@@ -138,6 +138,16 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
 .t td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .t tbody tr:hover td{background:var(--accent-soft)}
 .t td.cli{max-width:19rem;overflow:hidden;text-overflow:ellipsis}
+.t td.vend{max-width:16rem;overflow:hidden;text-overflow:ellipsis}
+/* columnas inmovilizadas (Retail: Socio y Cliente) */
+.t .stk{position:sticky;background:var(--panel);z-index:1}
+.t th.stk{z-index:3}
+.t .stk1{left:0}
+.t .stk2{left:var(--stk2,0)}
+.t .stk3{left:var(--stk3,0)}
+.t .stkl{box-shadow:inset -1px 0 0 var(--line)}
+.t tbody tr:hover td.stk{background:var(--accent-soft)}
+@media (max-width:700px){.t td.stk1,.t th.stk1{box-shadow:inset -1px 0 0 var(--line);max-width:9.5rem;overflow:hidden;text-overflow:ellipsis}}
 .t td.z{color:var(--bad);background:var(--bad-soft)}
 .t td.tot{font-weight:600}
 .pill{display:inline-block;padding:0 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:12px}
@@ -242,7 +252,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <button class="btn sec sm" type="button" id="export">Descargar Excel</button>
       </div>
       <p class="note" id="t-count">—</p>
-      <div class="twrap"><table class="t"><thead><tr id="t-head"></tr></thead><tbody id="t-body"></tbody></table></div>
+      <div class="twrap"><table class="t" id="t-table"><thead><tr id="t-head"></tr></thead><tbody id="t-body"></tbody></table></div>
     </section>
 
     <!-- COBERTURA -->
@@ -270,7 +280,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
           <label class="f"><span>Buscar</span><input class="input" type="search" id="r-q" placeholder="Socio" style="padding:6px 9px"></label>
         </div><button class="btn sec sm" type="button" id="r-export">Descargar Excel</button></div>
         <p class="note" id="r-count">—</p>
-        <div class="twrap"><table class="t"><thead><tr id="r-head"></tr></thead><tbody id="r-body"></tbody></table></div>
+        <div class="twrap"><table class="t" id="r-table"><thead><tr id="r-head"></tr></thead><tbody id="r-body"></tbody></table></div>
       </div>
     </section>
 
@@ -621,7 +631,7 @@ function render(){
   if(S.tab==='clientes'){
     const pre=met==='neto'?'n':'f';
     const mIdx=M.months.map((m,i)=>[m,i]).filter(([m])=>m.startsWith(anio));
-    const cols=[{k:'cli',h:'Cliente',l:1,cls:'cli'},{k:'cod',h:'Código',l:1,cls:'hide-sm'},{k:'ven',h:'Vendedor',l:1,cls:'hide-sm'},{k:'est',h:'Estado',l:1,cls:'hide-sm'},{k:'cond',h:'Condición de pago',l:1,cls:'hide-sm'},{k:'rel',h:'Relación',l:1,cls:'hide-sm'},
+    const cols=[{k:'cli',h:'Cliente',l:1,cls:'cli stk stk1'},{k:'cod',h:'Código',l:1,cls:'hide-sm stk stk2'},{k:'ven',h:'Vendedor',l:1,cls:'hide-sm vend stk stk3 stkl'},{k:'est',h:'Estado',l:1,cls:'hide-sm'},{k:'cond',h:'Condición de pago',l:1,cls:'hide-sm'},{k:'rel',h:'Relación',l:1,cls:'hide-sm'},
       ...mIdx.map(([m,i])=>({k:'m'+i,h:MES[+m.slice(5)-1],num:1,i})),{k:'tot',h:'Total '+anio,num:1,tot:1},{k:'ult',h:'Última factura'},{k:'pr',h:'Productos',nos:1}];
     const q=norm(f.q),prev=tienePrevios(M,anio);
     $('o-perdidos').textContent=prev?'Dejaron de comprar (compraron en '+(+anio-2)+' y '+(+anio-1)+', nada en '+anio+')':'Dejaron de comprar (sin datos de '+(+anio-2)+')';
@@ -635,10 +645,10 @@ function render(){
     const sinN=new Set(rows.filter((p)=>!(p.fy[anio]>0)).map((p)=>p.c.cod)).size,CAP=600,dist=new Set(rows.map((p)=>p.c.cod)).size;
     $('tab-title').textContent='Clientes × mes · '+(met==='neto'?'neto en miles de pesos (M$)':'n° de facturas')+' · '+anio;
     $('t-count').textContent=nf.format(dist)+' clientes'+(dist!==rows.length?' en '+nf.format(rows.length)+' filas vendedor-cliente':'')+' · '+nf.format(sinN)+' sin facturas en '+anio+(rows.length>CAP?' · se muestran los primeros '+CAP+' (el Excel descargado trae todos)':'');
-    $('t-head').replaceChildren(...cols.map((c)=>{const th=el('th',{scope:'col',text:c.h});if(!c.nos)th.dataset.f=c.k;if(c.l)th.classList.add('l');if(c.cls)th.classList.add(c.cls);if(c.k===sc2.f)th.setAttribute('aria-sort',sc2.dir==='asc'?'ascending':'descending');return th;}));
+    $('t-head').replaceChildren(...cols.map((c)=>{const th=el('th',{scope:'col',text:c.h});if(!c.nos)th.dataset.f=c.k;if(c.l)th.classList.add('l');if(c.cls)th.classList.add(...c.cls.split(' '));if(c.k===sc2.f)th.setAttribute('aria-sort',sc2.dir==='asc'?'ascending':'descending');return th;}));
     const fr=document.createDocumentFragment();
     for(const p of rows.slice(0,CAP)){const tr=document.createElement('tr');
-      for(const c of cols){const v=val(p,c);const td=document.createElement('td');if(c.l)td.className='l';if(c.cls)td.classList.add(c.cls);if(c.tot)td.classList.add('tot');
+      for(const c of cols){const v=val(p,c);const td=document.createElement('td');if(c.l)td.className='l';if(c.cls)td.classList.add(...c.cls.split(' '));if(c.tot)td.classList.add('tot');
         if(c.num){td.textContent=pre==='n'?miles(v):nf.format(v);if(!(v>0))td.classList.add('z');}
         else if(c.k==='ult'){td.textContent=v?MES[+v.slice(5)-1]+' '+v.slice(0,4):'Sin facturas';if(!v)td.classList.add('z');}
         else if(c.k==='pr'){if(p.c.pr&&p.c.pr.length){const b=el('button',{type:'button',class:'btn sec sm',text:'Excel'});b.dataset.cod=p.c.cod;b.title='Descargar productos vendidos a '+p.c.nom;td.append(b);}else td.textContent='—';}
@@ -647,6 +657,7 @@ function render(){
         tr.append(td);}
       fr.append(tr);}
     $('t-body').replaceChildren(fr);
+    {const h=$('t-head'),w=(s)=>{const e=h.querySelector(s);return e?e.getBoundingClientRect().width:0;};const T=$('t-table');T.style.setProperty('--stk2',w('.stk1')+'px');T.style.setProperty('--stk3',(w('.stk1')+w('.stk2'))+'px');}
   }
   if(S.tab==='cobertura'){
     const byV=new Map();for(const p of B){if(!byV.has(p.v))byV.set(p.v,[]);byV.get(p.v).push(p);}
@@ -672,35 +683,39 @@ function render(){
     $('r-cli').replaceChildren(new Option('Todos','Todos'),...clis.map(([k,n])=>new Option(n,k)));$('r-cli').value=S.rcli||'Todos';
     $('r-vista').value=S.rvista||'todos';
     const agg=new Map();
-    for(const r of rows0){if(S.rcli&&S.rcli!=='Todos'&&r.cod!==S.rcli)continue;const k=r.cod+'|'+r.so;let a=agg.get(k);if(!a){a={k,so:r.so,cod:r.cod,cli:r.cli,f:new Float64Array(N),n:new Float64Array(N)};agg.set(k,a);}a.f[r.i]+=r.n;a.n[r.i]+=r.neto;}
+    for(const r of rows0){if(S.rcli&&S.rcli!=='Todos'&&r.cod!==S.rcli)continue;const k=r.cod+'|'+r.so;let a=agg.get(k);if(!a){a={k,so:r.so,cod:r.cod,cli:r.cli,f:new Float64Array(N),n:new Float64Array(N),vy:new Map(),vu:new Map()};agg.set(k,a);}a.f[r.i]+=r.n;a.n[r.i]+=r.neto;
+      if(M.months[r.i].startsWith(anio))a.vy.set(r.v,(a.vy.get(r.v)||0)+r.n);if(!(a.vu.get(r.v)>=r.i))a.vu.set(r.v,r.i);}
     const all=[...agg.values()];
-    for(const a of all){a.fy=0;a.ny=0;a.fh=0;a.nh=0;a.mc=0;a.ult='';for(let i=0;i<N;i++){a.fh+=a.f[i];a.nh+=a.n[i];if(a.f[i]>0)a.ult=M.months[i];}for(const [,i] of mIdx){a.fy+=a.f[i];a.ny+=a.n[i];if(a.f[i]>0)a.mc++;}a.ms=mIdx.length-a.mc;}
+    for(const a of all){a.fy=0;a.ny=0;a.fh=0;a.nh=0;a.mc=0;a.ult='';for(let i=0;i<N;i++){a.fh+=a.f[i];a.nh+=a.n[i];if(a.f[i]>0)a.ult=M.months[i];}for(const [,i] of mIdx){a.fy+=a.f[i];a.ny+=a.n[i];if(a.f[i]>0)a.mc++;}a.ms=mIdx.length-a.mc;
+      a.ven=a.vy.size?[...a.vy.entries()].sort((x,y)=>y[1]-x[1]).map((x)=>x[0]).join(', '):[...a.vu.entries()].sort((x,y)=>y[1]-x[1]).map((x)=>x[0])[0]||'';
+      a.venDet=a.vy.size?[...a.vy.entries()].sort((x,y)=>y[1]-x[1]).map(([v,n])=>v+' ('+nf.format(n)+' fact.)').join(', '):(a.ven?a.ven+' (última venta)':'');}
     const con=all.filter((a)=>a.fy>0);
     $('r-tot').textContent=nf.format(all.length);$('r-con').textContent=nf.format(con.length);$('r-sin').textContent=nf.format(all.length-con.length);
     $('r-fac').textContent=nf.format(all.reduce((s,a)=>s+a.fy,0));$('r-neto').textContent=mm(all.reduce((s,a)=>s+a.ny,0));
     $('r-l-con').textContent='Compraron en '+anio;$('r-l-sin').textContent='Sin compra en '+anio;$('r-l-fac').textContent='Facturas '+etA;$('r-l-neto').textContent='Neto '+etA;
     const pre=met==='neto'?'n':'f';const q=norm(S.rq||'');const rv=S.rvista||'todos';
     let rows=all.filter((a)=>(rv==='todos'||(rv==='sin'?!(a.fy>0):a.fy>0))&&(!q||norm(a.so).includes(q)));
-    const cols=[{k:'so',h:'Socio',l:1,cls:'cli'},{k:'cli',h:'Cliente',l:1,cls:'hide-sm'},...mIdx.map(([m,i])=>({k:'m'+i,h:MES[+m.slice(5)-1],num:1,i})),
+    const cols=[{k:'so',h:'Socio',l:1,cls:'cli stk stk1'},{k:'cli',h:'Cliente',l:1,cls:'hide-sm cli stk stk2 stkl'},{k:'ven',h:'Vendedor',l:1,cls:'hide-sm vend'},...mIdx.map(([m,i])=>({k:'m'+i,h:MES[+m.slice(5)-1],num:1,i})),
       {k:'tot',h:'Total '+anio,num:1,tot:1},{k:'his',h:'Total histórico',num:1},{k:'mc',h:'Meses con compra',cnt:1},{k:'ms',h:'Meses sin compra',cnt:1},{k:'ult',h:'Última compra'},{k:'pr',h:'Productos',nos:1}];
-    const val=(a,c)=>c.k==='so'?a.so:c.k==='cli'?a.cli:c.k==='tot'?(pre==='n'?a.ny:a.fy):c.k==='his'?(pre==='n'?a.nh:a.fh):c.k==='mc'?a.mc:c.k==='ms'?a.ms:c.k==='ult'?a.ult:c.i!=null?(pre==='n'?a.n[c.i]:a.f[c.i]):'';
+    const val=(a,c)=>c.k==='so'?a.so:c.k==='cli'?a.cli:c.k==='ven'?a.ven:c.k==='tot'?(pre==='n'?a.ny:a.fy):c.k==='his'?(pre==='n'?a.nh:a.fh):c.k==='mc'?a.mc:c.k==='ms'?a.ms:c.k==='ult'?a.ult:c.i!=null?(pre==='n'?a.n[c.i]:a.f[c.i]):'';
     const rs=S.rsort&&cols.find((c)=>c.k===S.rsort.f)?S.rsort:{f:'tot',dir:'desc'};const scol=cols.find((c)=>c.k===rs.f);
     rows.sort((a,b)=>{const A=val(a,scol),Bv=val(b,scol);const c=typeof A==='number'?A-Bv:String(A).localeCompare(String(Bv),'es');return(rs.dir==='asc'?c:-c)||a.so.localeCompare(b.so,'es');});
     S.lastRetail={rows,cols,val,anio,pre};
     $('r-title').textContent='Socios × mes · '+(met==='neto'?'neto en miles de pesos (M$)':'n° de facturas')+' · '+anio;
     $('r-count').textContent=rows0.length?nf.format(rows.length)+' socios · '+nf.format(rows.filter((a)=>!(a.fy>0)).length)+' sin compra en '+anio:'No hay ventas con socio en tus carteras.';
-    $('r-head').replaceChildren(...cols.map((c)=>{const th=el('th',{scope:'col',text:c.h});if(!c.nos)th.dataset.f=c.k;if(c.l)th.classList.add('l');if(c.cls)th.classList.add(c.cls);if(c.k===rs.f)th.setAttribute('aria-sort',rs.dir==='asc'?'ascending':'descending');return th;}));
+    $('r-head').replaceChildren(...cols.map((c)=>{const th=el('th',{scope:'col',text:c.h});if(!c.nos)th.dataset.f=c.k;if(c.l)th.classList.add('l');if(c.cls)th.classList.add(...c.cls.split(' '));if(c.k===rs.f)th.setAttribute('aria-sort',rs.dir==='asc'?'ascending':'descending');return th;}));
     const fr=document.createDocumentFragment();
     for(const a of rows){const tr=document.createElement('tr');
-      for(const c of cols){const v=val(a,c);const td=document.createElement('td');if(c.l)td.className='l';if(c.cls)td.classList.add(c.cls);if(c.tot)td.classList.add('tot');
+      for(const c of cols){const v=val(a,c);const td=document.createElement('td');if(c.l)td.className='l';if(c.cls)td.classList.add(...c.cls.split(' '));if(c.tot)td.classList.add('tot');
         if(c.num){td.textContent=pre==='n'?miles(v):nf.format(v);if(!(v>0)&&c.k!=='his')td.classList.add('z');}
         else if(c.cnt){td.textContent=nf.format(v);if(c.k==='ms'&&v>0)td.classList.add('z');}
         else if(c.k==='ult'){td.textContent=v?MES[+v.slice(5)-1]+' '+v.slice(0,4):'—';}
         else if(c.k==='pr'){const pr=M.rprod.get(a.k);if(pr&&pr.length){const b=el('button',{type:'button',class:'btn sec sm',text:'Excel'});b.dataset.rk=a.k;b.title='Descargar productos comprados por '+a.so;td.append(b);}else td.textContent='—';}
-        else{td.textContent=v;if(c.k==='so')td.title=a.so;}
+        else{td.textContent=v;if(c.k==='so')td.title=a.so;if(c.k==='ven')td.title=a.venDet;}
         tr.append(td);}
       fr.append(tr);}
     $('r-body').replaceChildren(fr);
+    const s1=$('r-head').querySelector('.stk1');if(s1)$('r-table').style.setProperty('--stk2',s1.getBoundingClientRect().width+'px');
   }
 
 }
@@ -761,7 +776,7 @@ $('cob-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCob)return;co
   const data=[...L.filas.map((r)=>fila(r)),fila(L.tot,'TOTAL (clientes distintos)')];const ws=XLSX.utils.json_to_sheet(data);
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Cobertura '+L.anio);XLSX.writeFile(wb,'Cobertura_vendedores_'+L.anio+'.xlsx');});
 $('r-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastRetail)return;const L=S.lastRetail;
-  const data=L.rows.map((a)=>{const o={};for(const c of L.cols){if(c.k==='pr')continue;let v=L.val(a,c);if(c.k==='ult')v=v||'';o[c.h]=v;}return o;});
+  const data=L.rows.map((a)=>{const o={};for(const c of L.cols){if(c.k==='pr')continue;let v=L.val(a,c);if(c.k==='ult')v=v||'';if(c.k==='ven')v=a.venDet;o[c.h]=v;}return o;});
   const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Socios '+L.anio);XLSX.writeFile(wb,'Retail_socios_'+L.anio+(L.pre==='n'?'_neto':'_facturas')+'.xlsx');});
 /* ---------- maestro: carga de datos ---------- */
 function renderMaestro(){
