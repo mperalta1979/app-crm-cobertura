@@ -1,0 +1,29 @@
+{
+ "name": "APP CRM Cobertura",
+ "short_name": "CRM Cobertura",
+ "description": "Cobertura de cartera por vendedor - Petroflex S.A.",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0e4a5a",
+ "theme_color": "#0e4a5a",
+ "lang": "es-CL",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
