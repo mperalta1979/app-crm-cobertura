@@ -291,7 +291,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
 
       <div class="card">
         <h2>Usuarios</h2>
-        <p class="note">Administrador: todo, incluido este Maestro. Gerencia: ve todas las carteras. Vendedor: solo las carteras vinculadas. Cada usuario entra con su nombre de usuario y clave, y puede cambiar su clave con el botón "Mi clave".</p>
+        <p class="note">Administrador: todo, incluido este Maestro. Gerencia: ve todas las carteras. Vendedor: solo las carteras vinculadas. Cada usuario entra con su nombre de usuario y la clave que le asignes; solo el Administrador puede cambiar claves.</p>
         <div class="twrap" style="max-height:none"><table class="t ulist"><thead><tr><th class="l">Usuario</th><th class="l">Nombre</th><th class="l">Rol</th><th class="l">Carteras</th><th></th></tr></thead><tbody id="u-body"></tbody></table></div>
         <div class="row"><button class="btn sec sm" type="button" id="u-new">Nuevo usuario</button><button class="btn sec sm" type="button" id="u-gen">Crear usuarios para vendedores sin usuario</button></div>
         <p class="status" id="u-status" role="status"></p>
@@ -306,7 +306,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
           <div class="field" id="u-pass-w"><span id="u-pass-l">Clave inicial (mín. 6)</span><div class="pw"><input class="input" id="u-pass" type="password" autocomplete="new-password"><button type="button" class="eye" data-eye="u-pass" aria-label="Mostrar clave" title="Mostrar clave"></button></div></div>
         </div>
         <div class="field" id="u-vend-wrap"><span>Carteras que ve (vendedor)</span><div class="vgrid" id="u-vend"></div></div>
-        <p class="hint" id="u-edit-hint" hidden>La clave de otro usuario no se puede cambiar desde aquí: el usuario la cambia con "Mi clave". Si la olvidó, elimínalo y créalo con otro nombre de usuario (o bórralo también en Firebase → Authentication y créalo de nuevo con el mismo).</p>
+        <p class="hint" id="u-edit-hint" hidden>Para cambiarle la clave, escribe la nueva en "Nueva clave". El usuario sigue entrando con el mismo nombre de usuario y la clave nueva; la anterior deja de funcionar.</p>
         <p class="err" id="u-err"></p>
         <div class="row"><button class="btn" type="button" id="u-save">Guardar</button><button class="btn sec" type="button" id="u-cancel">Cancelar</button></div>
       </div>
@@ -383,7 +383,7 @@ function ventas_(XLSX,rows){
 (function(){
 'use strict';
 const FB_CFG={apiKey:'AIzaSyCcq56y1-ZSm1ZOXaePHzw96GW9TiSgUl0',authDomain:'crm-cobertura.firebaseapp.com',projectId:'crm-cobertura',storageBucket:'crm-cobertura.firebasestorage.app',messagingSenderId:'944900547052',appId:'1:944900547052:web:38e2bd826b4424a809e0c9'};
-const DOM_USR='crm-cobertura.app',COL_U='crm_usuarios',COL_D='crm_datos',PARTE=900000;
+const DOM_USR='crm-cobertura.app',COL_U='crm_usuarios',COL_D='crm_datos',COL_L='crm_login',PARTE=900000;
 if(!window.firebase){document.getElementById('l-err').textContent='No se pudo conectar con el servidor. Revisa tu conexión a internet y recarga.';return;}
 firebase.initializeApp(FB_CFG);const auth=firebase.auth(),db=firebase.firestore();
 const sleep=(ms)=>new Promise((r)=>setTimeout(r,ms));
@@ -408,6 +408,8 @@ const IDB=(()=>{let dbp=null;const open=()=>dbp||(dbp=new Promise((res)=>{try{co
 
 /* ---------- usuarios (Firebase) ---------- */
 const aEmail=(u)=>{u=String(u||'').trim().toLowerCase();return u.includes('@')?u:u+'@'+DOM_USR;};
+async function emailLogin(u){u=String(u||'').trim().toLowerCase();if(u.includes('@'))return u;
+  try{const d=await db.collection(COL_L).doc(u).get();if(d.exists&&d.data().email)return d.data().email;}catch(e){}return aEmail(u);}
 let USERS=[];
 async function cargarUsuarios(){const q=await db.collection(COL_U).get();USERS=q.docs.map((d)=>({uid:d.id,...d.data()}));}
 const findUser=(u)=>USERS.find((x)=>x.u===String(u).trim().toLowerCase());
@@ -500,7 +502,7 @@ function escucharDatos(){
 /* ---------- login ---------- */
 $('login-form').addEventListener('submit',async(e)=>{e.preventDefault();$('l-err').textContent='';
   const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
-  try{await auth.signInWithEmailAndPassword(aEmail($('l-user').value),$('l-pass').value);$('l-pass').value='';}
+  try{await auth.signInWithEmailAndPassword(await emailLogin($('l-user').value),$('l-pass').value);$('l-pass').value='';}
   catch(err){$('l-err').textContent=errAuth(err);}finally{btn.disabled=false;}});
 $('logout').addEventListener('click',()=>{auth.signOut();});
 async function perfilDe(user){
@@ -517,7 +519,7 @@ auth.onAuthStateChanged(async(user)=>{
     if(!p){busy(false);await auth.signOut();$('l-err').textContent='Tu usuario no está habilitado. Pide acceso al administrador.';return;}
     S.user=p;S.f={...DEF};S.sort=null;
     $('who-name').textContent=p.nombre||p.u;$('who-rol').textContent='· '+ROL[p.rol];
-    $('tab-maestro').hidden=p.rol!=='admin';if(p.rol!=='admin'&&S.tab==='maestro')S.tab='resumen';
+    $('tab-maestro').hidden=p.rol!=='admin';$('my-pass').hidden=p.rol!=='admin';if(p.rol!=='admin'&&S.tab==='maestro')S.tab='resumen';
     $('empty-t').textContent=p.rol==='admin'?'Ve a Maestro y sube los archivos de cartera y ventas.':'El administrador todavía no carga los archivos de cartera y ventas.';
     if(p.rol==='admin')await cargarUsuarios().catch(()=>{});
     await escucharDatos();
@@ -824,13 +826,13 @@ function renderUsuarios(){
     del.addEventListener('click',async()=>{if(del.dataset.c!=='1'){del.dataset.c='1';del.textContent='¿Eliminar? Confirmar';setTimeout(()=>{del.dataset.c='';del.textContent='Eliminar';},4000);return;}
       if(u.uid===S.user.uid){toast('No puedes eliminar tu propio usuario.');return;}
       if(u.rol==='admin'&&USERS.filter((x)=>x.rol==='admin').length<2){toast('Debe quedar al menos un Administrador.');return;}
-      try{await db.collection(COL_U).doc(u.uid).delete();USERS=USERS.filter((x)=>x!==u);renderUsuarios();toast('Usuario '+u.u+' eliminado: ya no puede entrar.');}catch(e){toast(errAuth(e));}});
+      try{await db.collection(COL_U).doc(u.uid).delete();await db.collection(COL_L).doc(u.u).delete().catch(()=>{});USERS=USERS.filter((x)=>x!==u);renderUsuarios();toast('Usuario '+u.u+' eliminado: ya no puede entrar.');}catch(e){toast(errAuth(e));}});
     return el('tr',null,el('td',{class:'l',text:u.u}),el('td',{class:'l',text:u.nombre||''}),el('td',{class:'l',text:ROL[u.rol]||u.rol}),
       el('td',{class:'l',text:u.rol==='vendedor'?((u.vend||[]).join(', ')||'— ninguna —'):'Todas'}),el('td',null,el('span',{class:'row',style:'justify-content:flex-end'},ed,del)));}));
 }
 function abrirForm(u){editando=u||null;$('u-form-card').hidden=false;$('u-form-title').textContent=u?'Editar usuario '+u.u:'Nuevo usuario';
   $('u-user').value=u?u.u:'';$('u-user').disabled=!!u;$('u-name').value=u?u.nombre||'':'';$('u-rol').value=u?u.rol:'vendedor';$('u-pass').value='';$('u-pass').type='password';
-  $('u-pass-w').hidden=!!u;$('u-edit-hint').hidden=!u;$('u-err').textContent='';
+  const yo=u&&u.uid===S.user.uid;$('u-pass-w').hidden=!!yo;$('u-pass-l').textContent=u?'Nueva clave (vacío = no cambia)':'Clave inicial (mín. 6)';$('u-edit-hint').hidden=!u||yo;$('u-err').textContent='';
   const sel=new Set(u&&u.vend||[]);const vs=S.M?S.M.vendors:[];
   $('u-vend').replaceChildren(...(vs.length?vs.map((v)=>{const cb=el('input',{type:'checkbox',value:v,checked:sel.has(v)});return el('label',null,cb,v);}):[el('span',{class:'hint',text:'Carga primero los datos para ver las carteras.'})]));
   vendVis();$('u-form-card').scrollIntoView({behavior:'smooth',block:'start'});$(u?'u-name':'u-user').focus();}
@@ -839,7 +841,13 @@ $('u-rol').addEventListener('change',vendVis);
 $('u-new').addEventListener('click',()=>abrirForm(null));
 $('u-cancel').addEventListener('click',()=>{$('u-form-card').hidden=true;editando=null;});
 let SEC=null;
-async function crearCuenta(u,pw){SEC=SEC||firebase.initializeApp(FB_CFG,'secundaria');const a=SEC.auth();const cred=await a.createUserWithEmailAndPassword(aEmail(u),pw);const uid=cred.user.uid;await a.signOut();return uid;}
+// Crea la cuenta en Firebase Auth. Si el correo interno ya existe (usuario borrado o clave cambiada antes), usa usuario.2, usuario.3, …
+async function crearCuenta(u,pw){SEC=SEC||firebase.initializeApp(FB_CFG,'secundaria');const a=SEC.auth();
+  for(let k=1;k<=50;k++){const email=k===1?aEmail(u):u+'.'+k+'@'+DOM_USR;
+    try{const cred=await a.createUserWithEmailAndPassword(email,pw);const uid=cred.user.uid;await a.signOut();return{uid,email};}
+    catch(e){if(!(e&&e.code&&e.code.includes('email-already-in-use')))throw e;}}
+  throw new Error('No se pudo crear la cuenta de '+u+'.');}
+async function publicarLogin(u,email){await db.collection(COL_L).doc(u).set({email});}
 $('u-save').addEventListener('click',async()=>{
   const u=$('u-user').value.trim().toLowerCase(),nombre=$('u-name').value.trim(),rol=$('u-rol').value,pw=$('u-pass').value;
   const vend=[...$('u-vend').querySelectorAll('input:checked')].map((i)=>i.value);const err=$('u-err');err.textContent='';
@@ -847,12 +855,18 @@ $('u-save').addEventListener('click',async()=>{
     if(findUser(u)){err.textContent='Ya existe el usuario '+u+'.';return;}if(pw.length<6){err.textContent='La clave debe tener al menos 6 caracteres.';return;}}
   if(rol==='vendedor'&&!vend.length){err.textContent='Elige al menos una cartera para el vendedor.';return;}
   if(editando&&editando.rol==='admin'&&rol!=='admin'&&USERS.filter((x)=>x.rol==='admin').length<2){err.textContent='Debe quedar al menos un Administrador.';return;}
+  if(editando&&pw&&pw.length<6&&editando.uid!==S.user.uid){err.textContent='La clave debe tener al menos 6 caracteres.';return;}
   const b=$('u-save');b.disabled=true;
   try{
-    if(editando){const upd={nombre,rol,vend:rol==='vendedor'?vend:[]};await db.collection(COL_U).doc(editando.uid).update(upd);Object.assign(editando,upd);if(S.user.uid===editando.uid)Object.assign(S.user,upd);}
-    else{const uid=await crearCuenta(u,pw);const doc={u,email:aEmail(u),nombre,rol,vend:rol==='vendedor'?vend:[],creado:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);USERS.push({uid,...doc});}
-    $('u-form-card').hidden=true;const nm=editando?editando.u:u;editando=null;renderUsuarios();toast('Usuario '+nm+' guardado.');
-  }catch(e){err.textContent=errAuth(e)+(e&&e.code&&e.code.includes('email-already-in-use')?' Si lo eliminaste antes, usa otro nombre o bórralo en Firebase → Authentication.':'');}
+    if(editando){const upd={nombre,rol,vend:rol==='vendedor'?vend:[]};
+      if(pw&&editando.uid!==S.user.uid){if(pw.length<6){err.textContent='La clave debe tener al menos 6 caracteres.';return;}
+        const viejo=editando.uid;const {uid,email}=await crearCuenta(editando.u,pw);const {uid:_x,...resto}=editando;
+        const doc={...resto,...upd,email,clave:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(editando.u,email);await db.collection(COL_U).doc(viejo).delete();
+        Object.assign(editando,doc,{uid});}
+      else{await db.collection(COL_U).doc(editando.uid).update(upd);Object.assign(editando,upd);if(S.user.uid===editando.uid)Object.assign(S.user,upd);}}
+    else{const {uid,email}=await crearCuenta(u,pw);const doc={u,email,nombre,rol,vend:rol==='vendedor'?vend:[],creado:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(u,email);USERS.push({uid,...doc});}
+    $('u-form-card').hidden=true;const nm=editando?editando.u:u;const yoMismo=editando&&editando.uid===S.user.uid;editando=null;renderUsuarios();toast('Usuario '+nm+' guardado'+(pw&&!yoMismo?' con su clave nueva':'')+'.');
+  }catch(e){err.textContent=errAuth(e)+(e&&e.code&&e.code.includes('email-already-in-use')?'':'');}
   finally{b.disabled=false;}});
 const NO_PERSONA=/OFICINA|SERVICIOS|^GAS$|MATERIAS|EXPORTACION|EMPRESA|SODIMAC|SIN VENDEDOR/i;
 $('u-gen').addEventListener('click',async()=>{
@@ -864,11 +878,11 @@ $('u-gen').addEventListener('click',async()=>{
     let u=norm(p[p.length-1][0]+p[0]).replace(/[^a-z0-9]/g,'');const base=u;let n=2;while(findUser(u))u=base+(n++);
     const nombre=p.length>=3?p[p.length-1].charAt(0)+p[p.length-1].slice(1).toLowerCase()+' '+p[0].charAt(0)+p[0].slice(1).toLowerCase():v;
     busy(true,'Creando usuarios…',(k+1)+' de '+pend.length+': '+u);
-    try{const uid=await crearCuenta(u,'petroflex');const doc={u,email:aEmail(u),nombre,rol:'vendedor',vend:[v],creado:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);USERS.push({uid,...doc});nuevos.push(u);}
+    try{const {uid,email}=await crearCuenta(u,'petroflex');const doc={u,email,nombre,rol:'vendedor',vend:[v],creado:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(u,email);USERS.push({uid,...doc});nuevos.push(u);}
     catch(e){fallos.push(u+' ('+errAuth(e)+')');}}
   busy(false);renderUsuarios();
   $('u-status').className='status'+(nuevos.length?' ok':'');
-  $('u-status').textContent=(nuevos.length?'Se crearon '+nuevos.length+' usuarios ('+nuevos.join(', ')+') con clave inicial "petroflex". Pídeles cambiarla con "Mi clave".':'Todos los vendedores ya tienen usuario.')+(fallos.length?' No se pudieron crear: '+fallos.join('; ')+'.':'');});
+  $('u-status').textContent=(nuevos.length?'Se crearon '+nuevos.length+' usuarios ('+nuevos.join(', ')+') con clave inicial "petroflex". Puedes cambiarles la clave con Editar.':'Todos los vendedores ya tienen usuario.')+(fallos.length?' No se pudieron crear: '+fallos.join('; ')+'.':'');});
 
 /* ---------- inicio: lo maneja onAuthStateChanged ---------- */
 busy(true,'Conectando…');
