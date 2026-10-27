@@ -139,6 +139,7 @@ button,input,select{font:inherit;color:inherit}
 .pillx.ini{color:var(--accent-2);border-color:var(--accent-2)}
 .pillx.muted{color:var(--muted)}
 .t td.hot{color:var(--bad);font-weight:600}
+.t td.hotini{color:var(--accent-2);font-weight:600}
 .t tr.tot td{font-weight:600;background:var(--bg)}
 .f{max-width:100%}.f .sel,.f .input{max-width:100%}.tbar .left{min-width:0;max-width:100%}.tbar{min-width:0}
 .t td .btn.sm{padding:2px 8px;font-size:12px}
@@ -316,6 +317,9 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <div class="grid2">
           <div class="card" style="grid-column:1/-1"><h2>NV por semana</h2><p class="note" id="nv-dist-note">—</p>
             <div class="twrap" style="max-height:none"><table class="t" id="nv-table"><thead><tr id="nv-thead"></tr></thead><tbody id="nv-tbody"></tbody></table></div></div>
+          <div class="card" style="grid-column:1/-1"><h2>Patrón de emisión</h2>
+            <p class="note">Reparte las NV de cada vendedor en tres tramos del mes. <b>Carga a inicio de mes</b>: 35% o más en Inicio (día 1–7). <b>Carga a fin de mes</b>: 40% o más en Fin (día 22 al cierre). <b>Pareja</b>: no cumple ninguna de las dos. <b>Pocos datos</b>: menos de 10 NV. <span id="nv-pat-note"></span></p>
+            <div class="twrap" style="max-height:none"><table class="t" id="nv-ptable"><thead><tr><th class="l stk stk1 stkl">Vendedor</th><th>NV</th><th>Inicio (día 1–7)</th><th>Mitad (día 8–21)</th><th>Fin (día 22–cierre)</th><th class="l">Patrón</th></tr></thead><tbody id="nv-pbody"></tbody></table></div></div>
           <div class="card"><h2>NV por día de la semana</h2><p class="note">Suma de los vendedores seleccionados en el mes elegido.</p><div class="nvdow" id="nv-dow"></div></div>
         </div>
       </div>
@@ -836,19 +840,22 @@ function renderNV(){
   const semanas=[];for(let w=ms0(lunes(desde));w<=ms0(hasta);w+=7*DAY){const a=iso(Math.max(w,ms0(desde))),b=iso(Math.min(w+6*DAY,ms0(hasta)));semanas.push({k:iso(w),a,b,curso:mes!=='todos'?b>n.hasta&&a<=n.hasta:w+6*DAY>ms0(n.hasta)});}
   const lblS=(s)=>{const d1=+s.a.slice(8,10),d2=+s.b.slice(8,10),m1=MES[+s.a.slice(5,7)-1].toLowerCase(),m2=MES[+s.b.slice(5,7)-1].toLowerCase();return (m1===m2?d1+'–'+d2+' '+m2:d1+' '+m1+'–'+d2+' '+m2);};
   const patronDe=(lista)=>{let nv=0,ini=0,fin=0;for(const r of lista){const d=+r.f.slice(8,10);nv+=r.c;if(d<=7)ini+=r.c;if(d>=22)fin+=r.c;}
-    const pi=nv?Math.round(100*ini/nv):0,pf=nv?Math.round(100*fin/nv):0;return{nv,pi,pf,patron:nv<10?'Pocos datos':pf>=40?'Carga a fin de mes':pi>=35?'Carga a inicio de mes':'Pareja'};};
+    const pi=nv?Math.round(100*ini/nv):0,pf=nv?Math.round(100*fin/nv):0,pm=nv?100-pi-pf:0;return{nv,pi,pm,pf,patron:nv<10?'Pocos datos':pf>=40?'Carga a fin de mes':pi>=35?'Carga a inicio de mes':'Pareja'};};
   const porSem=(lista)=>{const m=new Map();for(const r of lista){const k=lunes(r.f);m.set(k,(m.get(k)||0)+r.c);}return m;};
   const T=patronDe(inMes),TS=porSem(inMes);const enCurso=mes==='todos'?months.some((m)=>!completo(m)):!completo(mes);
   const topS=semanas.map((s)=>({s,n:TS.get(s.k)||0})).sort((a,b)=>b.n-a.n)[0];
   $('nv-take').replaceChildren((mes==='todos'?'En todos los meses, ':'En '+MESES_L[+mes.slice(5,7)-1]+', '),'la semana con más NV fue la del ',el('b',{text:lblS(topS.s)}),' con ',el('b',{text:nf.format(topS.n)+' NV ('+(T.nv?Math.round(100*topS.n/T.nv):0)+'%)'}),'. Del día 22 a fin de mes se emitió el ',el('b',{text:T.pf+'%'}),' y del 1 al 7, el ',el('b',{text:T.pi+'%'}),'.'+(enCurso?(mes==='todos'?' Incluye el mes en curso, cuyo cierre aún está incompleto.':' El mes aún no termina, así que el cierre está incompleto.'):''));
   const filas=[{v:sc?'(Mis carteras)':'(Todos)',tot:1,...T,ws:TS},...sel.map((v)=>{const l=inMes.filter((r)=>r.v===v);return{v,...patronDe(l),ws:porSem(l)};}).filter((o)=>o.nv>0).sort((a,b)=>b.nv-a.nv)];
-  $('nv-thead').replaceChildren(el('th',{class:'l stk stk1 stkl',text:'Vendedor'}),el('th',{text:'NV'}),...semanas.map((s,i)=>{const th=el('th',{text:(mes==='todos'?'':'Sem '+(i+1)+' · ')+lblS(s)+(s.curso?' *':'')});th.title='Semana del lunes '+fdate(s.k)+(s.curso?' (en curso)':'');return th;}),el('th',{text:'Día 1–7'}),el('th',{text:'Día 22–fin'}),el('th',{class:'l',text:'Patrón'}));
+  $('nv-thead').replaceChildren(el('th',{class:'l stk stk1 stkl',text:'Vendedor'}),el('th',{text:'NV'}),...semanas.map((s,i)=>{const th=el('th',{text:(mes==='todos'?'':'Sem '+(i+1)+' · ')+lblS(s)+(s.curso?' *':'')});th.title='Semana del lunes '+fdate(s.k)+(s.curso?' (en curso)':'');return th;}));
   $('nv-tbody').replaceChildren(...filas.map((o)=>{const hot=o.patron==='Carga a fin de mes';const tr=el('tr',{class:o.tot?'tot':''});
     const mx=Math.max(0,...semanas.map((s)=>o.ws.get(s.k)||0));
-    const pill=el('span',{class:'pillx '+(hot?'fin':o.patron==='Carga a inicio de mes'?'ini':o.patron==='Pareja'?'':'muted'),text:o.patron});
     tr.append(el('td',{class:'l stk stk1 stkl',text:o.v}),el('td',{text:nf.format(o.nv)}),...semanas.map((s)=>{const c=o.ws.get(s.k)||0;const td=el('td',{text:o.nv?Math.round(100*c/o.nv)+'%':'—'});td.title=nf.format(c)+' NV';if(c===mx&&c>0)td.style.fontWeight='700';if(!c)td.classList.add('z');return td;}),
-      el('td',{text:o.pi+'%'}),el('td',{class:hot?'hot':'',text:o.pf+'%'}),el('td',{class:'l'},pill));return tr;}));
-  $('nv-dist-note').textContent='Porcentaje de las NV de cada vendedor emitidas en cada semana (lunes a domingo); en negrita su semana más alta. Pasa el mouse sobre una celda para ver la cantidad. Patrón: "Carga a fin de mes" con 40% o más del día 22 al cierre; "Carga a inicio de mes" con 35% o más del día 1 al 7.'+(semanas.some((s)=>s.curso)?' * Semana en curso.':'');
+      );return tr;}));
+  $('nv-pbody').replaceChildren(...filas.map((o)=>{const hot=o.patron==='Carga a fin de mes',ini=o.patron==='Carga a inicio de mes';const tr=el('tr',{class:o.tot?'tot':''});
+    const pill=el('span',{class:'pillx '+(hot?'fin':ini?'ini':o.patron==='Pareja'?'':'muted'),text:o.patron});
+    tr.append(el('td',{class:'l stk stk1 stkl',text:o.v}),el('td',{text:nf.format(o.nv)}),el('td',{class:ini?'hotini':'',text:o.pi+'%'}),el('td',{text:o.pm+'%'}),el('td',{class:hot?'hot':'',text:o.pf+'%'}),el('td',{class:'l'},pill));return tr;}));
+  $('nv-pat-note').textContent=enCurso?(mes==='todos'?'Incluye el mes en curso: su tramo Fin aún está incompleto.':'El mes aún no termina: el tramo Fin está incompleto.'):'';
+  $('nv-dist-note').textContent='Porcentaje de las NV de cada vendedor emitidas en cada semana (lunes a domingo); en negrita su semana más alta. Pasa el mouse sobre una celda para ver la cantidad.'+(semanas.some((s)=>s.curso)?' * Semana en curso.':'');
   nvLinea(inMes,sel,col,mes);nvDow(inMes,sel);
 }
 function svgEl(box,W,H,label){const NS='http://www.w3.org/2000/svg';const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('width','100%');svg.setAttribute('role','img');svg.setAttribute('aria-label',label);box.append(svg);
