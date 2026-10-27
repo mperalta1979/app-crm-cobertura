@@ -123,6 +123,23 @@ button,input,select{font:inherit;color:inherit}
 .tbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:space-between}
 .tbar .left{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
 .wrap .wrap{width:100%;max-width:none;margin:0}
+/* Emisión NV x Vendedor */
+:root{--s1:#1f7a8c;--s2:#c0632d;--s3:#5b6bbf;--s4:#2f8f5b;--s5:#b04a7a;--s6:#8a7a1f;--s7:#6c4fa3;--s8:#3d8fc4;--band:rgba(14,74,90,.07)}
+@media (prefers-color-scheme:dark){:root{--s1:#5fb3c6;--s2:#e9935f;--s3:#93a0ea;--s4:#6cc690;--s5:#e486b2;--s6:#d6c25c;--s7:#ad91e0;--s8:#7cc0ea;--band:rgba(95,179,198,.10)}}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+#nv-cont .filters{align-items:flex-start}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
+.chip[aria-pressed=true]{background:var(--panel);border-color:var(--muted)}
+.chip.act{color:var(--muted);font-weight:600}
+.chip .sw{width:10px;height:10px;border-radius:50%;background:var(--line);flex:none}
+.nvchart{position:relative;min-height:340px}
+.nvdow{position:relative;min-height:220px}
+.pillx{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line)}
+.pillx.fin{color:var(--bad);border-color:var(--bad)}
+.pillx.ini{color:var(--accent-2);border-color:var(--accent-2)}
+.pillx.muted{color:var(--muted)}
+.t td.hot{color:var(--bad);font-weight:600}
+.t tr.tot td{font-weight:600;background:var(--bg)}
 .f{max-width:100%}.f .sel,.f .input{max-width:100%}.tbar .left{min-width:0;max-width:100%}.tbar{min-width:0}
 .t td .btn.sm{padding:2px 8px;font-size:12px}
 .t tfoot td{position:sticky;bottom:0;background:var(--panel);font-weight:600;border-top:2px solid var(--line)}
@@ -205,6 +222,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
       <button class="tab" role="tab" data-tab="cobertura" aria-selected="false">Cobertura</button>
       <button class="tab" role="tab" data-tab="clientes" aria-selected="false">Clientes × mes</button>
       <button class="tab" role="tab" data-tab="retail" aria-selected="false">Retail</button>
+      <button class="tab" role="tab" data-tab="nv" aria-selected="false">Emisión NV x Vendedor</button>
       <button class="tab" role="tab" data-tab="maestro" aria-selected="false" id="tab-maestro" hidden>Maestro</button>
     </nav>
   </header>
@@ -285,11 +303,29 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
       </div>
     </section>
 
+    <!-- EMISIÓN NV -->
+    <section id="p-nv" class="wrap" style="padding:0" hidden>
+      <div class="card" id="nv-vacio" hidden><h2>Aún no hay NV cargadas</h2><p class="note" id="nv-vacio-t">—</p></div>
+      <div id="nv-cont" class="wrap" style="padding:0">
+        <div><h2 style="font-family:var(--f-display);font-size:20px;margin:0">Emisión de NV por vendedor</h2><p class="take" id="nv-take" style="margin-top:6px">—</p><p class="note" id="nv-src">—</p></div>
+        <div class="filters">
+          <label class="f"><span>Mes</span><select class="sel" id="nv-mes"></select></label>
+          <div class="f" style="flex:1 1 30rem"><span>Vendedores</span><div class="chips" id="nv-chips"></div></div>
+        </div>
+        <div class="card"><h2>NV emitidas por fecha</h2><p class="note">Cantidad de NV distintas (estado A, P o C) por fecha de emisión. La franja sombreada marca del día 21 a fin de mes.</p><div class="nvchart" id="nv-chart"></div></div>
+        <div class="grid2">
+          <div class="card"><h2>¿Inicio, mitad o fin de mes?</h2><p class="note" id="nv-dist-note">—</p>
+            <div class="twrap" style="max-height:none"><table class="t"><thead><tr><th class="l">Vendedor</th><th>NV</th><th>Día 1–10</th><th>Día 11–20</th><th>Día 21–fin</th><th class="l">Patrón</th></tr></thead><tbody id="nv-tbody"></tbody></table></div></div>
+          <div class="card"><h2>NV por día de la semana</h2><p class="note">Suma de los vendedores seleccionados en el mes elegido.</p><div class="nvdow" id="nv-dow"></div></div>
+        </div>
+      </div>
+    </section>
+
     <!-- MAESTRO -->
     <section id="p-maestro" class="wrap" style="padding:0" hidden>
       <div class="card">
         <h2>Cargar datos</h2>
-        <p class="note">Sube el Excel de cartera (Query_clientes_Vista) y/o el de ventas (VENTAS_...). Puedes subir uno solo; la app reconoce cuál es por sus columnas y conserva el otro. La primera vez se necesitan los dos.</p>
+        <p class="note">Sube el Excel de cartera (Query_clientes_Vista), el de ventas (VENTAS) y/o el de NV (Vista_Logistica…). Puedes subir uno solo; la app reconoce cuál es por sus columnas y conserva los demás. La primera vez se necesitan cartera y ventas.</p>
         <div class="drop" id="drop">
           <b>Arrastra aquí los archivos Excel</b>
           <span class="note">o</span>
@@ -348,8 +384,24 @@ function leer_(XLSX,buf){const wb=XLSX.read(buf,{type:'array',dense:true});const
 function procesar(XLSX,buf){
   const rows=leer_(XLSX,buf);const h=rows[0]||[];
   if(idx_(h,['Tipo_Docto'])>=0)return ventas_(XLSX,rows);
+  if(idx_(h,['Numero_NVenta'])>=0&&idx_(h,['fecha_emis'])>=0)return nv_(XLSX,rows);
   if(idx_(h,['CodAux'])>=0)return cartera_(rows);
   throw new Error('No reconozco el archivo: no tiene las columnas de cartera (CodAux) ni de ventas (Tipo_Docto).');
+}
+function nv_(XLSX,rows){
+  const h=rows[0];const I={nv:idx_(h,['Numero_NVenta']),f:idx_(h,['fecha_emis']),v:idx_(h,['VenDes','Vendedor']),e:idx_(h,['nvEstado','Estado'])};
+  const falta=Object.keys(I).filter((k)=>I[k]<0).map((k)=>({nv:'Numero_NVenta',f:'fecha_emis',v:'VenDes',e:'nvEstado'})[k]);
+  if(falta.length)throw new Error('Al archivo de NV le faltan columnas: '+falta.join(', '));
+  const fecha=(x)=>{if(x==null||x==='')return '';if(typeof x==='number'){const p=XLSX.SSF.parse_date_code(x);return p.y+'-'+String(p.m).padStart(2,'0')+'-'+String(p.d).padStart(2,'0');}
+    if(x instanceof Date)return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+    const s=String(x).trim();let m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[1]+'-'+m[2]+'-'+m[3]:'';};
+  const vistos=new Set(),anul=new Set(),acc=new Map();let desde='',hasta='';
+  for(let i=1;i<rows.length;i++){const r=rows[i];const nv=s_(r[I.nv]);if(!nv)continue;const est=s_(r[I.e]).toUpperCase();
+    if(!['A','P','C'].includes(est)){if(est==='N')anul.add(nv);continue;}
+    if(vistos.has(nv))continue;vistos.add(nv);const f=fecha(r[I.f]);if(!f)continue;const v=s_(r[I.v])||'SIN VENDEDOR';
+    const k=f+'\u0001'+v;acc.set(k,(acc.get(k)||0)+1);if(!desde||f<desde)desde=f;if(f>hasta)hasta=f;}
+  if(!acc.size)throw new Error('El archivo de NV no trae notas de venta en estado A, P o C.');
+  return {tipo:'nv',rows:[...acc.entries()].map(([k,n])=>{const [f,v]=k.split('\u0001');return [f,v,n];}),desde,hasta,total:vistos.size,anuladas:anul.size};
 }
 function cartera_(rows){
   const h=rows[0];const I={v:idx_(h,['VENDEDOR','VenDes']),cod:idx_(h,['CodAux']),nom:idx_(h,['NomAux']),rut:idx_(h,['RutAux']),act:idx_(h,['ActAux']),bl:idx_(h,['Bloqueado']),cat:idx_(h,['CatDes']),cve:idx_(h,['CveDes'])};
@@ -487,6 +539,22 @@ async function guardarNube(raw){
   for(let i=n;i<pn;i++)await db.collection(COL_D).doc('parte_'+i).delete().catch(()=>{});
   S.ver=version;await IDB.put('cache',{version,raw});
 }
+async function guardarNV(reg){
+  const bytes=await gzip(JSON.stringify(reg));if(bytes.length>PARTE)throw new Error('El archivo de NV es demasiado grande para guardarlo (más de un año de NV). Sube un período más corto.');
+  const version=new Date().toISOString();
+  await db.collection(COL_D).doc('nv').set({version,nombre:reg.nombre,cargado:reg.cargado,desde:reg.desde,hasta:reg.hasta,total:reg.total,por:auth.currentUser.email,d:firebase.firestore.Blob.fromUint8Array(bytes)});
+  S.nv=reg;S.nvVer=version;await IDB.put('nvcache',{version,reg});
+}
+function escucharNV(){
+  if(S.unsubNV)S.unsubNV();
+  S.unsubNV=db.collection(COL_D).doc('nv').onSnapshot(async(d)=>{
+    try{if(!d.exists){S.nv=null;S.nvVer=null;}else{const m=d.data();if(m.version!==S.nvVer){const c=await IDB.get('nvcache');
+      if(c&&c.version===m.version)S.nv=c.reg;else{const reg=JSON.parse(await gunzip(m.d.toUint8Array()));S.nv=reg;await IDB.put('nvcache',{version:m.version,reg});}
+      const nuevo=S.nvVer!=null;S.nvVer=m.version;if(nuevo)toast('NV actualizadas: hasta el '+fdate(S.nv.hasta)+'.');}}}
+    catch(e){toast(errAuth(e));}
+    if(S.user&&(S.tab==='nv'||S.tab==='maestro'))render();
+  },(e)=>{});
+}
 async function cargarNube(meta){
   const c=await IDB.get('cache');if(c&&c.version===meta.version)return c.raw;
   for(let intento=0;intento<4;intento++){
@@ -526,7 +594,7 @@ async function perfilDe(user){
   try{await ref.set(p);return{uid:user.uid,...p};}catch(e){return null;}
 }
 auth.onAuthStateChanged(async(user)=>{
-  if(!user){if(S.unsub){S.unsub();S.unsub=null;}S.user=null;S.raw=null;S.M=null;$('v-app').hidden=true;$('v-login').hidden=false;busy(false);$('l-user').focus();return;}
+  if(!user){if(S.unsub){S.unsub();S.unsub=null;}if(S.unsubNV){S.unsubNV();S.unsubNV=null;}S.nv=null;S.nvVer=null;S.user=null;S.raw=null;S.M=null;$('v-app').hidden=true;$('v-login').hidden=false;busy(false);$('l-user').focus();return;}
   busy(true,'Ingresando…');
   try{const p=await perfilDe(user);
     if(!p){busy(false);await auth.signOut();$('l-err').textContent='Tu usuario no está habilitado. Pide acceso al administrador.';return;}
@@ -535,7 +603,7 @@ auth.onAuthStateChanged(async(user)=>{
     $('tab-maestro').hidden=p.rol!=='admin';$('my-pass').hidden=p.rol!=='admin';if(p.rol!=='admin'&&S.tab==='maestro')S.tab='resumen';
     $('empty-t').textContent=p.rol==='admin'?'Ve a Maestro y sube los archivos de cartera y ventas.':'El administrador todavía no carga los archivos de cartera y ventas.';
     if(p.rol==='admin')await cargarUsuarios().catch(()=>{});
-    await escucharDatos();
+    await escucharDatos();escucharNV();
     $('v-login').hidden=true;$('v-app').hidden=false;mostrarTab(S.tab);
   }catch(e){busy(false);$('l-err').textContent=errAuth(e);await auth.signOut().catch(()=>{});}
   finally{busy(false);}
@@ -552,7 +620,7 @@ $('p-save').addEventListener('click',async()=>{const u=auth.currentUser,cur=$('p
 document.querySelectorAll('.tab').forEach((b)=>b.addEventListener('click',()=>mostrarTab(b.dataset.tab)));
 function mostrarTab(t){if(!S.user)return;if(t==='maestro'&&S.user.rol!=='admin')t='resumen';S.tab=t;
   document.querySelectorAll('.tab').forEach((b)=>b.setAttribute('aria-selected',b.dataset.tab===t));
-  for(const k of ['resumen','cobertura','clientes','retail','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=t==='maestro';
+  for(const k of ['resumen','cobertura','clientes','retail','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=t==='maestro'||t==='nv';
   $('w-grupo').hidden=t==='cobertura'||t==='retail';$('w-estado').hidden=t==='retail';$('w-cond').hidden=t==='retail';
   render();}
 
@@ -578,6 +646,7 @@ function stats(pairs,y){const cli=new Set(),con=new Set();let fa=0,ne=0;for(cons
 /* ---------- render ---------- */
 function render(){
   if(!S.user)return;
+  if(S.tab==='nv'){$('empty').hidden=true;renderNV();return;}
   $('empty').hidden=!!S.M||S.tab==='maestro';
   if(!S.M){$('data-info').textContent='Sin datos cargados';for(const k of ['resumen','cobertura','clientes','retail'])$('p-'+k).hidden=true;$('filters').hidden=true;if(S.tab==='maestro')renderMaestro();return;}
   const M=S.M,f=S.f,sc=alcance();
@@ -727,6 +796,100 @@ function render(){
 
 }
 
+/* ---------- Emisión NV x Vendedor ---------- */
+const MESES_L=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIAS_L=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'],DIAS_C=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const SERIE=['--s1','--s2','--s3','--s4','--s5','--s6','--s7','--s8'].map((v)=>'var('+v+')');
+const mesLbl=(m)=>{const s=MESES_L[+m.slice(5,7)-1];return s[0].toUpperCase()+s.slice(1)+' '+m.slice(0,4);};
+const fDia=(f)=>+f.slice(8,10)+' '+MES[+f.slice(5,7)-1].toLowerCase();
+const dowOf=(f)=>new Date(f+'T00:00:00Z').getUTCDay();
+$('nv-mes').addEventListener('change',(e)=>{S.nvMes=e.target.value;render();});
+$('nv-chips').addEventListener('click',(e)=>{const b=e.target.closest('button');if(!b)return;const rk=S.nvRank||[];
+  if(b.dataset.act==='all')S.nvSel=rk.slice();else if(b.dataset.act==='top')S.nvSel=rk.slice(0,5);else if(b.dataset.act==='none')S.nvSel=[];
+  else{const sel=(S.nvSel||rk.slice(0,5)).slice();const i=sel.indexOf(b.dataset.v);if(i>=0)sel.splice(i,1);else sel.push(b.dataset.v);S.nvSel=rk.filter((x)=>sel.includes(x));}
+  render();});
+function renderNV(){
+  const sc=alcance();const n=S.nv;
+  const rows=n?n.rows.map(([f,v,c])=>({f,v,c})).filter((r)=>!sc||sc.has(r.v)):[];
+  $('nv-vacio').hidden=!!rows.length;$('nv-cont').hidden=!rows.length;
+  if(!rows.length){$('nv-vacio-t').textContent=!n?(S.user.rol==='admin'?'Ve a Maestro y sube el archivo de NV (Vista_Logistica_para_Grafico_de_Barras).':'El administrador todavía no carga el archivo de NV.'):'No hay NV de tus carteras en el archivo cargado.';return;}
+  $('nv-src').textContent='Fuente: '+n.nombre+' · NV emitidas del '+fdate(n.desde)+' al '+fdate(n.hasta)+' · cargado el '+fdate(n.cargado);
+  const totV=new Map();for(const r of rows)totV.set(r.v,(totV.get(r.v)||0)+r.c);
+  const rank=[...totV.entries()].sort((a,b)=>b[1]-a[1]).map((x)=>x[0]);S.nvRank=rank;
+  let sel=(S.nvSel||rank.slice(0,5)).filter((v)=>rank.includes(v));
+  const months=[...new Set(rows.map((r)=>r.f.slice(0,7)))].sort();
+  const mes=S.nvMes&&(S.nvMes==='todos'||months.includes(S.nvMes))?S.nvMes:'todos';
+  $('nv-mes').replaceChildren(new Option('Todos los meses','todos'),...months.map((m)=>new Option(mesLbl(m),m)));$('nv-mes').value=mes;
+  const col=(v)=>SERIE[sel.indexOf(v)%SERIE.length];
+  const mk=(txt,act)=>{const b=el('button',{type:'button',class:'chip act',text:txt});b.dataset.act=act;return b;};
+  $('nv-chips').replaceChildren(mk('Top 5','top'),mk('Todos','all'),mk('Ninguno','none'),...rank.map((v)=>{const on=sel.includes(v);
+    const b=el('button',{type:'button',class:'chip'});b.dataset.v=v;b.setAttribute('aria-pressed',on);const sw=el('span',{class:'sw'});if(on)sw.style.background=col(v);
+    b.append(sw,el('span',{text:v+' · '+nf.format(totV.get(v))}));return b;}));
+  // tramos del mes
+  const maxDay={};for(const r of rows){const m=r.f.slice(0,7),d=+r.f.slice(8,10);maxDay[m]=Math.max(maxDay[m]||0,d);}
+  const lastDay=(m)=>new Date(Date.UTC(+m.slice(0,4),+m.slice(5,7),0)).getUTCDate();
+  const completo=(m)=>maxDay[m]>=lastDay(m)-3;
+  const inMes=rows.filter((r)=>mes==='todos'||r.f.startsWith(mes));
+  const tramo=(lista)=>{const o={nv:0,ini:0,med:0,fin:0};for(const r of lista){const d=+r.f.slice(8,10);o.nv+=r.c;o[d<=10?'ini':d<=20?'med':'fin']+=r.c;}
+    const p=(x)=>o.nv?Math.round(100*x/o.nv):0;o.pi=p(o.ini);o.pm=p(o.med);o.pf=p(o.fin);
+    o.patron=o.nv<10?'Pocos datos':o.pf>=45?'Carga a fin de mes':o.pi>=45?'Carga a inicio de mes':'Pareja';return o;};
+  const T=tramo(inMes);const enCurso=mes==='todos'?months.some((m)=>!completo(m)):!completo(mes);
+  $('nv-take').replaceChildren((mes==='todos'?'En todos los meses, ':'En '+MESES_L[+mes.slice(5,7)-1]+', '),el('b',{text:T.pf+'%'}),' de las NV se emitió del día 21 a fin de mes, ',el('b',{text:T.pm+'%'}),' del 11 al 20 y ',el('b',{text:T.pi+'%'}),' del 1 al 10.'+(enCurso?(mes==='todos'?' Incluye el mes en curso, cuyo tramo final aún está incompleto.':' El mes aún no termina, así que el tramo final está incompleto.'):''));
+  const filas=[{v:sc?'(Mis carteras)':'(Todos)',tot:1,...T},...sel.map((v)=>({v,...tramo(inMes.filter((r)=>r.v===v))})).filter((o)=>o.nv>0).sort((a,b)=>b.nv-a.nv)];
+  $('nv-tbody').replaceChildren(...filas.map((o)=>{const hot=o.patron==='Carga a fin de mes';const tr=el('tr',{class:o.tot?'tot':''});
+    const pill=el('span',{class:'pillx '+(hot?'fin':o.patron==='Carga a inicio de mes'?'ini':o.patron==='Pareja'?'':'muted'),text:o.patron});
+    tr.append(el('td',{class:'l',text:o.v}),el('td',{text:nf.format(o.nv)}),el('td',{text:o.pi+'%'}),el('td',{text:o.pm+'%'}),el('td',{class:hot?'hot':'',text:o.pf+'%'}),el('td',{class:'l'},pill));return tr;}));
+  const inc=months.filter((m)=>!completo(m)&&(mes==='todos'||m===mes)).map((m)=>MESES_L[+m.slice(5,7)-1]);
+  $('nv-dist-note').textContent='Porcentaje de las NV según el tramo del mes en que se emitieron. Sobre 45% en un tramo se marca como carga.'+(inc.length?' Incluye '+inc.join(', ')+', que aún no termina: su tramo 21–fin está incompleto.':'');
+  nvLinea(inMes,sel,col,mes);nvDow(inMes,sel);
+}
+function svgEl(box,W,H,label){const NS='http://www.w3.org/2000/svg';const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('width','100%');svg.setAttribute('role','img');svg.setAttribute('aria-label',label);box.append(svg);
+  svg.mk=(t,a,txt)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;svg.append(e);return e;};return svg;}
+const nice=(mx)=>{mx=Math.max(1,mx);const p=Math.pow(10,Math.floor(Math.log10(mx)));const st=[1,2,2.5,5,10].map((k)=>k*p).find((s)=>mx/s<=5)||p*10;const top=Math.ceil(mx/st)*st;const tk=[];for(let v=0;v<=top+1e-9;v+=st)tk.push(Math.round(v*100)/100);return{top,tk};};
+function nvLinea(inMes,sel,col,mes){
+  const box=$('nv-chart');box.replaceChildren();
+  if(!sel.length){box.append(el('p',{class:'note',text:'Elige al menos un vendedor arriba.'}));return;}
+  const dates=[...new Set(inMes.map((r)=>r.f))].sort();if(!dates.length){box.append(el('p',{class:'note',text:'Sin NV en este período.'}));return;}
+  const map=new Map();for(const r of inMes){const k=r.v+'|'+r.f;map.set(k,(map.get(k)||0)+r.c);}
+  const series=sel.map((v)=>({v,c:col(v),vals:dates.map((d)=>map.get(v+'|'+d)||0)}));
+  const W=Math.max(300,box.clientWidth),H=340,top=10,bot=28;const {top:yTop,tk}=nice(Math.max(...series.flatMap((s)=>s.vals)));
+  const svg=svgEl(box,W,H,'NV emitidas por fecha y vendedor');
+  const pr=svg.mk('text',{'font-size':12},nf.format(yTop));const ml=Math.ceil(pr.getComputedTextLength())+12;pr.remove();
+  const t0=Date.parse(dates[0]+'T00:00:00Z'),t1=Math.max(Date.parse(dates[dates.length-1]+'T00:00:00Z'),t0+864e5);
+  const x=(f)=>ml+(W-ml-12)*((Date.parse(f+'T00:00:00Z')-t0)/(t1-t0));const y=(v)=>top+(H-top-bot)*(1-v/yTop);
+  // franja día 21 a fin de mes
+  const ms=[...new Set(dates.map((d)=>d.slice(0,7)))];
+  for(const m of ms){const ld=new Date(Date.UTC(+m.slice(0,4),+m.slice(5,7),0)).getUTCDate();const a=Math.max(ml,x(m+'-20')+((W-ml-12)*(12*36e5)/(t1-t0))),b=Math.min(W-12,x(m+'-'+String(ld).padStart(2,'0'))+((W-ml-12)*(12*36e5)/(t1-t0)));
+    if(b>a)svg.mk('rect',{x:a,y:top,width:b-a,height:H-top-bot,fill:'var(--band)'});}
+  for(const v of tk){svg.mk('line',{x1:ml,x2:W-12,y1:y(v),y2:y(v),stroke:'var(--line)'});svg.mk('text',{x:ml-8,y:y(v)+4,'text-anchor':'end','font-size':12,fill:'var(--muted)'},nf.format(v));}
+  svg.mk('line',{x1:ml,x2:W-12,y1:y(0),y2:y(0),stroke:'var(--muted)'});
+  const nT=Math.max(2,Math.floor((W-ml-12)/70));const paso=Math.max(1,Math.ceil(dates.length/nT));let lastR=-1e9;
+  dates.forEach((d,i)=>{if(i%paso)return;const tx=svg.mk('text',{x:x(d),y:H-8,'text-anchor':'middle','font-size':12,fill:'var(--muted)'},fDia(d));const w=tx.getComputedTextLength();
+    if(x(d)-w/2<lastR+6||x(d)-w/2<0||x(d)+w/2>W)tx.remove();else lastR=x(d)+w/2;});
+  for(const s of series)svg.mk('path',{d:s.vals.map((v,i)=>(i?'L':'M')+x(dates[i]).toFixed(1)+','+y(v).toFixed(1)).join(''),fill:'none',stroke:s.c,'stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round'});
+  const rule=svg.mk('line',{y1:top,y2:H-bot,stroke:'var(--muted)',opacity:0});const dots=series.map((s)=>svg.mk('circle',{r:3.5,fill:s.c,opacity:0}));
+  const tip=el('div',{class:'tip'});tip.hidden=true;box.append(tip);
+  const hit=svg.mk('rect',{x:ml,y:0,width:W-ml-12,height:H,fill:'transparent'});
+  const move=(ev)=>{const R=svg.getBoundingClientRect();const sx=(ev.clientX-R.left)*(W/R.width);let i=0,best=1e9;dates.forEach((d,k)=>{const dd=Math.abs(x(d)-sx);if(dd<best){best=dd;i=k;}});
+    const cx=x(dates[i]);rule.setAttribute('x1',cx);rule.setAttribute('x2',cx);rule.setAttribute('opacity',1);dots.forEach((c,k)=>{c.setAttribute('cx',cx);c.setAttribute('cy',y(series[k].vals[i]));c.setAttribute('opacity',1);});
+    const items=series.map((s)=>({v:s.v,c:s.c,n:s.vals[i]})).sort((a,b)=>b.n-a.n);const tot=items.reduce((a,o)=>a+o.n,0);const d=dates[i];
+    tip.replaceChildren(el('div',{class:'t',text:DIAS_L[dowOf(d)]+' '+fDia(d)+(items.length>1?' · '+nf.format(tot)+' NV':'')}),...items.slice(0,10).map((o)=>{const sw=el('span',{class:'sw'});sw.style.cssText='display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:'+o.c;
+      return el('div',{style:'display:flex;justify-content:space-between;gap:14px'},el('span',null,sw,o.v),el('b',{text:nf.format(o.n)}));}));
+    if(items.length>10)tip.append(el('div',{class:'t',text:'+'+(items.length-10)+' más'}));tip.hidden=false;
+    const px=cx*(R.width/W),bw=box.clientWidth,tw=tip.offsetWidth;let left=px+12;if(left+tw>bw)left=px-tw-12;tip.style.left=Math.max(0,left)+'px';tip.style.top='8px';};
+  hit.addEventListener('mousemove',move);hit.addEventListener('touchstart',(e)=>move(e.touches[0]),{passive:true});
+  hit.addEventListener('mouseleave',()=>{tip.hidden=true;rule.setAttribute('opacity',0);dots.forEach((c)=>c.setAttribute('opacity',0));});
+}
+function nvDow(inMes,sel){
+  const box=$('nv-dow');box.replaceChildren();const agg=new Map();for(const r of inMes)if(sel.includes(r.v)){const k=dowOf(r.f);agg.set(k,(agg.get(k)||0)+r.c);}
+  const order=[1,2,3,4,5];if(agg.get(6))order.push(6);if(agg.get(0))order.push(0);
+  const data=order.map((k)=>({k,n:agg.get(k)||0}));const W=Math.max(260,box.clientWidth),H=220;const mx=Math.max(1,...data.map((o)=>o.n));const best=Math.max(...data.map((o)=>o.n));
+  const svg=svgEl(box,W,H,'NV por día de la semana');const step=(W-16)/order.length;const bw=Math.min(32,step*0.6);const y=(v)=>22+(H-48)*(1-v/mx);
+  svg.mk('line',{x1:8,x2:W-8,y1:y(0),y2:y(0),stroke:'var(--muted)'});
+  data.forEach((o,i)=>{const cx=8+step*i+step/2;svg.mk('rect',{x:cx-bw/2,width:bw,y:y(o.n),height:Math.max(0,y(0)-y(o.n)),rx:4,fill:o.n===best&&best>0?'var(--accent-2)':'var(--bar-muted)'});
+    svg.mk('text',{x:cx,y:y(o.n)-6,'text-anchor':'middle','font-size':12,fill:'var(--fg)'},nf.format(o.n));svg.mk('text',{x:cx,y:H-8,'text-anchor':'middle','font-size':12,fill:'var(--muted)'},DIAS_C[o.k]);});
+}
+
 function chartMes(months,vals,fs,ns,anio){
   const box=$('mes');box.replaceChildren();if(!months.length){box.append(el('p',{class:'note',text:'Sin ventas para este filtro.'}));return;}
   const W=Math.max(300,box.clientWidth),H=230,top=10,bot=26;
@@ -748,7 +911,7 @@ function chartMes(months,vals,fs,ns,anio){
     const bx=box.clientWidth,tw=tip.offsetWidth;const px=(ml+i*stepX+stepX/2)*(r.width/W);tip.style.left=Math.min(Math.max(0,px-tw/2),bx-tw)+'px';tip.style.top='0px';};
   hit.addEventListener('mousemove',move);hit.addEventListener('mouseleave',()=>{tip.hidden=true;});hit.addEventListener('touchstart',(e)=>move(e.touches[0]),{passive:true});
 }
-let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(S.tab==='resumen')render();},150);});
+let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(S.tab==='resumen'||S.tab==='nv')render();},150);});
 
 /* ---------- exportar Excel ---------- */
 $('export').addEventListener('click',()=>{
@@ -787,14 +950,17 @@ $('r-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastRetail)return;c
   const data=L.rows.map((a)=>{const o={};for(const c of L.cols){if(c.k==='pr')continue;let v=L.val(a,c);if(c.k==='ult')v=v||'';o[c.h]=v;}return o;});
   const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Socios '+L.anio);XLSX.writeFile(wb,'Retail_socios_'+L.anio+(L.pre==='n'?'_neto':'_facturas')+'.xlsx');});
 /* ---------- maestro: carga de datos ---------- */
+let nvInfoLater=false;
 function renderMaestro(){
   const R=S.raw||{},c=R.cartera||S.pend&&S.pend.cartera,v=R.ventas||S.pend&&S.pend.ventas;
-  if(!c||!v){$('file-info').replaceChildren(el('div',{class:'fileinfo'},el('b',{text:'Cartera de clientes'}),el('span',{text:c?c.nombre+' (lista, falta ventas)':'Sin cargar'})),el('div',{class:'fileinfo'},el('b',{text:'Ventas (facturas)'}),el('span',{text:v?v.nombre+' (lista, falta cartera)':'Sin cargar'})));renderUsuarios();return;}
+  if(!c||!v){nvInfoLater=true;$('file-info').replaceChildren(el('div',{class:'fileinfo'},el('b',{text:'Cartera de clientes'}),el('span',{text:c?c.nombre+' (lista, falta ventas)':'Sin cargar'})),el('div',{class:'fileinfo'},el('b',{text:'Ventas (facturas)'}),el('span',{text:v?v.nombre+' (lista, falta cartera)':'Sin cargar'})));nvInfo();renderUsuarios();return;}
   $('file-info').replaceChildren(
     el('div',{class:'fileinfo'},el('b',{text:'Cartera de clientes'}),el('span',{text:c.nombre||'—'}),el('span',{class:'hint',text:nf.format(c.rows.length)+' filas · cargada el '+fdate(c.cargado)+(c.nuevos!=null?' · '+nf.format(c.nuevos)+' clientes nuevos en esa carga':' · carga base (sin nuevos)')})),
     el('div',{class:'fileinfo'},el('b',{text:'Ventas (facturas)'}),el('span',{text:v.nombre||'—'}),el('span',{class:'hint',text:'Ventas hasta el '+fdate(v.corte)+' · cargada el '+fdate(v.cargado)})));
-  renderUsuarios();
+  nvInfo();renderUsuarios();
 }
+function nvInfo(){const n=S.nv;const box=el('div',{class:'fileinfo'},el('b',{text:'Emisión de NV'}),el('span',{text:n?n.nombre:'Sin cargar'}),
+  el('span',{class:'hint',text:n?nf.format(n.total)+' NV del '+fdate(n.desde)+' al '+fdate(n.hasta)+' · cargada el '+fdate(n.cargado):'Opcional: alimenta la sección Emisión NV x Vendedor.'}));$('file-info').append(box);}
 const drop=$('drop');
 ['dragenter','dragover'].forEach((t)=>drop.addEventListener(t,(e)=>{e.preventDefault();drop.classList.add('over');}));
 ['dragleave','drop'].forEach((t)=>drop.addEventListener(t,(e)=>{e.preventDefault();drop.classList.remove('over');}));
@@ -816,11 +982,14 @@ async function parsear(buf){
 async function procesarArchivos(files){
   files=files.filter((f)=>/\.xlsx?$/i.test(f.name));if(!files.length){toast('Elige archivos Excel (.xlsx).');return;}
   const st=$('load-status');st.className='status';st.textContent='';const hechos=[];
-  const base=S.raw?{...S.raw}:{...(S.pend||{})};
+  const base=S.raw?{...S.raw}:{...(S.pend||{})};let cv=false;
   try{
     for(const file of files){
       busy(true,'Leyendo '+file.name+'…','Un archivo de ventas grande puede tardar 20 a 60 segundos.');
       const buf=await file.arrayBuffer();const r=await parsear(buf);
+      if(r.tipo==='nv'){busy(true,'Guardando NV en la nube…');await guardarNV({nombre:file.name,cargado:new Date().toISOString(),rows:r.rows,desde:r.desde,hasta:r.hasta,total:r.total,anuladas:r.anuladas});
+        hechos.push('NV ('+nf.format(r.total)+' NV del '+fdate(r.desde)+' al '+fdate(r.hasta)+(r.anuladas?', '+nf.format(r.anuladas)+' anuladas excluidas':'')+')');continue;}
+      cv=true;
       const reg={nombre:file.name,cargado:new Date().toISOString(),rows:r.rows};let extra='';
       if(r.tipo==='ventas'){reg.corte=r.corte;reg.prods=r.prods;reg.cp=r.cp;reg.rt=r.rt;reg.rp=r.rp;}
       else{const prev=base.cartera;
@@ -830,6 +999,7 @@ async function procesarArchivos(files){
           reg.alta=alta;reg.nuevos=nv;extra=', '+nf.format(nv)+' nuevos';}}
       base[r.tipo]=reg;hechos.push(r.tipo==='ventas'?'ventas ('+nf.format(r.rows.length)+' grupos, hasta el '+fdate(r.corte)+')':'cartera ('+nf.format(r.rows.length)+' clientes'+extra+')');
     }
+    if(!cv){st.className='status ok';st.textContent='Listo: se actualizó '+hechos.join(' y ')+'. Todos los usuarios ya ven los datos nuevos.';return;}
     if(!base.cartera||!base.ventas){S.pend=base;st.className='status';st.textContent='Leído: '+hechos.join(' y ')+'. Falta el archivo de '+(base.cartera?'ventas':'cartera')+' para publicar los datos.';return;}
     busy(true,'Cruzando cartera y ventas…');await sleep(30);
     const M=combinar(base.cartera,base.ventas);
