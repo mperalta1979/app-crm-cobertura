@@ -128,6 +128,7 @@ button,input,select{font:inherit;color:inherit}
 @media (prefers-color-scheme:dark){:root{--s1:#5fb3c6;--s2:#e9935f;--s3:#93a0ea;--s4:#6cc690;--s5:#e486b2;--s6:#d6c25c;--s7:#ad91e0;--s8:#7cc0ea;--band:rgba(95,179,198,.10)}}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 #nv-cont .filters{align-items:flex-start}
+#vpc-anios .chip[aria-pressed=true],#vpc-meses .chip[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
 .chip[aria-pressed=true]{background:var(--panel);border-color:var(--muted)}
 .chip.act{color:var(--muted);font-weight:600}
@@ -223,6 +224,8 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
       <button class="tab" role="tab" data-tab="cobertura" aria-selected="false">Cobertura</button>
       <button class="tab" role="tab" data-tab="clientes" aria-selected="false">Clientes × mes</button>
       <button class="tab" role="tab" data-tab="retail" aria-selected="false">Retail</button>
+      <button class="tab" role="tab" data-tab="vpc" aria-selected="false">Ventas por cliente</button>
+      <button class="tab" role="tab" data-tab="csv" aria-selected="false">Clientes sin ventas</button>
       <button class="tab" role="tab" data-tab="nv" aria-selected="false">Emisión NV x Vendedor</button>
       <button class="tab" role="tab" data-tab="maestro" aria-selected="false" id="tab-maestro" hidden>Maestro</button>
     </nav>
@@ -301,6 +304,47 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         </div><button class="btn sec sm" type="button" id="r-export">Descargar Excel</button></div>
         <p class="note" id="r-count">—</p>
         <div class="twrap"><table class="t" id="r-table"><thead><tr id="r-head"></tr></thead><tbody id="r-body"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- CLIENTES SIN VENTAS -->
+    <section id="p-csv" class="card" hidden>
+      <div class="tbar"><div><h2 id="csv-title">Clientes sin ventas</h2><p class="note" id="csv-note">—</p></div><button class="btn sec sm" type="button" id="csv-export">Descargar Excel</button></div>
+      <div class="filters" style="padding:0;border:0">
+        <label class="f"><span>Sin ventas en</span><select class="sel" id="csv-per"><option value="6">Últimos 6 meses</option><option value="12" selected>Último año</option><option value="24">Últimos 2 años</option></select></label>
+        <label class="f"><span>Mostrar</span><select class="sel" id="csv-tipo"><option value="todos">Todos</option><option value="antes">Compraron antes y dejaron de comprar</option><option value="nunca">Sin ventas registradas desde ene-2024</option></select></label>
+        <label class="f"><span>Vendedor</span><select class="sel" id="csv-ven"></select></label>
+        <label class="f"><span>Estado</span><select class="sel" id="csv-est"><option>Todos</option><option>Activo</option><option>Inactivo</option></select></label>
+        <label class="f"><span>Buscar</span><input class="input" type="search" id="csv-q" placeholder="Cliente, código o RUT" style="padding:6px 9px"></label>
+        <button class="link" type="button" id="csv-reset">Restablecer</button>
+      </div>
+      <p class="take" id="csv-tot" style="font-size:15px">—</p>
+      <div class="twrap"><table class="t" id="csv-table"><thead><tr id="csv-head"></tr></thead><tbody id="csv-body"></tbody></table></div>
+    </section>
+
+    <!-- VENTAS POR CLIENTE -->
+    <section id="p-vpc" class="wrap" style="padding:0" hidden>
+      <div class="card" id="vpc-vacio" hidden><h2>Falta actualizar los datos de ventas</h2><p class="note" id="vpc-vacio-t">—</p></div>
+      <div class="card" id="vpc-cont">
+        <h2>Ventas por cliente</h2>
+        <p class="note">Facturas (tipo F) por cliente, socio, vendedor y producto, sumadas en los meses elegidos. Los montos son netos en pesos.</p>
+        <div class="filters" style="padding:0;border:0;align-items:flex-start">
+          <div class="f"><span>Año</span><div class="chips" id="vpc-anios"></div></div>
+          <div class="f" style="flex:1 1 26rem"><span>Mes</span><div class="chips" id="vpc-meses"></div></div>
+        </div>
+        <div class="filters" style="padding:0;border:0">
+          <label class="f"><span>Cliente</span><input class="input" type="search" id="vpc-cli" list="vpc-l-cli" placeholder="Nombre o código" style="padding:6px 9px"></label>
+          <label class="f"><span>Socio</span><input class="input" type="search" id="vpc-so" list="vpc-l-so" placeholder="Socio" style="padding:6px 9px"></label>
+          <label class="f"><span>Vendedor</span><input class="input" type="search" id="vpc-ven" list="vpc-l-ven" placeholder="Vendedor" style="padding:6px 9px"></label>
+          <label class="f"><span>Producto</span><input class="input" type="search" id="vpc-pro" list="vpc-l-pro" placeholder="Código o nombre" style="padding:6px 9px"></label>
+          <label class="chk" style="display:flex;gap:6px;align-items:center;padding-bottom:6px;cursor:pointer"><input type="checkbox" id="vpc-mes"> Ver por mes</label>
+          <button class="link" type="button" id="vpc-reset">Restablecer</button>
+          <button class="btn sec sm" type="button" id="vpc-export" style="margin-left:auto">Descargar Excel</button>
+        </div>
+        <datalist id="vpc-l-cli"></datalist><datalist id="vpc-l-so"></datalist><datalist id="vpc-l-ven"></datalist><datalist id="vpc-l-pro"></datalist>
+        <p class="take" id="vpc-tot" style="font-size:15px">—</p>
+        <p class="note" id="vpc-count">—</p>
+        <div class="twrap"><table class="t" id="vpc-table"><thead><tr id="vpc-head"></tr></thead><tbody id="vpc-body"></tbody></table></div>
       </div>
     </section>
 
@@ -417,7 +461,7 @@ function cartera_(rows){
   return {tipo:'cartera',rows:out};
 }
 function ventas_(XLSX,rows){
-  const h=rows[0];const I={tipo:idx_(h,['Tipo_Docto']),est:idx_(h,['Estado_Docto']),folio:idx_(h,['Folio_Docto']),fecha:idx_(h,['Fecha_Docto']),anio:idx_(h,['Año','Ano']),mes:idx_(h,['Mes']),dia:idx_(h,['Dia','Día']),v:idx_(h,['Vendedor']),cod:idx_(h,['Cod_Cliente']),rut:idx_(h,['RUT_Cliente']),cli:idx_(h,['Cliente']),neto:idx_(h,['Neto']),pc:idx_(h,['Cod_Producto']),pn:idx_(h,['Producto']),um:idx_(h,['Un_Medida']),so:idx_(h,['Socio'])};
+  const h=rows[0];const I={tipo:idx_(h,['Tipo_Docto']),est:idx_(h,['Estado_Docto']),folio:idx_(h,['Folio_Docto']),fecha:idx_(h,['Fecha_Docto']),anio:idx_(h,['Año','Ano']),mes:idx_(h,['Mes']),dia:idx_(h,['Dia','Día']),v:idx_(h,['Vendedor']),cod:idx_(h,['Cod_Cliente']),rut:idx_(h,['RUT_Cliente']),cli:idx_(h,['Cliente']),neto:idx_(h,['Neto']),pc:idx_(h,['Cod_Producto']),pn:idx_(h,['Producto']),um:idx_(h,['Un_Medida']),so:idx_(h,['Socio']),q:idx_(h,['Cantidad'])};
   const req={tipo:'Tipo_Docto',est:'Estado_Docto',folio:'Folio_Docto',v:'Vendedor',cod:'Cod_Cliente',neto:'Neto'};
   const falta=Object.keys(req).filter(k=>I[k]<0).map(k=>req[k]);
   if(I.fecha<0&&(I.anio<0||I.mes<0))falta.push('Fecha_Docto (o Año y Mes)');
@@ -425,16 +469,18 @@ function ventas_(XLSX,rows){
   const fecha=(r)=>{let y,m,d;if(I.anio>=0&&I.mes>=0&&r[I.anio]!=null&&r[I.mes]!=null){y=+r[I.anio];m=+r[I.mes];d=I.dia>=0?+r[I.dia]:1;}
     else{const f=r[I.fecha];if(typeof f==='number'){const p=XLSX.SSF.parse_date_code(f);y=p.y;m=p.m;d=p.d;}else if(f instanceof Date){y=f.getFullYear();m=f.getMonth()+1;d=f.getDate();}else if(f){const t=String(f).match(/(\d{4})-(\d{2})-(\d{2})/)||String(f).match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);if(t){if(t[1].length===4){y=+t[1];m=+t[2];d=+t[3]}else{y=+t[3];m=+t[2];d=+t[1]}}}}
     if(!y||!m)return null;return [y,m,d||1];};
-  const acc=new Map();let corte='';const prods=[],pIdx=new Map(),cp=new Set(),rt=new Map(),rp=new Set();
+  const acc=new Map();let corte='';const prods=[],pIdx=new Map(),cp=new Set(),rt=new Map(),rp=new Set(),vp=new Map(),ld=new Map();
   for(let i=1;i<rows.length;i++){const r=rows[i];
     if(s_(r[I.tipo])!=='F'||s_(r[I.est])!=='V')continue;
     const f=fecha(r);if(!f)continue;
     const ym=f[0]+'-'+String(f[1]).padStart(2,'0');const ymd=ym+'-'+String(f[2]).padStart(2,'0');if(ymd>corte)corte=ymd;
+    {const kc=code_(r[I.cod])+'\u0001'+(I.rut<0?'':s_(r[I.rut]));if(!(ld.get(kc)>=ymd))ld.set(kc,ymd);}
     const vend=s_(r[I.v])||'SIN VENDEDOR';const cod=code_(r[I.cod]);const rut=I.rut<0?'':s_(r[I.rut]);
     const k=vend+'\u0001'+cod+'\u0001'+rut+'\u0001'+ym;
     let a=acc.get(k);if(!a){a={vend,cod,rut,ym,cli:I.cli<0?'':s_(r[I.cli]),fol:new Set(),neto:0};acc.set(k,a);}
     const folio=s_(r[I.folio]),neto=Number(r[I.neto])||0;a.fol.add(folio);a.neto+=neto;
-    let pi=-1;if(I.pc>=0){const pc=s_(r[I.pc]);if(pc){pi=pIdx.get(pc);if(pi==null){pi=prods.length;pIdx.set(pc,pi);prods.push([pc,I.pn<0?'':s_(r[I.pn]),I.um<0?'':s_(r[I.um])]);}cp.add(cod+'\u0001'+rut+'\u0001'+ym+'\u0001'+pi);}}
+    let pi=-1;if(I.pc>=0){const pc=s_(r[I.pc]);if(pc){pi=pIdx.get(pc);if(pi==null){pi=prods.length;pIdx.set(pc,pi);prods.push([pc,I.pn<0?'':s_(r[I.pn]),I.um<0?'':s_(r[I.um])]);}cp.add(cod+'\u0001'+rut+'\u0001'+ym+'\u0001'+pi);
+      const so0=I.so>=0?socio_(r[I.so]):'';const kv=cod+'\u0001'+rut+'\u0001'+so0+'\u0001'+vend+'\u0001'+ym+'\u0001'+pi;let c=vp.get(kv);if(!c){c=[0,0];vp.set(kv,c);}c[0]+=I.q<0?0:(Number(r[I.q])||0);c[1]+=neto;}}
     if(I.so>=0){const so=socio_(r[I.so]);if(so){const kk=vend+'\u0001'+cod+'\u0001'+rut+'\u0001'+so+'\u0001'+ym;let b=rt.get(kk);if(!b){b={vend,cod,rut,so,ym,cli:a.cli,fol:new Set(),neto:0};rt.set(kk,b);}b.fol.add(folio);b.neto+=neto;if(pi>=0)rp.add(vend+'\u0001'+cod+'\u0001'+rut+'\u0001'+so+'\u0001'+ym+'\u0001'+pi);}}}
   if(!acc.size)throw new Error('El archivo de ventas no trae facturas (Tipo_Docto F, Estado_Docto V).');
   const out=[];for(const a of acc.values())out.push([a.vend,a.cod,a.rut,a.cli,a.ym,a.fol.size,Math.round(a.neto)]);
@@ -442,7 +488,9 @@ function ventas_(XLSX,rows){
   return {tipo:'ventas',rows:out,corte,prods,
     cp:[...cp].map((k)=>{const x=sp(k);return [x[0],x[1],x[2],+x[3]];}),
     rt:[...rt.values()].map((b)=>[b.vend,b.cod,b.rut,b.cli,b.so,b.ym,b.fol.size,Math.round(b.neto)]),
-    rp:[...rp].map((k)=>{const x=sp(k);return [x[0],x[1],x[2],x[3],x[4],+x[5]];})};
+    rp:[...rp].map((k)=>{const x=sp(k);return [x[0],x[1],x[2],x[3],x[4],+x[5]];}),
+    vp:[...vp.entries()].map(([k,c])=>{const x=sp(k);return [x[0],x[1],x[2],x[3],x[4],+x[5],Math.round(c[0]*100)/100,Math.round(c[1])];}),
+    ld:[...ld.entries()].map(([k,d])=>{const x=sp(k);return [x[0],x[1],d];})};
 }
 </script>
 
@@ -499,7 +547,7 @@ function combinar(CA,VE){
   const cart=CA.rows,vent=VE.rows,alta=CA.alta||{};
   const clients=new Map(),rut2cod=new Map();
   for(const [vend,cod,nom,rut,act,bloq,cat,cve] of cart){if(!cod)continue;let c=clients.get(cod);
-    if(!c){c={cod,nom:nom||cod,estado:act==='S'?'Activo':'Inactivo',bloq:bloq==='S',cat,cond:cve||'Sin condición',cv:[],alta:alta[cod]||''};clients.set(cod,c);}
+    if(!c){c={cod,nom:nom||cod,rut:rut||'',estado:act==='S'?'Activo':'Inactivo',bloq:bloq==='S',cat,cond:cve||'Sin condición',cv:[],alta:alta[cod]||''};clients.set(cod,c);}
     const v=vend||'SIN VENDEDOR';if(!c.cv.includes(v))c.cv.push(v);if(rut)rut2cod.set(rut,cod);}
   const res=(cod,rut)=>clients.has(cod)?cod:(rut2cod.get(rut)||cod);
   let mn='9999-99',mx='';for(const r of vent){if(r[4]<mn)mn=r[4];if(r[4]>mx)mx=r[4];}
@@ -527,7 +575,13 @@ function combinar(CA,VE){
   let rpVend=false;
   for(const x of VE.rp||[]){if(x.length===6){const [vend,cod,rut,so,ym,pi]=x;rpVend=true;addRP(res(cod,rut)+'|'+so+'|'+(vend||'SIN VENDEDOR'),ym,pi);}else{const [cod,rut,so,ym,pi]=x;addRP(res(cod,rut)+'|'+so,ym,pi);}}
   const vendors=[...new Set(list.map((p)=>p.v))].sort((a,b)=>a.localeCompare(b,'es'));
-  return{months,years,pairs:list,vendors,prods,retail,rprod,rpVend};
+  // ventas por cliente y producto
+  const vpc=[];for(const [cod,rut,so,vend,ym,pi,q,n] of VE.vp||[]){const k=res(cod,rut);const c=clients.get(k);const i=mi.get(ym);if(i==null)continue;vpc.push({cod:k,cli:c?c.nom:k,so,v:vend||'SIN VENDEDOR',i,pi,q,n});}
+  // última venta por cliente (fecha exacta si el archivo la trae; si no, el mes)
+  for(const [cod,rut,d] of VE.ld||[]){const c=clients.get(res(cod,rut));if(c&&!(c.ud>=d))c.ud=d;}
+  for(const p of list)if(p.ult&&!(p.c.um>=p.ult))p.c.um=p.ult;
+  const cartera=[...clients.values()].filter((c)=>c.cv.length);
+  return{months,years,pairs:list,vendors,prods,retail,rprod,rpVend,vpc,hayVpc:!!VE.vp,cartera,hayLd:!!VE.ld,corte:VE.corte||''};
 }
 const perdido=(c,y)=>{const a=String(+y-1),b=String(+y-2);return a in c.fy&&b in c.fy&&c.fy[a]>0&&c.fy[b]>0&&!(c.fy[y]>0);};
 const tienePrevios=(M,y)=>M.years.includes(String(+y-2));
@@ -624,7 +678,7 @@ $('p-save').addEventListener('click',async()=>{const u=auth.currentUser,cur=$('p
 document.querySelectorAll('.tab').forEach((b)=>b.addEventListener('click',()=>mostrarTab(b.dataset.tab)));
 function mostrarTab(t){if(!S.user)return;if(t==='maestro'&&S.user.rol!=='admin')t='resumen';S.tab=t;
   document.querySelectorAll('.tab').forEach((b)=>b.setAttribute('aria-selected',b.dataset.tab===t));
-  for(const k of ['resumen','cobertura','clientes','retail','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=t==='maestro'||t==='nv';
+  for(const k of ['resumen','cobertura','clientes','retail','vpc','csv','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=t==='maestro'||t==='nv'||t==='vpc'||t==='csv';
   $('w-grupo').hidden=t==='cobertura'||t==='retail';$('w-estado').hidden=t==='retail';$('w-cond').hidden=t==='retail';
   render();}
 
@@ -651,6 +705,8 @@ function stats(pairs,y){const cli=new Set(),con=new Set();let fa=0,ne=0;for(cons
 function render(){
   if(!S.user)return;
   if(S.tab==='nv'){$('empty').hidden=true;renderNV();return;}
+  if(S.tab==='vpc'&&S.M){$('empty').hidden=true;renderVPC();return;}
+  if(S.tab==='csv'&&S.M){$('empty').hidden=true;renderCSV();return;}
   $('empty').hidden=!!S.M||S.tab==='maestro';
   if(!S.M){$('data-info').textContent='Sin datos cargados';for(const k of ['resumen','cobertura','clientes','retail'])$('p-'+k).hidden=true;$('filters').hidden=true;if(S.tab==='maestro')renderMaestro();return;}
   const M=S.M,f=S.f,sc=alcance();
@@ -964,6 +1020,106 @@ $('cob-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCob)return;co
 $('r-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastRetail)return;const L=S.lastRetail;
   const data=L.rows.map((a)=>{const o={};for(const c of L.cols){if(c.k==='pr')continue;let v=L.val(a,c);if(c.k==='ult')v=v||'';o[c.h]=v;}return o;});
   const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Socios '+L.anio);XLSX.writeFile(wb,'Retail_socios_'+L.anio+(L.pre==='n'?'_neto':'_facturas')+'.xlsx');});
+
+/* ---------- Ventas por cliente ---------- */
+const VF={anios:null,meses:null,cli:'',so:'',ven:'',pro:'',porMes:false};S.vf={...VF};S.vsort=null;
+const fmtQ=new Intl.NumberFormat('es-CL',{maximumFractionDigits:2});
+$('vpc-anios').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;const a=new Set(S.vf.anios||[]);a.has(b.dataset.v)?a.delete(b.dataset.v):a.add(b.dataset.v);S.vf.anios=[...a];render();});
+$('vpc-meses').addEventListener('click',(e)=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.act==='all')S.vf.meses=null;else if(b.dataset.act==='none')S.vf.meses=[];
+  else{const m=new Set(S.vf.meses||['01','02','03','04','05','06','07','08','09','10','11','12']);m.has(b.dataset.v)?m.delete(b.dataset.v):m.add(b.dataset.v);S.vf.meses=[...m];}render();});
+for(const [id,k] of [['vpc-cli','cli'],['vpc-so','so'],['vpc-ven','ven'],['vpc-pro','pro']]){let tm;$(id).addEventListener('input',(e)=>{clearTimeout(tm);tm=setTimeout(()=>{S.vf[k]=e.target.value;render();},200);});}
+$('vpc-mes').addEventListener('change',(e)=>{S.vf.porMes=e.target.checked;render();});
+$('vpc-reset').addEventListener('click',()=>{S.vf={...VF};S.vsort=null;for(const id of ['vpc-cli','vpc-so','vpc-ven','vpc-pro'])$(id).value='';render();});
+$('vpc-head').addEventListener('click',(e)=>{const th=e.target.closest('th[data-f]');if(!th)return;const f=th.dataset.f;S.vsort=S.vsort&&S.vsort.f===f?{f,dir:S.vsort.dir==='asc'?'desc':'asc'}:{f,dir:th.classList.contains('l')?'asc':'desc'};render();});
+function renderVPC(){
+  const M=S.M,sc=alcance(),P=M.prods;
+  $('vpc-vacio').hidden=M.hayVpc;$('vpc-cont').hidden=!M.hayVpc;
+  if(!M.hayVpc){$('vpc-vacio-t').textContent=S.user.rol==='admin'?'Vuelve a cargar el Excel de ventas en Maestro para guardar las cantidades y montos por producto.':'El administrador debe volver a cargar el Excel de ventas para activar esta sección.';return;}
+  const f=S.vf;const anios=M.years;const selA=f.anios&&f.anios.length?f.anios.filter((a)=>anios.includes(a)):[anios[anios.length-1]];
+  if(!f.anios||!f.anios.length)f.anios=selA.slice();
+  const selM=f.meses==null?null:new Set(f.meses);
+  $('vpc-anios').replaceChildren(...anios.map((a)=>{const b=el('button',{type:'button',class:'chip',text:a});b.dataset.v=a;b.setAttribute('aria-pressed',selA.includes(a));return b;}));
+  const mk=(t,a)=>{const b=el('button',{type:'button',class:'chip act',text:t});b.dataset.act=a;return b;};
+  $('vpc-meses').replaceChildren(mk('Todos','all'),mk('Ninguno','none'),...MES.map((m,i)=>{const v=String(i+1).padStart(2,'0');const b=el('button',{type:'button',class:'chip',text:m});b.dataset.v=v;b.setAttribute('aria-pressed',!selM||selM.has(v));return b;}));
+  $('vpc-mes').checked=!!f.porMes;
+  const mOk=M.months.map((m)=>selA.includes(m.slice(0,4))&&(!selM||selM.has(m.slice(5,7))));
+  const base=M.vpc.filter((r)=>(!sc||sc.has(r.v))&&mOk[r.i]);
+  // sugerencias de los buscadores (según el período y el alcance)
+  const lst=(id,vals)=>{const s=[...new Set(vals)].sort((a,b)=>a.localeCompare(b,'es')).slice(0,3000);$(id).replaceChildren(...s.map((v)=>el('option',{value:v})));};
+  lst('vpc-l-cli',base.map((r)=>r.cli));lst('vpc-l-so',base.filter((r)=>r.so).map((r)=>r.so));lst('vpc-l-ven',base.map((r)=>r.v));lst('vpc-l-pro',base.map((r)=>P[r.pi][0]+' · '+P[r.pi][1]));
+  const q=(s)=>norm(String(s||'').trim());const qc=q(f.cli),qs=q(f.so),qv=q(f.ven),qp=q(f.pro).split(' · ')[0];
+  const sel=base.filter((r)=>(!qc||norm(r.cli).includes(qc)||String(r.cod).includes(qc))&&(!qs||norm(r.so).includes(qs))&&(!qv||norm(r.v).includes(qv))&&(!qp||norm(P[r.pi][0]).includes(qp)||norm(P[r.pi][1]).includes(qp)));
+  const agg=new Map();for(const r of sel){const k=r.cod+'|'+r.so+'|'+r.v+'|'+r.pi+(f.porMes?'|'+r.i:'');let a=agg.get(k);if(!a){a={cod:r.cod,cli:r.cli,so:r.so,v:r.v,pi:r.pi,mes:f.porMes?M.months[r.i]:'',q:0,n:0};agg.set(k,a);}a.q+=r.q;a.n+=r.n;}
+  let rows=[...agg.values()];
+  const cols=[{k:'cli',h:'Cliente',l:1,cls:'cli stk stk1'},{k:'so',h:'Socio',l:1,cls:'hide-sm vend stk stk2'},{k:'v',h:'Vendedor',l:1,cls:'hide-sm vend stk stk3 stkl'},...(f.porMes?[{k:'mes',h:'Mes',l:1}]:[]),
+    {k:'pc',h:'Código prod.',l:1},{k:'pn',h:'Producto',l:1,cls:'cli'},{k:'um',h:'UM',l:1},{k:'q',h:'Cantidad',num:1},{k:'n',h:'Neto $',num:1}];
+  const val=(a,c)=>c.k==='pc'?P[a.pi][0]:c.k==='pn'?P[a.pi][1]:c.k==='um'?P[a.pi][2]:a[c.k];
+  const ss=S.vsort&&cols.some((c)=>c.k===S.vsort.f)?S.vsort:{f:'n',dir:'desc'};const scol=cols.find((c)=>c.k===ss.f);
+  rows.sort((a,b)=>{const A=val(a,scol),B=val(b,scol);const c=typeof A==='number'?A-B:String(A).localeCompare(String(B),'es');return (ss.dir==='asc'?c:-c)||b.n-a.n;});
+  const totN=rows.reduce((s,a)=>s+a.n,0);const porUM=new Map();for(const a of rows){const u=P[a.pi][2]||'Sin UM';porUM.set(u,(porUM.get(u)||0)+a.q);}
+  const per=selA.slice().sort().join(', ')+(selM&&selM.size<12?' · '+[...selM].sort().map((m)=>MES[+m-1]).join(', '):'');
+  $('vpc-tot').replaceChildren('Neto ',el('b',{text:'$'+nf.format(Math.round(totN))}),' · ',...[...porUM.entries()].sort((a,b)=>b[1]-a[1]).flatMap(([u,v],i)=>[i?' · ':'',u+' ',el('b',{text:fmtQ.format(v)})]),' · período: '+per);
+  const CAP=1000;$('vpc-count').textContent=nf.format(rows.length)+' filas'+(rows.length>CAP?' · se muestran las primeras '+nf.format(CAP)+' (el Excel descargado trae todas)':'');
+  S.lastVPC={rows,cols,val,per};
+  $('vpc-head').replaceChildren(...cols.map((c)=>{const th=el('th',{scope:'col',text:c.h});th.dataset.f=c.k;if(c.l)th.classList.add('l');if(c.cls)th.classList.add(...c.cls.split(' '));if(c.k===ss.f)th.setAttribute('aria-sort',ss.dir==='asc'?'ascending':'descending');return th;}));
+  const fr=document.createDocumentFragment();
+  for(const a of rows.slice(0,CAP)){const tr=document.createElement('tr');for(const c of cols){let v=val(a,c);const td=document.createElement('td');if(c.l)td.className='l';if(c.cls)td.classList.add(...c.cls.split(' '));
+    if(c.k==='q')v=fmtQ.format(v);else if(c.k==='n')v='$'+nf.format(Math.round(v));else if(c.k==='mes')v=MES[+v.slice(5)-1]+' '+v.slice(0,4);
+    td.textContent=v||(c.k==='so'?'':'—');if(c.k==='cli')td.title=a.cli+' · '+a.cod;if(c.k==='pn')td.title=v;tr.append(td);}fr.append(tr);}
+  $('vpc-body').replaceChildren(fr);
+  {const h=$('vpc-head'),w=(s)=>{const e=h.querySelector(s);return e?e.getBoundingClientRect().width:0;};const T=$('vpc-table');T.style.setProperty('--stk2',w('.stk1')+'px');T.style.setProperty('--stk3',(w('.stk1')+w('.stk2'))+'px');}
+}
+$('vpc-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastVPC)return;const L=S.lastVPC;
+  const data=L.rows.map((a)=>{const o={'Cliente':a.cli,'Código cliente':a.cod,'Socio':a.so,'Vendedor':a.v};if(a.mes)o['Mes']=a.mes;const p=S.M.prods[a.pi];o['Código producto']=p[0];o['Producto']=p[1];o['UM']=p[2];o['Cantidad']=a.q;o['Neto']=Math.round(a.n);return o;});
+  const ws=XLSX.utils.json_to_sheet(data);ws['!cols']=[{wch:40},{wch:12},{wch:30},{wch:24},...(L.rows[0]&&L.rows[0].mes?[{wch:9}]:[]),{wch:14},{wch:50},{wch:5},{wch:12},{wch:14}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Ventas por cliente');XLSX.writeFile(wb,'Ventas_por_cliente_'+nomArch(L.per)+'.xlsx');toast('Descargadas '+nf.format(data.length)+' filas.');});
+
+/* ---------- Clientes sin ventas ---------- */
+const CF={per:'12',tipo:'todos',ven:'Todos',est:'Todos',q:''};S.cf={...CF};S.csort=S.csort||null;S.ssort=null;
+for(const [id,k] of [['csv-per','per'],['csv-tipo','tipo'],['csv-ven','ven'],['csv-est','est']])$(id).addEventListener('change',(e)=>{S.cf[k]=e.target.value;render();});
+{let tm;$('csv-q').addEventListener('input',(e)=>{clearTimeout(tm);tm=setTimeout(()=>{S.cf.q=e.target.value;render();},200);});}
+$('csv-reset').addEventListener('click',()=>{S.cf={...CF};S.ssort=null;$('csv-q').value='';render();});
+$('csv-head').addEventListener('click',(e)=>{const th=e.target.closest('th[data-f]');if(!th)return;const f=th.dataset.f;S.ssort=S.ssort&&S.ssort.f===f?{f,dir:S.ssort.dir==='asc'?'desc':'asc'}:{f,dir:th.classList.contains('l')?'asc':'desc'};render();});
+const restaMeses=(ymd,n)=>{const [y,m,d]=ymd.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1-n,d));return dt.toISOString().slice(0,10);};
+function renderCSV(){
+  const M=S.M,sc=alcance(),f=S.cf;const corte=M.corte||'';
+  if(!corte){$('csv-tot').textContent='Carga el Excel de ventas para ver este listado.';$('csv-body').replaceChildren();return;}
+  const desde=restaMeses(corte,+f.per);
+  const vend=[...new Set(M.cartera.flatMap((c)=>c.cv))].filter((v)=>!sc||sc.has(v)).sort((a,b)=>a.localeCompare(b,'es'));
+  if(f.ven!=='Todos'&&!vend.includes(f.ven))f.ven='Todos';
+  $('csv-ven').replaceChildren(new Option('Todos','Todos'),...vend.map((v)=>new Option(v,v)));
+  $('csv-per').value=f.per;$('csv-tipo').value=f.tipo;$('csv-ven').value=f.ven;$('csv-est').value=f.est;if(document.activeElement!==$('csv-q'))$('csv-q').value=f.q;
+  const ultima=(c)=>c.ud||(c.um?c.um+'-31':'');
+  const q=norm(f.q);const corteMs=Date.parse(corte+'T00:00:00Z');
+  let rows=M.cartera.filter((c)=>{const cv=sc?c.cv.filter((v)=>sc.has(v)):c.cv;if(!cv.length)return false;
+    const u=ultima(c);if(u&&u>desde)return false;
+    if(f.tipo==='antes'&&!u)return false;if(f.tipo==='nunca'&&u)return false;
+    if(f.ven!=='Todos'&&!c.cv.includes(f.ven))return false;if(f.est!=='Todos'&&c.estado!==f.est)return false;
+    if(q&&!norm(c.nom).includes(q)&&!String(c.cod).includes(q)&&!norm(c.rut).includes(q))return false;return true;})
+    .map((c)=>{const u=c.ud||'';const um=!u&&c.um?c.um:'';const ref=u||(um?um+'-15':'');return{cod:c.cod,rut:c.rut,nom:c.nom,ven:(sc?c.cv.filter((v)=>sc.has(v)):c.cv).join(', '),est:c.estado,cond:c.cond,u,um,
+      dias:ref?Math.round((corteMs-Date.parse(ref+'T00:00:00Z'))/864e5):null};});
+  const cols=[{k:'cod',h:'Código cliente',l:1,cls:'stk stk1'},{k:'rut',h:'RUT',l:1},{k:'nom',h:'Cliente',l:1,cls:'cli'},{k:'ven',h:'Vendedor',l:1,cls:'vend'},{k:'est',h:'Estado',l:1},{k:'cond',h:'Condición de pago',l:1,cls:'hide-sm'},{k:'u',h:'Última venta',l:0},{k:'dias',h:'Días sin venta',num:1}];
+  const val=(r,c)=>c.k==='u'?(r.u||(r.um?r.um+'-00':'')):c.k==='dias'?(r.dias==null?1e9:r.dias):r[c.k];
+  const ss=S.ssort&&cols.some((c)=>c.k===S.ssort.f)?S.ssort:{f:'dias',dir:'asc'};const scol=cols.find((c)=>c.k===ss.f);
+  rows.sort((a,b)=>{const A=val(a,scol),B=val(b,scol);const c=typeof A==='number'?A-B:String(A).localeCompare(String(B),'es');return (ss.dir==='asc'?c:-c)||a.nom.localeCompare(b.nom,'es');});
+  const antes=rows.filter((r)=>r.u||r.um).length;
+  $('csv-title').textContent='Clientes sin ventas · '+({6:'últimos 6 meses',12:'último año',24:'últimos 2 años'})[f.per];
+  $('csv-note').textContent='Clientes de la cartera sin ninguna factura desde el '+fdate(new Date(Date.parse(desde+'T00:00:00Z')+864e5).toISOString().slice(0,10))+' hasta el corte del archivo de ventas ('+fdate(corte)+'). Ordenados por los que dejaron de comprar más recientemente.'+(M.hayLd?'':' Para ver el día exacto de la última venta, vuelve a cargar el Excel de ventas; mientras tanto se muestra el mes.');
+  $('csv-tot').replaceChildren(el('b',{text:nf.format(rows.length)}),' clientes · ',el('b',{text:nf.format(antes)}),' compraron antes y dejaron de comprar · ',el('b',{text:nf.format(rows.length-antes)}),' sin ventas registradas desde ene-2024');
+  S.lastCSV={rows,f,desde};
+  const fu=(r)=>r.u?fdate(r.u):r.um?MES[+r.um.slice(5)-1].toLowerCase()+'-'+r.um.slice(0,4):'Sin ventas desde ene-2024';
+  $('csv-head').replaceChildren(...cols.map((c)=>{const th=el('th',{scope:'col',text:c.h});th.dataset.f=c.k;if(c.l)th.classList.add('l');if(c.cls)th.classList.add(...c.cls.split(' '));if(c.k===ss.f)th.setAttribute('aria-sort',ss.dir==='asc'?'ascending':'descending');return th;}));
+  const CAP=1500,fr=document.createDocumentFragment();
+  for(const r of rows.slice(0,CAP)){const tr=document.createElement('tr');for(const c of cols){const td=document.createElement('td');if(c.l)td.className='l';if(c.cls)td.classList.add(...c.cls.split(' '));
+    td.textContent=c.k==='u'?fu(r):c.k==='dias'?(r.dias==null?'—':nf.format(r.dias)):(r[c.k]||'—');if(c.k==='u'&&!r.u&&!r.um)td.classList.add('z');if(c.k==='nom')td.title=r.nom;tr.append(td);}fr.append(tr);}
+  if(rows.length>CAP)fr.append(el('tr',null,el('td',{class:'l',colSpan:cols.length,text:'Se muestran los primeros '+nf.format(CAP)+' de '+nf.format(rows.length)+'. El Excel descargado trae todos.'})));
+  $('csv-body').replaceChildren(fr);
+}
+$('csv-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCSV)return;const L=S.lastCSV;
+  const data=L.rows.map((r)=>({'Código cliente':r.cod,'RUT':r.rut,'Cliente':r.nom,'Vendedor':r.ven,'Estado':r.est,'Condición de pago':r.cond,'Última venta':r.u?new Date(+r.u.slice(0,4),+r.u.slice(5,7)-1,+r.u.slice(8,10),12):r.um?r.um+' (mes)':'Sin ventas desde ene-2024','Días sin venta':r.dias}));
+  const ws=XLSX.utils.json_to_sheet(data,{cellDates:true,dateNF:'dd-mm-yyyy'});ws['!cols']=[{wch:13},{wch:13},{wch:45},{wch:28},{wch:9},{wch:20},{wch:24},{wch:13}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Clientes sin ventas');XLSX.writeFile(wb,'Clientes_sin_ventas_'+({6:'6_meses',12:'1_ano',24:'2_anos'})[L.f.per]+'.xlsx');toast('Descargados '+nf.format(data.length)+' clientes.');});
 /* ---------- maestro: carga de datos ---------- */
 let nvInfoLater=false;
 function renderMaestro(){
@@ -1006,7 +1162,7 @@ async function procesarArchivos(files){
         hechos.push('NV ('+nf.format(r.total)+' NV del '+fdate(r.desde)+' al '+fdate(r.hasta)+(r.anuladas?', '+nf.format(r.anuladas)+' anuladas excluidas':'')+')');continue;}
       cv=true;
       const reg={nombre:file.name,cargado:new Date().toISOString(),rows:r.rows};let extra='';
-      if(r.tipo==='ventas'){reg.corte=r.corte;reg.prods=r.prods;reg.cp=r.cp;reg.rt=r.rt;reg.rp=r.rp;}
+      if(r.tipo==='ventas'){reg.corte=r.corte;reg.prods=r.prods;reg.cp=r.cp;reg.rt=r.rt;reg.rp=r.rp;reg.vp=r.vp;reg.ld=r.ld;}
       else{const prev=base.cartera;
         if(!prev){reg.alta={};reg.nuevos=null;extra=', carga base';}
         else{const prevCods=new Set(prev.rows.map((x)=>x[1])),pa=prev.alta||{},hoy=new Date().toISOString().slice(0,10),alta={};let nv=0;
