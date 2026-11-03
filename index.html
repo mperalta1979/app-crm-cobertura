@@ -1457,14 +1457,14 @@ function riesgoDe(c){
   const ultM=[...c.ms].sort().pop();const u=c.ud||(ultM?ultM+'-15':'');if(!u)return null;
   const dias=Math.max(0,Math.round((Date.parse(corte+'T00:00:00Z')-Date.parse(u+'T00:00:00Z'))/864e5));
   if(ms.length<3){c.rie={n:ms.length,dias,u,med:null,ratio:null,nivel:null};return c.rie;}
-  const g=[];for(let i=1;i<ms.length;i++)g.push(mIdx_(ms[i])-mIdx_(ms[i-1]));g.sort((a,b)=>a-b);
-  const med=g.length%2?g[(g.length-1)/2]:(g[g.length/2-1]+g[g.length/2])/2;const ratio=dias/(med*30.44);
+  // frecuencia = separación promedio entre la primera y la última compra de la ventana
+  const med=(mIdx_(ms[ms.length-1])-mIdx_(ms[0]))/(ms.length-1);const ratio=dias/(med*30.44);
   c.rie={n:ms.length,dias,u,med,ratio,nivel:dias>365?null:ratio>=3?'alto':ratio>=2?'riesgo':null};return c.rie;}
 function neto12(pairs){const M=S.M;const desde=M.corte?mIdx_(M.corte.slice(0,7))-11:0;const m=new Map();
   M.months.forEach((ym,i)=>{if(mIdx_(ym)<desde)return;for(const p of pairs)if(p.n[i])m.set(p.c.cod,(m.get(p.c.cod)||0)+p.n[i]);});return m;}
 function riesgoLista(vset,pairs){const out=[];for(const c of S.M.cartera){const cv=c.cv.filter((v)=>vset.has(v));if(!cv.length)continue;const r=riesgoDe(c);if(r&&r.nivel)out.push({c,r,cv});}
   if(pairs){const n=neto12(pairs);for(const x of out)x.n12=n.get(x.c.cod)||0;}return out;}
-const freqTxt=(m)=>m==null?'—':m<=1?'todos los meses':m===1.5?'cada mes y medio':'cada '+(Number.isInteger(m)?m:String(m).replace('.',','))+' meses';
+const freqTxt=(m,n)=>{if(m==null)return '—';const r=Math.round(m*10)/10;const s=r<=1?'todos los meses':'cada '+String(r).replace('.',',')+' meses';return n?s+' ('+n+' de 24 meses con compra)':s;};
 ['rie-ven','rie-niv','rie-gest'].forEach((id)=>$(id).addEventListener('change',(e)=>{S.rf[id]=e.target.value;render();}));
 S.rf={'rie-ven':'Todos','rie-niv':'todos','rie-gest':'todos',q:''};S.rieSort=null;
 {let tm;$('rie-q').addEventListener('input',(e)=>{clearTimeout(tm);tm=setTimeout(()=>{S.rf.q=e.target.value;render();},200);});}
@@ -1477,7 +1477,7 @@ function renderRiesgo(){
   $('rie-ven').value=f['rie-ven'];$('rie-niv').value=f['rie-niv'];$('rie-gest').value=f['rie-gest'];
   const vs=new Set(f['rie-ven']==='Todos'?vend:[f['rie-ven']]);
   const pairs=M.pairs.filter((p)=>vs.has(p.v));const lista=riesgoLista(vs,pairs);const ug=ultimasGest();const hace30=sumaDias(hoyISO(),-30);const q=norm(f.q);
-  let rows=lista.map((x)=>{const g=ug.get(x.c.cod);return{cod:x.c.cod,nom:x.c.nom,ven:x.cv.join(', '),freq:x.r.med,u:x.r.u,dias:x.r.dias,ratio:x.r.ratio,nivel:x.r.nivel,n12:x.n12,g,gf:g?g.fecha:'',prox:g&&g.prox||''};})
+  let rows=lista.map((x)=>{const g=ug.get(x.c.cod);return{cod:x.c.cod,nom:x.c.nom,ven:x.cv.join(', '),freq:x.r.med,nm:x.r.n,u:x.r.u,dias:x.r.dias,ratio:x.r.ratio,nivel:x.r.nivel,n12:x.n12,g,gf:g?g.fecha:'',prox:g&&g.prox||''};})
     .filter((r)=>(f['rie-niv']==='todos'||r.nivel===f['rie-niv'])&&(f['rie-gest']==='todos'||(f['rie-gest']==='con'?r.gf>=hace30:!(r.gf>=hace30)))&&(!q||norm(r.nom).includes(q)||r.cod.includes(q)));
   const cols=[{k:'nom',h:'Cliente',l:1,cls:'cli stk stk1'},{k:'cod',h:'Código',l:1,cls:'hide-sm'},{k:'ven',h:'Vendedor',l:1,cls:'vend hide-sm'},{k:'nivel',h:'Nivel',l:1},{k:'freq',h:'Compra normalmente',l:1},{k:'u',h:'Última compra',l:1},{k:'dias',h:'Días sin comprar'},{k:'ratio',h:'Veces su frecuencia'},{k:'n12',h:'Neto últimos 12 meses $'},{k:'gf',h:'Última gestión',l:1},{k:'prox',h:'Próximo contacto',l:1}];
   const val=(r,c)=>c.k==='nivel'?(r.nivel==='alto'?2:1):r[c.k];
@@ -1491,7 +1491,7 @@ function renderRiesgo(){
   for(const r of rows.slice(0,1500)){const tr=document.createElement('tr');for(const c of cols){const td=document.createElement('td');if(c.l)td.className='l';if(c.cls)td.classList.add(...c.cls.split(' '));
     if(c.k==='nom'){td.textContent=r.nom;td.dataset.ficha=r.cod;td.title='Ver ficha de '+r.nom;}
     else if(c.k==='nivel')td.append(el('span',{class:'nivel '+r.nivel,text:r.nivel==='alto'?'Alto riesgo':'En riesgo'}));
-    else if(c.k==='freq')td.textContent=freqTxt(r.freq);else if(c.k==='u')td.textContent=fdate(r.u);
+    else if(c.k==='freq')td.textContent=freqTxt(r.freq,r.nm);else if(c.k==='u')td.textContent=fdate(r.u);
     else if(c.k==='dias')td.textContent=nf.format(r.dias);else if(c.k==='ratio')td.textContent=r.ratio.toFixed(1).replace('.',',')+'×';
     else if(c.k==='n12')td.textContent='$'+nf.format(Math.round(r.n12));
     else if(c.k==='gf'){if(r.g){td.textContent=fdate(r.g.fecha)+' · '+r.g.tipo;td.title=r.g.resultado+(r.g.nota?' — '+r.g.nota:'');}else{td.textContent='Sin gestión';td.classList.add('z');}}
@@ -1502,7 +1502,7 @@ function renderRiesgo(){
   {const T=$('rie-table'),w=$('rie-head').querySelector('.stk1');if(w)T.style.setProperty('--stk2',w.getBoundingClientRect().width+'px');}
 }
 $('rie-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastRie)return;
-  libroXLSX([['Clientes en riesgo',S.lastRie.rows.map((r)=>({'Cliente':r.nom,'Código':r.cod,'Vendedor':r.ven,'Nivel':r.nivel==='alto'?'Alto riesgo':'En riesgo','Compra normalmente':freqTxt(r.freq),'Última compra':r.u,'Días sin comprar':r.dias,'Veces su frecuencia':Math.round(r.ratio*10)/10,'Neto últimos 12 meses':Math.round(r.n12),'Última gestión':r.g?r.g.fecha+' · '+r.g.tipo+' · '+r.g.resultado:'','Próximo contacto':r.prox})),[45,12,28,12,20,12,10,10,16,40,14]]],'Clientes_en_riesgo.xlsx');});
+  libroXLSX([['Clientes en riesgo',S.lastRie.rows.map((r)=>({'Cliente':r.nom,'Código':r.cod,'Vendedor':r.ven,'Nivel':r.nivel==='alto'?'Alto riesgo':'En riesgo','Compra normalmente':freqTxt(r.freq,r.nm),'Última compra':r.u,'Días sin comprar':r.dias,'Veces su frecuencia':Math.round(r.ratio*10)/10,'Neto últimos 12 meses':Math.round(r.n12),'Última gestión':r.g?r.g.fecha+' · '+r.g.tipo+' · '+r.g.resultado:'','Próximo contacto':r.prox})),[45,12,28,12,20,12,10,10,16,40,14]]],'Clientes_en_riesgo.xlsx');});
 
 /* ---------- comparativo con el año anterior ---------- */
 S.cmp={anio:null,ven:'Todos',vista:'caida'};S.cmpSort=null;
@@ -1624,7 +1624,7 @@ function abrirFicha(cod){
   const dato=(k,v)=>el('div',null,el('span',{text:k}),v);
   $('fi-datos').replaceChildren(dato('Vendedor en cartera',(cv.join(', ')||'— no está en tu cartera —')+(otrosV?' (y '+otrosV+' más)':'')),dato('Le han facturado (desde '+M.years[0]+')',fact.join(', ')||'Nadie'),
     dato('Condición de pago',c.cond||'—'),dato('Categoría de crédito',c.cat||'—'),dato('Última compra',c.ud?fdate(c.ud):c.um?mesTxt(c.um):'Sin compras desde '+M.years[0]),
-    dato('Compra normalmente',r&&r.med!=null?freqTxt(r.med)+' (en '+r.n+' de los últimos 24 meses)':'Pocos datos para calcularlo'),
+    dato('Compra normalmente',r&&r.med!=null?freqTxt(r.med)+' (compró en '+r.n+' de los últimos 24 meses)':'Pocos datos para calcularlo'),
     dato('Alerta',r&&r.nivel?(r.nivel==='alto'?'Alto riesgo':'En riesgo')+': lleva '+nf.format(r.dias)+' días sin comprar':'Sin alerta'),...(c.alta?[dato('Cliente nuevo desde',fdate(c.alta))]:[]));
   const k=(t,v,s,cls)=>el('div',{class:'kpi'+(cls?' '+cls:'')},el('span',{text:t}),el('b',{text:v}),el('small',{text:s||''}));
   const sumY=(arr,y)=>M.months.reduce((s,m,i)=>m.startsWith(y)?s+arr[i]:s,0);const corteM=M.corte.slice(0,7);
@@ -1695,7 +1695,7 @@ const TUT={
     'Toca un encabezado para ordenar; por ejemplo, por "Última factura" para ver quién lleva más tiempo sin comprar.'],
     tip:'Los ceros en gris son meses sin compra. Una fila llena de grises con "Sin facturas" es un cliente para llamar.'},
   riesgo:{sec:'Clientes en riesgo',intro:'Clientes que todavía compran, pero que están tardando mucho más de lo normal en volver a hacerlo. Sirve para actuar antes de perderlos.',pasos:[
-    'Para cada cliente se calcula cada cuánto compra normalmente, mirando los meses en que compró en los últimos 24 meses (se necesitan al menos 3 meses con compra).',
+    'Para cada cliente se calcula cada cuánto compra normalmente: el tiempo promedio entre una compra y otra, desde su primera hasta su última compra de los últimos 24 meses (se necesitan al menos 3 meses con compra). Ejemplo: si compró en 12 meses repartidos en 16 meses, compra en promedio cada 1,5 meses.',
     'Si lleva sin comprar el doble de ese tiempo, queda "En riesgo"; si lleva el triple o más, "Alto riesgo". Ejemplo: un cliente que compra todos los meses y lleva 2 meses sin comprar está en riesgo.',
     'La lista se ordena por lo que el cliente compró en los últimos 12 meses, para atender primero a los más importantes.',
     'Filtra "Gestión: Sin gestión en 30 días" para ver a quién nadie ha contactado. Toca el nombre para abrir la ficha y registrar la llamada o visita.'],
