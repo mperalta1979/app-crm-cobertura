@@ -474,6 +474,11 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
       </div>
 
       <div class="card">
+        <h2>Secciones por tipo de usuario</h2><p class="note">Marca las secciones que ve cada tipo de usuario. Los cambios se aplican al instante a todos los usuarios conectados. Maestro siempre es solo para el administrador. Las descargas no cambian: Gerencia descarga y Vendedor solo ve en pantalla.</p>
+        <div class="twrap" style="max-height:none"><table class="t"><thead><tr><th class="l">Sección</th><th>Gerencia</th><th>Vendedor</th></tr></thead><tbody id="sec-body"></tbody></table></div>
+        <div class="row"><button class="btn" type="button" id="sec-save">Guardar secciones</button><span class="hint" id="sec-st"></span></div>
+      </div>
+      <div class="card">
         <div class="tbar"><div><h2>Metas por vendedor</h2><p class="note">Cobertura (% de clientes de la cartera con al menos una factura en el año) y neto anual en pesos. El neto se compara con la meta prorrateada a la fecha de corte de las ventas. Semáforo: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%.</p></div>
           <label class="f"><span>Año</span><select class="sel" id="m-anio"></select></label></div>
         <div class="twrap" style="max-height:28rem"><table class="t"><thead><tr><th class="l">Vendedor</th><th>Meta cobertura (%)</th><th>Meta neto anual ($)</th></tr></thead><tbody id="m-body"></tbody></table></div>
@@ -909,7 +914,7 @@ async function perfilDe(user){
   try{await ref.set(p);return{uid:user.uid,...p};}catch(e){return null;}
 }
 auth.onAuthStateChanged(async(user)=>{
-  if(!user){if(S.unsub){S.unsub();S.unsub=null;}(S.unsubV||[]).forEach((f)=>f());S.unsubV=[];if(S.unsubNV){S.unsubNV();S.unsubNV=null;}S.nv=null;S.nvVer=null;S.user=null;S.raw=null;S.M=null;$('v-app').hidden=true;$('v-login').hidden=false;busy(false);$('l-user').focus();return;}
+  if(!user){if(S.unsubSec){S.unsubSec();S.unsubSec=null;}S.ocultas=null;if(S.unsub){S.unsub();S.unsub=null;}(S.unsubV||[]).forEach((f)=>f());S.unsubV=[];if(S.unsubNV){S.unsubNV();S.unsubNV=null;}S.nv=null;S.nvVer=null;S.user=null;S.raw=null;S.M=null;$('v-app').hidden=true;$('v-login').hidden=false;busy(false);$('l-user').focus();return;}
   busy(true,'Ingresando…');
   try{const p=await perfilDe(user);
     if(!p){busy(false);await auth.signOut();$('l-err').textContent='Tu usuario no está habilitado. Pide acceso al administrador.';return;}
@@ -920,7 +925,7 @@ auth.onAuthStateChanged(async(user)=>{
     document.body.classList.toggle('rol-vendedor',p.rol==='vendedor');
     if(p.rol==='admin')await cargarUsuarios().catch(()=>{});
     if(p.rol==='vendedor')await escucharVend();else{await escucharDatos();escucharNV();}
-    await cargarMetas();registrarUso(p);G.reset();
+    await cargarMetas();registrarUso(p);G.reset();await escucharSecciones();
     $('v-login').hidden=true;$('v-app').hidden=false;mostrarTab(S.tab);
     gCargar().then(()=>gSync(true));
   }catch(e){busy(false);$('l-err').textContent=errAuth(e);await auth.signOut().catch(()=>{});}
@@ -936,7 +941,7 @@ $('p-save').addEventListener('click',async()=>{const u=auth.currentUser,cur=$('p
 
 /* ---------- pestañas ---------- */
 document.querySelectorAll('.tab').forEach((b)=>b.addEventListener('click',()=>mostrarTab(b.dataset.tab)));
-function mostrarTab(t){if(!S.user)return;if(t==='maestro'&&S.user.rol!=='admin')t='resumen';S.tab=t;
+function mostrarTab(t){if(!S.user)return;if(t==='maestro'&&S.user.rol!=='admin')t='resumen';if(!tabVisible(t))t=TABS_.find(tabVisible)||'resumen';S.tab=t;
   document.querySelectorAll('.tab').forEach((b)=>b.setAttribute('aria-selected',b.dataset.tab===t));
   for(const k of ['resumen','cobertura','clientes','retail','vpc','csv','riesgo','comp','gest','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=!['resumen','cobertura','clientes','retail'].includes(t);
   $('sec-title').textContent=(TUT[t]||{}).sec||'';
@@ -1407,7 +1412,7 @@ const libroXLSX=(hojas,archivo)=>{const wb=XLSX.utils.book_new();for(const [nom,
 
 /* ---------- metas por vendedor ---------- */
 S.metas={};
-async function cargarMetas(){S.metas={};try{const q=await db.collection(COL_M).get();for(const d of q.docs){const x=d.data();S.metas[d.id]=x.v||{};}}catch(e){}}
+async function cargarMetas(){S.metas={};try{const q=await db.collection(COL_M).get();for(const d of q.docs){if(!/^\d{4}$/.test(d.id))continue;const x=d.data();S.metas[d.id]=x.v||{};}}catch(e){}}
 function fracAnio(anio){const c=S.M&&S.M.corte;if(!c)return 1;const cy=+c.slice(0,4);anio=+anio;if(anio<cy)return 1;if(anio>cy)return 0;
   const ini=Date.UTC(cy,0,1),fin=Date.UTC(cy+1,0,1);return (Date.parse(c+'T00:00:00Z')-ini+864e5)/(fin-ini);}
 function cliPorVendedor(){const M=S.M;if(M._cliV)return M._cliV;const m=new Map();for(const p of M.pairs)if(p.inc)m.set(p.v,(m.get(p.v)||0)+1);M._cliV=m;return m;}
@@ -1737,6 +1742,7 @@ const TUT={
   maestro:{sec:'Maestro',intro:'Solo para el administrador: carga de archivos, metas, usuarios y registro de uso.',pasos:[
     'Arrastra o elige los Excel de cartera, ventas y NV. La app reconoce cada archivo por sus columnas y publica los datos para todos.',
     'En "Metas por vendedor" elige el año, escribe la meta de cobertura (%) y de neto anual ($) de cada vendedor y presiona "Guardar metas".',
+    'En "Secciones por tipo de usuario" marca qué secciones ve Gerencia y cuáles ve Vendedor, y presiona "Guardar secciones". Se aplica al instante.',
     '"Uso de la app" muestra cuándo entró cada usuario por última vez y cuántos días ingresó en la última semana y el último mes.',
     'En "Usuarios" creas, editas o eliminas usuarios y les asignas sus carteras. Solo tú puedes cambiar claves.'],
     tip:'Cada vendedor descarga solo los datos de su cartera. Si cambias la cartera asignada a un vendedor, sus datos se ajustan solos.'},
@@ -1751,6 +1757,23 @@ $('tut-btn').addEventListener('click',()=>abrirTut(S.tab));
 document.querySelectorAll('[data-tut]').forEach((b)=>b.addEventListener('click',()=>abrirTut(b.dataset.tut)));
 $('tut-close').addEventListener('click',()=>{$('tut').hidden=true;});$('tut').addEventListener('click',(e)=>{if(e.target===$('tut'))$('tut').hidden=true;});
 
+
+/* ---------- secciones visibles por tipo de usuario ---------- */
+const TABS_=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).filter((x)=>x!=='maestro');
+const tabNombre=(t)=>{const b=document.querySelector('.tab[data-tab="'+t+'"]');return b?b.textContent.trim():t;};
+const tabVisible=(t)=>{if(!S.user)return true;if(t==='maestro')return S.user.rol==='admin';if(S.user.rol==='admin')return true;const o=S.ocultas&&S.ocultas[S.user.rol];return !(o&&o.includes(t));};
+function aplicarSecciones(){if(!S.user)return;document.querySelectorAll('.tab').forEach((b)=>{if(b.dataset.tab!=='maestro')b.hidden=!tabVisible(b.dataset.tab);});}
+function escucharSecciones(){if(S.unsubSec)S.unsubSec();let primero=true;
+  return new Promise((resolve)=>{S.unsubSec=db.collection(COL_M).doc('secciones').onSnapshot((d)=>{S.ocultas=d.exists?(d.data().ocultas||{}):{};aplicarSecciones();
+    if(primero){primero=false;resolve();}else if(S.user&&!$('v-app').hidden){if(!tabVisible(S.tab))mostrarTab(S.tab);if(S.tab==='maestro')renderSecciones();}},
+    ()=>{S.ocultas={};if(primero){primero=false;resolve();}});});}
+function renderSecciones(){const o=S.ocultas||{};const ck=(rol,t)=>{const c=el('input',{type:'checkbox',checked:!((o[rol]||[]).includes(t))});c.dataset.rol=rol;c.dataset.t=t;c.setAttribute('aria-label',tabNombre(t)+' para '+ROL[rol]);return el('td',null,c);};
+  $('sec-body').replaceChildren(...TABS_.map((t)=>el('tr',null,el('td',{class:'l',text:tabNombre(t)}),ck('gerencia',t),ck('vendedor',t))));}
+$('sec-save').addEventListener('click',async()=>{const oc={gerencia:[],vendedor:[]};$('sec-body').querySelectorAll('input').forEach((c)=>{if(!c.checked)oc[c.dataset.rol].push(c.dataset.t);});
+  for(const r of ['gerencia','vendedor'])if(oc[r].length===TABS_.length){$('sec-st').textContent=ROL[r]+' debe ver al menos una sección.';return;}
+  try{await db.collection(COL_M).doc('secciones').set({ocultas:oc,por:auth.currentUser.email,ts:new Date().toISOString()});S.ocultas=oc;
+    const txt=(r)=>oc[r].length?'oculta '+oc[r].map(tabNombre).join(', '):'ve todas';$('sec-st').textContent='Guardado. Gerencia '+txt('gerencia')+'. Vendedor '+txt('vendedor')+'.';toast('Secciones guardadas.');}
+  catch(e){$('sec-st').textContent=errAuth(e);}});
 /* ---------- maestro: carga de datos ---------- */
 let nvInfoLater=false;
 function renderMaestro(){
@@ -1759,7 +1782,7 @@ function renderMaestro(){
   $('file-info').replaceChildren(
     el('div',{class:'fileinfo'},el('b',{text:'Cartera de clientes'}),el('span',{text:c.nombre||'—'}),el('span',{class:'hint',text:nf.format(c.rows.length)+' filas · cargada el '+fdate(c.cargado)+(c.nuevos!=null?' · '+nf.format(c.nuevos)+' clientes nuevos en esa carga':' · carga base (sin nuevos)')})),
     el('div',{class:'fileinfo'},el('b',{text:'Ventas (facturas)'}),el('span',{text:v.nombre||'—'}),el('span',{class:'hint',text:'Ventas hasta el '+fdate(v.corte)+' · cargada el '+fdate(v.cargado)})));
-  nvInfo();renderUsuarios();renderMetas();if(!S.usoCargado){S.usoCargado=true;cargarUso();}
+  nvInfo();renderUsuarios();renderMetas();renderSecciones();if(!S.usoCargado){S.usoCargado=true;cargarUso();}
   $('paq-info').textContent='Cada vendedor descarga solo los datos de su cartera (no puede bajar los de otros). Se publican solos cada vez que cargas un Excel de ventas, cartera o NV.'+(S.paqInfo?' Última publicación: '+nf.format(S.paqInfo.n)+' carteras.':'');
 }
 function nvInfo(){const n=S.nv;const box=el('div',{class:'fileinfo'},el('b',{text:'Emisión de NV'}),el('span',{text:n?n.nombre:'Sin cargar'}),
