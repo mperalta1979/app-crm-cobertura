@@ -159,6 +159,8 @@ button,input,select{font:inherit;color:inherit}
 .metain{width:8rem;padding:4px 6px}
 /* rol vendedor: sin descargas ni copia */
 body.rol-vendedor .dl{display:none!important}
+.cont{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.cont span{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;background:var(--panel)}
+.cont a{color:var(--accent-2)}
 body.rol-vendedor .t,body.rol-vendedor .modal{-webkit-user-select:none;user-select:none}
 #vpc-anios .chip[aria-pressed=true],#vpc-meses .chip[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
@@ -254,6 +256,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="resumen" aria-selected="true">Resumen</button>
       <button class="tab" role="tab" data-tab="cobertura" aria-selected="false">Cobertura</button>
+      <button class="tab" role="tab" data-tab="metas" aria-selected="false">Metas por vendedor</button>
       <button class="tab" role="tab" data-tab="clientes" aria-selected="false">Clientes × mes</button>
       <button class="tab" role="tab" data-tab="riesgo" aria-selected="false">Clientes en riesgo</button>
       <button class="tab" role="tab" data-tab="csv" aria-selected="false">Clientes sin ventas</button>
@@ -345,6 +348,14 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
       </div>
     </section>
 
+    <!-- METAS POR VENDEDOR -->
+    <section id="p-metas" class="card" hidden>
+      <div class="tbar"><div><h2 id="m-title">Metas por vendedor</h2><p class="note" id="m-note">—</p></div>
+        <div class="row"><label class="f"><span>Año</span><select class="sel" id="m-anio"></select></label><label class="f" id="m-mes-w"><span>Mes</span><select class="sel" id="m-mes"></select></label><button class="btn sec sm dl" type="button" id="m-export">Descargar Excel</button></div></div>
+      <div class="twrap" style="max-height:34rem"><table class="t" id="m-table"><thead><tr id="m-head"></tr></thead><tbody id="m-body"></tbody><tfoot><tr id="m-foot"></tr></tfoot></table></div>
+      <div class="row" id="m-edit"><button class="btn" type="button" id="m-btn-edit">Editar metas</button><button class="btn" type="button" id="m-save" hidden>Guardar metas</button><button class="btn sec" type="button" id="m-cancel" hidden>Cancelar</button><span class="hint" id="m-st"></span></div>
+    </section>
+
     <!-- CLIENTES EN RIESGO -->
     <section id="p-riesgo" class="card" hidden>
       <div class="tbar"><div><h2>Clientes en riesgo</h2><p class="note" id="rie-note">—</p></div><button class="btn sec sm dl" type="button" id="rie-export">Descargar Excel</button></div>
@@ -373,7 +384,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
     <!-- GESTIONES -->
     <section id="p-gest" class="wrap" style="padding:0" hidden>
       <div class="card"><div class="tbar"><div><h2>Próximos contactos</h2><p class="note">Clientes con un próximo contacto agendado en su última gestión, desde los atrasados hasta los próximos 14 días.</p></div><button class="btn sec sm" type="button" id="g-sync">Actualizar</button></div>
-        <div class="twrap"><table class="t"><thead><tr><th class="l">Fecha</th><th class="l">Cliente</th><th class="l">Vendedor</th><th class="l">Última gestión</th><th class="l">Nota</th></tr></thead><tbody id="g-prox"></tbody></table></div></div>
+        <div class="twrap"><table class="t"><thead><tr><th class="l">Fecha</th><th class="l">Cliente</th><th class="l">Vendedor</th><th class="l">Contacto</th><th class="l">Última gestión</th><th class="l">Nota</th></tr></thead><tbody id="g-prox"></tbody></table></div></div>
       <div class="card"><h2>Gestión por vendedor · últimos 30 días</h2><p class="note" id="g-res-note">—</p>
         <div class="twrap"><table class="t"><thead><tr><th class="l">Vendedor</th><th>Gestiones</th><th>Clientes gestionados</th><th>Clientes sin compra en el año</th><th>Sin compra gestionados</th><th>% gestionado</th><th>En riesgo gestionados</th><th class="l">Última gestión</th></tr></thead><tbody id="g-res"></tbody></table></div></div>
       <div class="card"><div class="tbar"><div><h2>Historial de gestiones</h2><p class="note" id="g-count">—</p></div><button class="btn sec sm dl" type="button" id="g-export">Descargar Excel</button></div>
@@ -385,7 +396,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
           <label class="f"><span>Hasta</span><input class="input" type="date" id="g-hasta" style="padding:5px 8px"></label>
           <label class="f"><span>Buscar</span><input class="input" type="search" id="g-q" placeholder="Cliente, nota o autor" style="padding:6px 9px"></label>
         </div>
-        <div class="twrap"><table class="t"><thead><tr><th class="l">Fecha</th><th class="l">Cliente</th><th class="l">Vendedor</th><th class="l">Tipo</th><th class="l">Resultado</th><th class="l">Nota</th><th class="l">Próximo contacto</th><th class="l">Registró</th></tr></thead><tbody id="g-hist"></tbody></table></div></div>
+        <div class="twrap"><table class="t"><thead><tr><th class="l">Fecha</th><th class="l">Cliente</th><th class="l">Vendedor</th><th class="l">Contacto</th><th class="l">Tipo</th><th class="l">Resultado</th><th class="l">Nota</th><th class="l">Próximo contacto</th><th class="l">Registró</th></tr></thead><tbody id="g-hist"></tbody></table></div></div>
     </section>
 
     <!-- CLIENTES SIN VENTAS -->
@@ -479,12 +490,6 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <div class="row"><button class="btn" type="button" id="sec-save">Guardar secciones</button><span class="hint" id="sec-st"></span></div>
       </div>
       <div class="card">
-        <div class="tbar"><div><h2>Metas por vendedor</h2><p class="note">Cobertura (% de clientes de la cartera con al menos una factura en el año) y neto anual en pesos. El neto se compara con la meta prorrateada a la fecha de corte de las ventas. Semáforo: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%.</p></div>
-          <label class="f"><span>Año</span><select class="sel" id="m-anio"></select></label></div>
-        <div class="twrap" style="max-height:28rem"><table class="t"><thead><tr><th class="l">Vendedor</th><th>Meta cobertura (%)</th><th>Meta neto anual ($)</th></tr></thead><tbody id="m-body"></tbody></table></div>
-        <div class="row"><button class="btn" type="button" id="m-save">Guardar metas</button><span class="hint" id="m-st"></span></div>
-      </div>
-      <div class="card">
         <div class="tbar"><div><h2>Uso de la app</h2><p class="note">Quién entra y cuándo (un registro por usuario y día).</p></div><button class="btn sec sm" type="button" id="uso-load">Actualizar</button></div>
         <div class="twrap" style="max-height:28rem"><table class="t"><thead><tr><th class="l">Usuario</th><th class="l">Nombre</th><th class="l">Rol</th><th class="l">Último ingreso</th><th>Días con ingreso (7 días)</th><th>Días con ingreso (30 días)</th><th>Ingresos (30 días)</th></tr></thead><tbody id="uso-body"></tbody></table></div>
       </div>
@@ -536,10 +541,16 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <label class="field"><span>Próximo contacto (opcional)</span><input class="input" type="date" id="gf-prox"></label>
         <label class="field" id="gf-ven-w"><span>Vendedor</span><select class="input" id="gf-ven"></select></label>
       </div>
+      <div class="uform">
+        <label class="field" id="gf-con-w"><span>Contacto</span><select class="input" id="gf-con"></select></label>
+        <label class="field gf-nuevo"><span>Nombre contacto</span><input class="input" id="gf-cnom" maxlength="80" autocomplete="off" placeholder="Nombre y apellido"></label>
+        <label class="field gf-nuevo"><span>Teléfono contacto</span><input class="input" id="gf-ctel" type="tel" inputmode="tel" maxlength="20" autocomplete="off" placeholder="+56 9 1234 5678"></label>
+      </div>
       <label class="field"><span>Nota</span><textarea class="input" id="gf-nota" rows="3" maxlength="600" placeholder="Qué se conversó, qué se ofreció, qué quedó pendiente…"></textarea></label>
       <p class="err" id="gf-err"></p>
       <div class="row"><button class="btn" type="button" id="gf-save">Guardar gestión</button><button class="btn sec" type="button" id="gf-cancel">Cancelar</button></div>
     </div>
+    <div id="fi-gcont"></div>
     <div class="gl" id="fi-glist"></div></div>
 </div></div>
 <div class="modal" id="tut" hidden><div class="box sm tutbox">
@@ -943,8 +954,9 @@ $('p-save').addEventListener('click',async()=>{const u=auth.currentUser,cur=$('p
 document.querySelectorAll('.tab').forEach((b)=>b.addEventListener('click',()=>mostrarTab(b.dataset.tab)));
 function mostrarTab(t){if(!S.user)return;if(t==='maestro'&&S.user.rol!=='admin')t='resumen';if(!tabVisible(t))t=TABS_.find(tabVisible)||'resumen';S.tab=t;
   document.querySelectorAll('.tab').forEach((b)=>b.setAttribute('aria-selected',b.dataset.tab===t));
-  for(const k of ['resumen','cobertura','clientes','retail','vpc','csv','riesgo','comp','gest','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=!['resumen','cobertura','clientes','retail'].includes(t);
+  for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=!['resumen','cobertura','clientes','retail'].includes(t);
   $('sec-title').textContent=(TUT[t]||{}).sec||'';
+  if(['metas','cobertura','resumen'].includes(t)&&Date.now()-(S.metasTs||0)>60000){S.metasTs=Date.now();cargarMetas().then(()=>{if(S.tab===t)render();});}
   $('w-grupo').hidden=t==='cobertura'||t==='retail';$('w-estado').hidden=t==='retail';$('w-cond').hidden=t==='retail';
   render();}
 
@@ -974,10 +986,11 @@ function render(){
   if(S.tab==='vpc'&&S.M){$('empty').hidden=true;renderVPC();return;}
   if(S.tab==='csv'&&S.M){$('empty').hidden=true;renderCSV();return;}
   if(S.tab==='riesgo'&&S.M){$('empty').hidden=true;renderRiesgo();return;}
+  if(S.tab==='metas'&&S.M){$('empty').hidden=true;renderMetas();return;}
   if(S.tab==='comp'&&S.M){$('empty').hidden=true;renderComp();return;}
   if(S.tab==='gest'&&S.M){$('empty').hidden=true;renderGest();return;}
   $('empty').hidden=!!S.M||S.tab==='maestro';
-  if(!S.M){$('data-info').textContent='Sin datos cargados';for(const k of ['resumen','cobertura','clientes','retail','vpc','csv','riesgo','comp','gest'])$('p-'+k).hidden=true;$('filters').hidden=true;if(S.tab==='maestro')renderMaestro();return;}
+  if(!S.M){$('data-info').textContent='Sin datos cargados';for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest'])$('p-'+k).hidden=true;$('filters').hidden=true;if(S.tab==='maestro')renderMaestro();return;}
   const M=S.M,f=S.f,sc=alcance();
   const corte=S.raw.ventas.corte||'';
   $('data-info').textContent='Ventas al '+fdate(corte)+' · cartera cargada el '+fdate(S.raw.cartera.cargado);
@@ -1416,28 +1429,89 @@ async function cargarMetas(){S.metas={};try{const q=await db.collection(COL_M).g
 function fracAnio(anio){const c=S.M&&S.M.corte;if(!c)return 1;const cy=+c.slice(0,4);anio=+anio;if(anio<cy)return 1;if(anio>cy)return 0;
   const ini=Date.UTC(cy,0,1),fin=Date.UTC(cy+1,0,1);return (Date.parse(c+'T00:00:00Z')-ini+864e5)/(fin-ini);}
 function cliPorVendedor(){const M=S.M;if(M._cliV)return M._cliV;const m=new Map();for(const p of M.pairs)if(p.inc)m.set(p.v,(m.get(p.v)||0)+1);M._cliV=m;return m;}
-function metaScope(vs,anio){const T=S.metas[String(anio)];if(!T||!S.M)return null;let neto=0,cw=0,cn=0,hay=false;const cpv=cliPorVendedor();
-  for(const v of vs){const m=T[vkey(v)];if(!m)continue;if(m.neto>0){neto+=m.neto;hay=true;}if(m.cob>0){const n=cpv.get(v)||0;cw+=m.cob/100*n;cn+=n;hay=true;}}
-  if(!hay)return null;return{neto,netoCorte:neto*fracAnio(anio),cob:cn?cw/cn:null};}
 const semaforo=(av)=>{if(av==null)return '';const s=el('span',{class:'sem '+(av>=1?'v':av>=0.8?'a':'r')});s.title=av>=1?'Cumple la meta':av>=0.8?'Entre 80% y 99% de la meta':'Bajo 80% de la meta';return s;};
+const editaMetas=()=>!!S.user&&(S.user.rol==='admin'||S.user.rol==='gerencia');
+// metas de neto mes a mes (si solo hay meta anual antigua, se reparte por días)
+function mesesMeta(m,anio){if(!m)return null;if(Array.isArray(m.nm)&&m.nm.some((x)=>x>0))return m.nm.map((x)=>+x||0);if(m.neto>0){const y=+anio,dy=(Date.UTC(y+1,0,1)-Date.UTC(y,0,1))/864e5;return Array.from({length:12},(_,i)=>m.neto*new Date(Date.UTC(y,i+1,0)).getUTCDate()/dy);}return null;}
+// parte de cada mes ya transcurrida a la fecha de corte
+function factorMes(anio,mes){const c=S.M&&S.M.corte;if(!c)return 1;const cy=+c.slice(0,4),cm=+c.slice(5,7),cd=+c.slice(8,10);anio=+anio;
+  if(anio<cy||(anio===cy&&mes<cm))return 1;if(anio>cy||mes>cm)return 0;const dim=new Date(Date.UTC(cy,cm,0)).getUTCDate();return Math.min(1,cd/dim);}
+const metaAcum=(arr,anio,hasta)=>{let s=0;for(let i=0;i<hasta;i++)s+=arr[i]*factorMes(anio,i+1);return s;};
+function metaScope(vs,anio){const T=S.metas[String(anio)];if(!T||!S.M)return null;let neto=0,netoCorte=0,cw=0,cn=0,hay=false;const cpv=cliPorVendedor();
+  for(const v of vs){const m=T[vkey(v)];if(!m)continue;const arr=mesesMeta(m,anio);if(arr){neto+=arr.reduce((a,b)=>a+b,0);netoCorte+=metaAcum(arr,anio,12);hay=true;}if(m.cob>0){const n=cpv.get(v)||0;cw+=m.cob/100*n;cn+=n;hay=true;}}
+  if(!hay)return null;return{neto,netoCorte,cob:cn?cw/cn:null};}
+S.mEdit=false;
 function renderMetas(){
-  const box=$('m-body');if(!S.M){box.replaceChildren(el('tr',null,el('td',{class:'l',colSpan:3,text:'Carga primero los datos para ver los vendedores.'})));return;}
-  const cy=+(S.M.corte||hoyISO()).slice(0,4);const anios=[...new Set([...S.M.years.map(Number),cy,cy+1])].sort();
-  const sel=$('m-anio');const a=S.mAnio||String(cy);if(sel.options.length!==anios.length){sel.replaceChildren(...anios.map((y)=>new Option(y,y)));}sel.value=a;
-  const T=S.metas[a]||{};const fmt=(n)=>n>0?nf.format(n):'';
-  box.replaceChildren(...S.M.vendors.map((v)=>{const m=T[vkey(v)]||{};const ic=el('input',{class:'input metain',type:'text',inputMode:'decimal',value:m.cob>0?String(m.cob).replace('.',','):'',placeholder:'—'});ic.dataset.vk=vkey(v);ic.dataset.v=v;ic.dataset.k='cob';
-    const inn=el('input',{class:'input metain',type:'text',inputMode:'numeric',value:fmt(m.neto),placeholder:'—'});inn.style.width='11rem';inn.dataset.vk=vkey(v);inn.dataset.v=v;inn.dataset.k='neto';
-    inn.addEventListener('blur',()=>{const n=+inn.value.replace(/\D/g,'');inn.value=n?nf.format(n):'';});
-    return el('tr',null,el('td',{class:'l',text:v}),el('td',null,ic),el('td',null,inn));}));
+  const M=S.M,sc=alcance(),ed=editaMetas()&&S.mEdit;const cy=+(M.corte||hoyISO()).slice(0,4),cmo=+(M.corte||hoyISO()).slice(5,7);const anios=[...new Set([...M.years.map(Number),cy,cy+1])].sort();
+  const a=S.mAnio&&anios.includes(+S.mAnio)?String(S.mAnio):String(cy);$('m-anio').replaceChildren(...anios.map((y)=>new Option(y,y)));$('m-anio').value=a;
+  const mesDef=+a<cy?12:+a>cy?1:cmo;const mes=S.mMes&&S.mMes>=1&&S.mMes<=12?S.mMes:mesDef;
+  $('m-mes').replaceChildren(...MESES_L.map((n,i)=>new Option(n[0].toUpperCase()+n.slice(1),i+1)));$('m-mes').value=String(mes);$('m-mes-w').hidden=ed;
+  const T=S.metas[a]||{};$('m-st').textContent=S.mSt||'';S.mSt='';
+  $('m-title').textContent=(ed?'Editar metas · ':'Metas por vendedor · ')+a;
+  $('m-btn-edit').hidden=!editaMetas()||ed;$('m-save').hidden=!ed;$('m-cancel').hidden=!ed;$('m-export').hidden=ed;
+  const vend=M.vendors.filter((v)=>!sc||sc.has(v));const ML=MES.map((x)=>x);
+  if(ed){
+    $('m-note').textContent='Escribe la meta de cobertura (%) y la meta de neto de cada mes en pesos. El total anual se suma solo. Puedes copiar un bloque de celdas desde Excel (vendedores en filas, meses en columnas) y pegarlo en la primera casilla de enero. Deja vacío lo que no tenga meta.';
+    $('m-head').replaceChildren(el('th',{class:'l vend stk stk1',scope:'col',text:'Vendedor'}),el('th',{scope:'col',text:'Cobertura %'}),...ML.map((m)=>el('th',{scope:'col',text:m})),el('th',{scope:'col',text:'Total anual $'}));
+    const fmt=(n)=>n>0?nf.format(Math.round(n)):'';
+    $('m-body').replaceChildren(...vend.map((v,ri)=>{const m=T[vkey(v)]||{};const arr=Array.isArray(m.nm)?m.nm:(mesesMeta(m,a)||[]);const tot=el('td',{class:'tot'});
+      const upd=()=>{let s=0;tr.querySelectorAll('input[data-k=nm]').forEach((i)=>{s+=+i.value.replace(/\D/g,'')||0;});tot.textContent=s?'$'+nf.format(s):'—';};
+      const ic=el('input',{class:'input metain',type:'text',inputMode:'decimal',value:m.cob>0?String(m.cob).replace('.',','):'',placeholder:'%'});ic.style.width='5rem';Object.assign(ic.dataset,{vk:vkey(v),v,k:'cob',r:ri,c:0});ic.setAttribute('aria-label','Meta de cobertura de '+v);
+      const ins=Array.from({length:12},(_,i)=>{const x=el('input',{class:'input metain',type:'text',inputMode:'numeric',value:fmt(arr[i]),placeholder:'$'});x.style.width='8.5rem';Object.assign(x.dataset,{vk:vkey(v),v,k:'nm',m:i,r:ri,c:i+1});x.setAttribute('aria-label','Meta de neto de '+v+' en '+MESES_L[i]);
+        x.addEventListener('blur',()=>{const n=+x.value.replace(/\D/g,'');x.value=n?nf.format(n):'';});x.addEventListener('input',upd);return el('td',null,x);});
+      const tr=el('tr',null,el('td',{class:'l vend stk stk1',text:v}),el('td',null,ic),...ins,tot);upd();return tr;}));
+    $('m-foot').replaceChildren();return;}
+  // vista de avance
+  const fr=factorMes(a,mes);const nomMes=MESES_L[mes-1];const parcial=fr>0&&fr<1;
+  $('m-note').textContent='Mes: neto facturado en '+nomMes+' contra la meta de ese mes'+(parcial?' (como el mes está en curso, la meta se cuenta hasta el día de corte, '+fdate(M.corte)+')':'')+'. Acumulado: enero a '+nomMes+' contra la suma de las metas de esos meses. Cobertura: % de clientes de la cartera con al menos una factura en '+a+', contra la meta anual. Semáforo: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%.';
+  const iM=M.months.indexOf(a+'-'+pad2(mes));const iAc=M.months.map((m,i)=>[m,i]).filter(([m])=>m.startsWith(a+'-')&&+m.slice(5,7)<=mes).map(([,i])=>i);
+  const byV=new Map();for(const p of M.pairs){if(sc&&!sc.has(p.v))continue;if(!byV.has(p.v))byV.set(p.v,[]);byV.get(p.v).push(p);}
+  const filas=vend.map((v)=>{const ps=byV.get(v)||[];const st=stats(ps,a);const m=T[vkey(v)]||{};const arr=mesesMeta(m,a);const mc=m.cob>0?m.cob/100:null;
+    const nmes=iM<0?0:ps.reduce((s,p)=>s+p.n[iM],0),nac=ps.reduce((s,p)=>s+iAc.reduce((t,i)=>t+p.n[i],0),0);
+    const mmes=arr&&arr[mes-1]>0?arr[mes-1]*fr:null,mac=arr?metaAcum(arr,a,mes):null,man=arr?arr.reduce((x,y)=>x+y,0):null;
+    return{v,cli:st.cli,cob:st.cob,mc,ac:mc?st.cob/mc:null,nmes,mmes:fr>0?mmes:null,mmesF:arr?arr[mes-1]:null,ames:mmes&&fr>0?nmes/mmes:null,nac,mac:mac||null,aac:mac?nac/mac:null,man:man||null};})
+    .filter((r)=>r.cli>0||r.nac>0||r.mc||r.man);
+  S.lastMetas={filas,a,mes,T,vend};
+  const Mc=nomMes[0].toUpperCase()+nomMes.slice(1,3);
+  const cols=[['v','Vendedor',1],['cli','Clientes en cartera'],['cob','Cobertura actual'],['mc','Meta cobertura'],['ac','Avance cobertura'],['nmes','Neto '+Mc+' $'],['mmes',(parcial?'Meta '+Mc+' al corte $':'Meta '+Mc+' $')],['ames','Avance '+Mc],['nac','Neto Ene–'+Mc+' $'],['mac','Meta Ene–'+Mc+' $'],['aac','Avance acumulado'],['man','Meta anual $']];
+  $('m-head').replaceChildren(...cols.map(([k,h,l])=>{const th=el('th',{scope:'col',text:h});if(l)th.classList.add('l','vend');return th;}));
+  const pct=(x)=>x==null?'—':pf.format(x),pes=(x)=>x==null?'—':'$'+nf.format(Math.round(x));
+  const cel=(r,k)=>{const td=el('td');if(k==='v'){td.className='l vend';td.textContent=r.v;return td;}
+    if(k==='cli')td.textContent=nf.format(r.cli);else if(k==='cob'||k==='mc')td.textContent=pct(r[k]);
+    else if(k==='ac'||k==='ames'||k==='aac'){td.textContent=pct(r[k]);if(r[k]!=null)td.prepend(semaforo(r[k]));td.style.fontWeight='600';}
+    else{td.textContent=pes(r[k]);if(k==='mmes'&&parcial&&r.mmesF)td.title='Meta completa del mes: $'+nf.format(Math.round(r.mmesF));}return td;};
+  $('m-body').replaceChildren(...filas.map((r)=>el('tr',null,...cols.map(([k])=>cel(r,k)))),...(filas.length?[]:[el('tr',null,el('td',{class:'l',colSpan:cols.length,text:'No hay vendedores para mostrar.'}))]));
+  const cm=filas.filter((r)=>r.mc),nm=filas.filter((r)=>r.man);const sum=(xs,k)=>xs.reduce((s,r)=>s+(r[k]||0),0);
+  const conM=cm.length||nm.length?filas.filter((r)=>r.mc||r.man):filas;
+  const tot={v:'Total',cli:sum(conM,'cli'),cob:null,mc:null,ac:null,nmes:sum(nm.length?nm:filas,'nmes'),mmes:nm.length?sum(nm,'mmes')||null:null,nac:sum(nm.length?nm:filas,'nac'),mac:nm.length?sum(nm,'mac')||null:null,man:nm.length?sum(nm,'man'):null};
+  tot.ames=tot.mmes?tot.nmes/tot.mmes:null;tot.aac=tot.mac?tot.nac/tot.mac:null;
+  if(cm.length){const cl=sum(cm,'cli');if(cl){tot.mc=cm.reduce((s,r)=>s+r.mc*r.cli,0)/cl;tot.cob=cm.reduce((s,r)=>s+r.cob*r.cli,0)/cl;tot.ac=tot.cob/tot.mc;}}
+  $('m-foot').replaceChildren(...(filas.length>1?cols.map(([k])=>{const td=cel(tot,k);if(k==='v')td.textContent=cm.length||nm.length?'Total (vendedores con meta)':'Total';return td;}):[]));
 }
-$('m-anio').addEventListener('change',(e)=>{S.mAnio=e.target.value;renderMetas();});
+$('m-anio').addEventListener('change',(e)=>{S.mAnio=e.target.value;S.mMes=null;render();});
+$('m-mes').addEventListener('change',(e)=>{S.mMes=+e.target.value;render();});
+$('m-btn-edit').addEventListener('click',()=>{S.mEdit=true;render();});
+$('m-cancel').addEventListener('click',()=>{S.mEdit=false;render();});
+// pegar un bloque desde Excel
+$('m-body').addEventListener('paste',(e)=>{const i=e.target.closest('input');if(!i||!S.mEdit)return;const txt=(e.clipboardData||window.clipboardData).getData('text');if(!/[\t\n]/.test(txt.trim()))return;e.preventDefault();
+  const filas=txt.replace(/\r/g,'').replace(/\n+$/,'').split('\n').map((l)=>l.split('\t'));const r0=+i.dataset.r,c0=+i.dataset.c;let n=0;
+  filas.forEach((fila,dr)=>fila.forEach((val,dc)=>{const x=$('m-body').querySelector('input[data-r="'+(r0+dr)+'"][data-c="'+(c0+dc)+'"]');if(!x)return;const raw=String(val).trim();
+    if(x.dataset.k==='cob')x.value=raw.replace('%','');else{const num=Math.round(+raw.replace(/\$|\s/g,'').replace(/\./g,'').replace(',','.'))||0;x.value=num?nf.format(num):'';}x.dispatchEvent(new Event('input',{bubbles:true}));n++;}));
+  toast('Pegadas '+n+' celdas. Revisa y presiona "Guardar metas".');});
 $('m-save').addEventListener('click',async()=>{const a=$('m-anio').value;const v={};let err='';
-  $('m-body').querySelectorAll('input').forEach((i)=>{const k=i.dataset.k;const raw=i.value.trim();if(!raw)return;let n=k==='cob'?+raw.replace('%','').replace(',','.'):+raw.replace(/\D/g,'');
-    if(k==='cob'&&(!(n>=0)||n>100)){err='La meta de cobertura de '+i.dataset.v+' debe estar entre 0 y 100.';return;}
-    (v[i.dataset.vk]||(v[i.dataset.vk]={vend:i.dataset.v}))[k]=n;});
+  $('m-body').querySelectorAll('input').forEach((i)=>{if(err)return;const vk=i.dataset.vk;const o=v[vk]||(v[vk]={vend:i.dataset.v,nm:Array(12).fill(0)});const raw=i.value.trim();if(!raw)return;
+    if(i.dataset.k==='cob'){const n=+raw.replace('%','').replace(',','.');if(!(n>=0)||n>100){err='La meta de cobertura de '+i.dataset.v+' debe estar entre 0 y 100.';return;}o.cob=n;}
+    else o.nm[+i.dataset.m]=+raw.replace(/\D/g,'')||0;});
   if(err){$('m-st').textContent=err;return;}
-  try{await db.collection(COL_M).doc(a).set({anio:+a,v,por:auth.currentUser.email,ts:new Date().toISOString()});S.metas[a]=v;$('m-st').textContent='Metas de '+a+' guardadas ('+Object.keys(v).length+' vendedores).';toast('Metas guardadas.');}
-  catch(e){$('m-st').textContent=errAuth(e);}});
+  for(const k of Object.keys(v)){const o=v[k];o.neto=o.nm.reduce((x,y)=>x+y,0);if(!o.neto)delete o.nm;if(!o.neto&&!(o.cob>0))delete v[k];}
+  {const prev=S.metas[a]||{};const vis=new Set([...$('m-body').querySelectorAll('input')].map((i)=>i.dataset.vk));for(const k in prev)if(!vis.has(k))v[k]=prev[k];}
+  const b=$('m-save');b.disabled=true;
+  try{await db.collection(COL_M).doc(a).set({anio:+a,v,por:auth.currentUser.email,ts:new Date().toISOString()});S.metas[a]=v;S.mEdit=false;S.mSt='Metas de '+a+' guardadas ('+Object.keys(v).length+' vendedores con meta).';toast('Metas guardadas.');render();}
+  catch(e){$('m-st').textContent=errAuth(e);}finally{b.disabled=false;}});
+$('m-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastMetas)return;const L=S.lastMetas;const r1=(x)=>x==null?'':Math.round(x*1000)/10;const M3=MES[L.mes-1];
+  const av=L.filas.map((r)=>({'Vendedor':r.v,'Clientes en cartera':r.cli,'Cobertura actual %':r1(r.cob),'Meta cobertura %':r1(r.mc),'Avance cobertura %':r1(r.ac),['Neto '+M3]:Math.round(r.nmes),['Meta '+M3]:r.mmes?Math.round(r.mmes):'',['Avance '+M3+' %']:r1(r.ames),['Neto Ene-'+M3]:Math.round(r.nac),['Meta Ene-'+M3]:r.mac?Math.round(r.mac):'','Avance acumulado %':r1(r.aac),'Meta anual':r.man?Math.round(r.man):''}));
+  const mm_=L.vend.map((v)=>{const m=L.T[vkey(v)];const arr=mesesMeta(m,L.a);const o={'Vendedor':v,'Meta cobertura %':m&&m.cob>0?m.cob:''};MES.forEach((n,i)=>{o[n]=arr?Math.round(arr[i]):'';});o['Total anual']=arr?Math.round(arr.reduce((x,y)=>x+y,0)):'';return o;}).filter((o)=>o['Total anual']||o['Meta cobertura %']);
+  libroXLSX([['Avance '+M3+' '+L.a,av,[28,12,12,12,12,16,16,12,16,16,12,16]],['Metas mensuales '+L.a,mm_,[28,12,...MES.map(()=>14),16]]],'Metas_vendedores_'+L.a+'_'+M3+'.xlsx');});
 
 /* ---------- registro de uso ---------- */
 async function registrarUso(p){const d=hoyISO().replace(/-/g,'');const k='uso_'+p.uid+'_'+d;if(SS.get(k))return;
@@ -1499,7 +1573,7 @@ function renderRiesgo(){
     else if(c.k==='freq')td.textContent=freqTxt(r.freq,r.nm);else if(c.k==='u')td.textContent=fdate(r.u);
     else if(c.k==='dias')td.textContent=nf.format(r.dias);else if(c.k==='ratio')td.textContent=r.ratio.toFixed(1).replace('.',',')+'×';
     else if(c.k==='n12')td.textContent='$'+nf.format(Math.round(r.n12));
-    else if(c.k==='gf'){if(r.g){td.textContent=fdate(r.g.fecha)+' · '+r.g.tipo;td.title=r.g.resultado+(r.g.nota?' — '+r.g.nota:'');}else{td.textContent='Sin gestión';td.classList.add('z');}}
+    else if(c.k==='gf'){if(r.g){td.textContent=fdate(r.g.fecha)+' · '+r.g.tipo;td.title=r.g.resultado+(r.g.cnom?' · contacto '+conTxt(r.g):'')+(r.g.nota?' — '+r.g.nota:'');}else{td.textContent='Sin gestión';td.classList.add('z');}}
     else if(c.k==='prox'){td.textContent=r.prox?fdate(r.prox):'—';if(r.prox&&r.prox<hoyISO())td.classList.add('z');}
     else td.textContent=r[c.k]||'—';tr.append(td);}fr.append(tr);}
   if(!rows.length)fr.append(el('tr',null,el('td',{class:'l',colSpan:cols.length,text:'No hay clientes en riesgo con este filtro.'})));
@@ -1592,8 +1666,8 @@ function renderGest(){
   const lim=sumaDias(hoy,14);const prox=[...ult.values()].filter((x)=>x.prox&&x.prox<=lim).sort((a,b)=>a.prox.localeCompare(b.prox));
   $('g-prox').replaceChildren(...prox.map((x)=>{const td=el('td',{class:'l',text:fdate(x.prox)+(x.prox<hoy?' · atrasado':x.prox===hoy?' · hoy':'')});if(x.prox<hoy)td.classList.add('z');
     const tc=el('td',{class:'l cli',text:x.cli});tc.dataset.ficha=x.cod;tc.title='Ver ficha de '+x.cli;
-    return el('tr',null,td,tc,el('td',{class:'l vend',text:x.vend}),el('td',{class:'l',text:fdate(x.fecha)+' · '+x.tipo+' · '+x.resultado}),el('td',{class:'l',text:x.nota||''}));}),
-    ...(prox.length?[]:[el('tr',null,el('td',{class:'l',colSpan:5,text:'No hay contactos agendados para los próximos 14 días.'}))]));
+    return el('tr',null,td,tc,el('td',{class:'l vend',text:x.vend}),conCel(x),el('td',{class:'l',text:fdate(x.fecha)+' · '+x.tipo+' · '+x.resultado}),el('td',{class:'l',text:x.nota||''}));}),
+    ...(prox.length?[]:[el('tr',null,el('td',{class:'l',colSpan:6,text:'No hay contactos agendados para los próximos 14 días.'}))]));
   // resumen por vendedor (30 días)
   const desde30=sumaDias(hoy,-30);const Y=M.years[M.years.length-1];const rl=riesgoLista(new Set(vend));const rset=new Map();for(const x of rl)for(const v of x.cv){if(!rset.has(v))rset.set(v,new Set());rset.get(v).add(x.c.cod);}
   const res=vend.filter((v)=>f['g-ven']==='Todos'||v===f['g-ven']).map((v)=>{const gs=viv.filter((x)=>x.vend===v&&x.fecha>=desde30);const gc=new Set(gs.map((x)=>x.cod));
@@ -1609,10 +1683,10 @@ function renderGest(){
     &&(!q||norm(x.cli).includes(q)||norm(x.nota).includes(q)||norm(x.autorNom).includes(q)||String(x.cod).includes(q))).sort(gOrden);
   S.lastGest=hist;$('g-count').textContent=nf.format(hist.length)+' gestiones'+(hist.length>500?' · se muestran las 500 más recientes':'')+'. Para registrar una gestión, toca el nombre de un cliente en cualquier sección y usa "Registrar gestión" en su ficha.';
   $('g-hist').replaceChildren(...hist.slice(0,500).map((x)=>{const tc=el('td',{class:'l cli',text:x.cli});tc.dataset.ficha=x.cod;tc.title='Ver ficha de '+x.cli;
-    return el('tr',null,el('td',{class:'l',text:fdate(x.fecha)}),tc,el('td',{class:'l vend',text:x.vend}),el('td',{class:'l',text:x.tipo}),el('td',{class:'l',text:x.resultado}),el('td',{class:'l',text:x.nota||''}),el('td',{class:'l',text:x.prox?fdate(x.prox):'—'}),el('td',{class:'l',text:x.autorNom||''}));}),
-    ...(hist.length?[]:[el('tr',null,el('td',{class:'l',colSpan:8,text:G.sync?'No hay gestiones con este filtro.':'Cargando gestiones…'}))]));
+    return el('tr',null,el('td',{class:'l',text:fdate(x.fecha)}),tc,el('td',{class:'l vend',text:x.vend}),conCel(x),el('td',{class:'l',text:x.tipo}),el('td',{class:'l',text:x.resultado}),el('td',{class:'l',text:x.nota||''}),el('td',{class:'l',text:x.prox?fdate(x.prox):'—'}),el('td',{class:'l',text:x.autorNom||''}));}),
+    ...(hist.length?[]:[el('tr',null,el('td',{class:'l',colSpan:9,text:G.sync?'No hay gestiones con este filtro.':'Cargando gestiones…'}))]));
 }
-$('g-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastGest)return;libroXLSX([['Gestiones',S.lastGest.map((x)=>({'Fecha':x.fecha,'Cliente':x.cli,'Código':x.cod,'Vendedor':x.vend,'Tipo':x.tipo,'Resultado':x.resultado,'Nota':x.nota||'','Próximo contacto':x.prox||'','Registró':x.autorNom||''})),[11,45,12,28,18,28,60,14,24]]],'Gestiones_'+hoyISO()+'.xlsx');});
+$('g-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastGest)return;libroXLSX([['Gestiones',S.lastGest.map((x)=>({'Fecha':x.fecha,'Cliente':x.cli,'Código':x.cod,'Vendedor':x.vend,'Contacto':x.cnom||'','Teléfono contacto':x.ctel||'','Tipo':x.tipo,'Resultado':x.resultado,'Nota':x.nota||'','Próximo contacto':x.prox||'','Registró':x.autorNom||''})),[11,45,12,28,28,16,18,28,60,14,24]]],'Gestiones_'+hoyISO()+'.xlsx');});
 
 /* ---------- ficha de cliente ---------- */
 document.addEventListener('click',(e)=>{const t=e.target.closest('[data-ficha]');if(t&&S.M){e.preventDefault();abrirFicha(t.dataset.ficha);}});
@@ -1653,27 +1727,42 @@ function abrirFicha(cod){
   const n=M.months.filter((m)=>m<=corteM).length;chartMes(M.months.slice(0,n),Array.from(ns.slice(0,n),(x)=>x/1e6),fs,ns,Y,'fi-chart');
   gSync(false);$('fi-close').focus();
 }
-function fichaGest(){const cod=S.fichaCod;if(!cod)return;const xs=gVivas().filter((x)=>x.cod===cod&&gScope(x)).sort(gOrden);
+function fichaGest(){const cod=S.fichaCod;if(!cod)return;
+  {const cs=contactosDe(cod);$('fi-gcont').replaceChildren(...(cs.length?[el('p',{class:'note',style:'margin:0 0 6px',text:'Contactos registrados ('+cs.length+'). No se modifican; para uno distinto, agrégalo al registrar una gestión.'}),el('div',{class:'cont'},...cs.map((c)=>el('span',null,c.cnom+(c.ctel?' · ':''),c.ctel?el('a',{href:'tel:'+telNorm(c.ctel),text:c.ctel}):'')))]:[]));}const xs=gVivas().filter((x)=>x.cod===cod&&gScope(x)).sort(gOrden);
   $('fi-glist').replaceChildren(...xs.map((x)=>{const box=el('div',{class:'gi'},el('div',{class:'gh'},el('span',{text:fdate(x.fecha)+' · '+x.tipo+' · '+x.vend}),el('span',{text:'Registró '+(x.autorNom||'—')})),
+      x.cnom?el('div',{class:'hint'},'Contacto: '+x.cnom+(x.ctel?' · ':''),x.ctel?el('a',{href:'tel:'+telNorm(x.ctel),text:x.ctel}):''):null,
       el('div',null,el('b',{text:x.resultado}),x.nota?' — '+x.nota:''),x.prox?el('div',{class:'hint',text:'Próximo contacto: '+fdate(x.prox)}):null);
     if(x.autor===S.user.uid||S.user.rol==='admin'){const b=el('button',{type:'button',class:'btn danger sm',text:'Eliminar'});b.style.marginTop='6px';
       b.addEventListener('click',async()=>{if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent='¿Eliminar? Confirmar';setTimeout(()=>{b.dataset.c='';b.textContent='Eliminar';},4000);return;}
         try{const ts=Date.now();await db.collection(COL_G).doc(x.vk).collection('items').doc(x.id).update({borrada:true,ts});x.borrada=true;x.ts=ts;IDB.put(gKey(),{items:[...G.items.values()],last:G.last});fichaGest();if(S.tab==='gest'||S.tab==='riesgo')render();toast('Gestión eliminada.');}catch(e){toast(errAuth(e));}});box.append(b);}
     return box;}),...(xs.length?[]:[el('p',{class:'note',text:'Todavía no hay gestiones registradas para este cliente.'})]));}
+const telNorm=(s)=>String(s||'').replace(/[^\d+]/g,'');
+const conTxt=(x)=>x&&x.cnom?x.cnom+(x.ctel?' · '+x.ctel:''):'';
+const conCel=(x)=>{const td=el('td',{class:'l'});if(x.cnom){td.append(x.cnom);if(x.ctel){td.append(' · ',el('a',{href:'tel:'+telNorm(x.ctel),text:x.ctel}));}}else td.textContent='—';return td;};
+// contactos del cliente: salen de las gestiones (también de las eliminadas), no se editan
+function contactosDe(cod){const m=new Map();for(const x of [...G.items.values()].filter((y)=>y.cod===cod&&y.cnom&&gScope(y)).sort((a,b)=>b.ts-a.ts)){const k=norm(x.cnom).trim()+'|'+telNorm(x.ctel);if(!m.has(k))m.set(k,{cnom:x.cnom,ctel:x.ctel||'',ult:x.fecha});}return [...m.values()];}
+function gfContactos(){const cs=contactosDe(S.fichaCod);const sel=$('gf-con');sel.replaceChildren(...cs.map((c,i)=>new Option(conTxt(c),String(i))),new Option('+ Agregar contacto nuevo','nuevo'));sel.value=cs.length?'0':'nuevo';S.gfCons=cs;$('gf-con-w').hidden=!cs.length;gfNuevoVis();}
+const gfNuevoVis=()=>{const n=$('gf-con').value==='nuevo';document.querySelectorAll('.gf-nuevo').forEach((e)=>{e.hidden=!n;});};
+$('gf-con').addEventListener('change',()=>{gfNuevoVis();if($('gf-con').value==='nuevo')$('gf-cnom').focus();});
 function vendGestion(c){const M=S.M;if(S.user.rol==='vendedor'){const mios=S.user.vend||[];const en=c.cv.filter((v)=>mios.includes(v));return en.length?en:mios;}
   const vs=[...new Set([...c.cv,...M.pairs.filter((p)=>p.c===c&&p.f.some((x)=>x>0)).map((p)=>p.v)])];return vs.length?vs:M.vendors;}
 $('fi-gnew').addEventListener('click',()=>{const c=S.M.clients.get(S.fichaCod);if(!c)return;
   $('gf-fecha').value=hoyISO();$('gf-fecha').max=hoyISO();$('gf-prox').value='';$('gf-prox').min=hoyISO();$('gf-nota').value='';$('gf-err').textContent='';
   $('gf-tipo').replaceChildren(...TIPOS_G.map((t)=>new Option(t,t)));$('gf-res').replaceChildren(new Option('Elige un resultado',''),...RES_G.map((t)=>new Option(t,t)));
   const vs=vendGestion(c);$('gf-ven').replaceChildren(...vs.map((v)=>new Option(v,v)));$('gf-ven-w').hidden=vs.length<2;
+  $('gf-cnom').value='';$('gf-ctel').value='';gfContactos();
   $('fi-gform').hidden=false;$('fi-gnew').hidden=true;$('gf-tipo').focus();});
 $('gf-cancel').addEventListener('click',()=>{$('fi-gform').hidden=true;$('fi-gnew').hidden=false;});
 $('gf-save').addEventListener('click',async()=>{const c=S.M.clients.get(S.fichaCod);if(!c)return;const err=$('gf-err');err.textContent='';
   const fecha=$('gf-fecha').value,tipo=$('gf-tipo').value,resultado=$('gf-res').value,nota=$('gf-nota').value.trim().slice(0,600),prox=$('gf-prox').value,vend=$('gf-ven').value;
   if(!fecha){err.textContent='Indica la fecha de la gestión.';return;}if(fecha>hoyISO()){err.textContent='La fecha no puede ser futura.';return;}
   if(!resultado){err.textContent='Elige el resultado de la gestión.';return;}if(prox&&prox<fecha){err.textContent='El próximo contacto debe ser posterior a la gestión.';return;}if(!vend){err.textContent='Elige el vendedor.';return;}
+  let cnom,ctel;if($('gf-con').value==='nuevo'){cnom=$('gf-cnom').value.trim().replace(/\s+/g,' ');ctel=$('gf-ctel').value.trim();
+    if(cnom.length<2){err.textContent='Escribe el nombre del contacto.';$('gf-cnom').focus();return;}
+    const dg=ctel.replace(/\D/g,'');if(dg.length<8||dg.length>12){err.textContent='Escribe un teléfono válido (8 a 12 dígitos, por ejemplo +56 9 1234 5678).';$('gf-ctel').focus();return;}}
+  else{const c0=S.gfCons[+$('gf-con').value];cnom=c0.cnom;ctel=c0.ctel;}
   const vk=vkey(vend);const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-  const doc={cod:c.cod,cli:c.nom,vend,vk,autor:S.user.uid,autorNom:S.user.nombre||S.user.u,ts:Date.now(),fecha,tipo,resultado,nota,prox:prox||''};
+  const doc={cod:c.cod,cli:c.nom,vend,vk,autor:S.user.uid,autorNom:S.user.nombre||S.user.u,ts:Date.now(),fecha,tipo,resultado,nota,prox:prox||'',cnom,ctel};
   const b=$('gf-save');b.disabled=true;
   try{await db.collection(COL_G).doc(vk).collection('items').doc(id).set(doc);G.items.set(vk+'/'+id,{...doc,id});IDB.put(gKey(),{items:[...G.items.values()],last:G.last});
     $('fi-gform').hidden=true;$('fi-gnew').hidden=false;fichaGest();toast('Gestión guardada.');if(S.tab==='gest'||S.tab==='riesgo')render();}
@@ -1693,6 +1782,13 @@ const TUT={
     'Si el administrador cargó metas, aparecen las columnas de meta y avance con un semáforo: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%. La meta de neto se compara con lo que debería llevarse vendido a la fecha de corte.',
     'Toca un encabezado para ordenar la tabla. La última fila suma clientes distintos (un cliente con dos vendedores cuenta una vez).'],
     tip:'Usa esta tabla en la reunión semanal: ordena por "No atendidos" para ver dónde está el mayor espacio para crecer.'},
+  metas:{sec:'Metas por vendedor',intro:'La meta de cada vendedor y su avance, mes a mes y acumulado en el año, con semáforo.',pasos:[
+    'Elige el año y el mes arriba. Por defecto se muestra el mes de la fecha de corte de las ventas.',
+    'Columnas del mes: neto facturado en ese mes contra la meta del mes. Si el mes está en curso, la meta se cuenta solo hasta el día de corte (por ejemplo, al 2 de noviembre se usa 2/30 de la meta de noviembre).',
+    'Acumulado: neto de enero hasta el mes elegido contra la suma de las metas de esos meses. Cobertura: % de clientes de la cartera con al menos una factura en el año, contra la meta anual.',
+    'Semáforo del avance: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%.',
+    'Administrador y gerencia: presionan "Editar metas", escriben la cobertura (%) y la meta de neto de cada mes por vendedor, y luego "Guardar metas". Se puede pegar un bloque copiado desde Excel en la primera casilla de enero.'],
+    tip:'La fila Total suma solo a los vendedores que tienen meta, para que el avance general sea comparable.'},
   clientes:{sec:'Clientes × mes',intro:'El detalle cliente por cliente, con sus facturas o su neto de cada mes del año elegido.',pasos:[
     'Usa "Vista" para ver solo los clientes sin facturas, con facturas, los que dejaron de comprar o los nuevos. "Relación" separa la cartera actual de clientes a los que el vendedor les vendió pero ya no están en su cartera.',
     'Escribe en "Buscar" parte del nombre o el código de un cliente.',
@@ -1718,7 +1814,7 @@ const TUT={
     'Toca el nombre de un cliente para abrir su ficha.'],
     tip:'Incluye todas las facturas de cada vendedor, también a clientes que hoy no están en su cartera. Por eso los totales pueden diferir un poco de la sección Cobertura.'},
   gest:{sec:'Gestiones',intro:'El registro de lo que cada vendedor hace con sus clientes: llamadas, visitas, cotizaciones, con notas y fecha del próximo contacto.',pasos:[
-    'Para registrar una gestión, toca el nombre de cualquier cliente (en esta u otra sección), y en su ficha usa "Registrar gestión". Indica fecha, tipo, resultado, una nota y, si corresponde, el próximo contacto.',
+    'Para registrar una gestión, toca el nombre de cualquier cliente (en esta u otra sección), y en su ficha usa "Registrar gestión". Indica fecha, tipo, resultado, el contacto (nombre y teléfono), una nota y, si corresponde, el próximo contacto. Puedes registrar varias gestiones con el mismo cliente; todas quedan en su historial.',
     '"Próximos contactos" lista los clientes con contacto agendado, desde los atrasados (en rojo) hasta los próximos 14 días.',
     '"Gestión por vendedor" muestra, en los últimos 30 días, cuántas gestiones hizo cada vendedor y qué parte de sus clientes sin compra gestionó.',
     'El historial se filtra por vendedor, tipo, resultado, fechas o texto. Cada gestión la puede eliminar quien la registró.'],
@@ -1739,9 +1835,8 @@ const TUT={
     'La tabla semanal usa semanas de lunes a domingo.',
     'El "Patrón" indica si el vendedor emite sus NV al inicio del mes (35% o más entre los días 1 y 7), al final (40% o más desde el día 22) o de forma pareja.'],
     tip:'Se cuentan NV distintas en estado A, P o C; las anuladas no se cuentan.'},
-  maestro:{sec:'Maestro',intro:'Solo para el administrador: carga de archivos, metas, usuarios y registro de uso.',pasos:[
+  maestro:{sec:'Maestro',intro:'Solo para el administrador: carga de archivos, secciones por tipo de usuario, usuarios y registro de uso.',pasos:[
     'Arrastra o elige los Excel de cartera, ventas y NV. La app reconoce cada archivo por sus columnas y publica los datos para todos.',
-    'En "Metas por vendedor" elige el año, escribe la meta de cobertura (%) y de neto anual ($) de cada vendedor y presiona "Guardar metas".',
     'En "Secciones por tipo de usuario" marca qué secciones ve Gerencia y cuáles ve Vendedor, y presiona "Guardar secciones". Se aplica al instante.',
     '"Uso de la app" muestra cuándo entró cada usuario por última vez y cuántos días ingresó en la última semana y el último mes.',
     'En "Usuarios" creas, editas o eliminas usuarios y les asignas sus carteras. Solo tú puedes cambiar claves.'],
@@ -1749,7 +1844,8 @@ const TUT={
   ficha:{sec:'Ficha de cliente',intro:'Todo lo de un cliente en un solo lugar.',pasos:[
     'Arriba están sus datos: vendedor, condición de pago, última compra, cada cuánto compra normalmente y si tiene alerta de riesgo.',
     'El gráfico muestra lo que compró cada mes; abajo, el resumen por año, las NV emitidas y los productos que compra.',
-    'En "Gestiones" presiona "Registrar gestión": elige tipo y resultado, escribe una nota y, si quedaste de volver a llamar, el próximo contacto.',
+    'En "Gestiones" presiona "Registrar gestión": elige tipo, resultado y el contacto con quien hablaste, escribe una nota y, si quedaste de volver a llamar, el próximo contacto. Puedes registrar todas las gestiones que necesites con el mismo cliente.',
+    'Contactos: la primera vez escribes nombre y teléfono. Quedan guardados y no se modifican; en la siguiente gestión los eliges de la lista o agregas otro con "+ Agregar contacto nuevo".',
     'Cierra la ficha con "Cerrar", la tecla Esc o tocando fuera de ella.'],
     tip:'Si eres vendedor, la ficha muestra lo que tú le has vendido al cliente.'}};
 function abrirTut(k){const T=TUT[k];if(!T)return;$('tut-title').textContent='Tutorial · '+T.sec;$('tut-intro').textContent=T.intro;$('tut-pasos').replaceChildren(...T.pasos.map((p)=>el('li',{text:p})));$('tut-tip').textContent='Consejo: '+T.tip;$('tut').hidden=false;$('tut-close').focus();}
@@ -1782,7 +1878,7 @@ function renderMaestro(){
   $('file-info').replaceChildren(
     el('div',{class:'fileinfo'},el('b',{text:'Cartera de clientes'}),el('span',{text:c.nombre||'—'}),el('span',{class:'hint',text:nf.format(c.rows.length)+' filas · cargada el '+fdate(c.cargado)+(c.nuevos!=null?' · '+nf.format(c.nuevos)+' clientes nuevos en esa carga':' · carga base (sin nuevos)')})),
     el('div',{class:'fileinfo'},el('b',{text:'Ventas (facturas)'}),el('span',{text:v.nombre||'—'}),el('span',{class:'hint',text:'Ventas hasta el '+fdate(v.corte)+' · cargada el '+fdate(v.cargado)})));
-  nvInfo();renderUsuarios();renderMetas();renderSecciones();if(!S.usoCargado){S.usoCargado=true;cargarUso();}
+  nvInfo();renderUsuarios();renderSecciones();if(!S.usoCargado){S.usoCargado=true;cargarUso();}
   $('paq-info').textContent='Cada vendedor descarga solo los datos de su cartera (no puede bajar los de otros). Se publican solos cada vez que cargas un Excel de ventas, cartera o NV.'+(S.paqInfo?' Última publicación: '+nf.format(S.paqInfo.n)+' carteras.':'');
 }
 function nvInfo(){const n=S.nv;const box=el('div',{class:'fileinfo'},el('b',{text:'Emisión de NV'}),el('span',{text:n?n.nombre:'Sin cargar'}),
