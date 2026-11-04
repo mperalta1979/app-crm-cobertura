@@ -485,8 +485,8 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
       </div>
 
       <div class="card">
-        <h2>Secciones por tipo de usuario</h2><p class="note">Marca las secciones que ve cada tipo de usuario. Los cambios se aplican al instante a todos los usuarios conectados. Maestro siempre es solo para el administrador. Las descargas no cambian: Gerencia descarga y Vendedor solo ve en pantalla.</p>
-        <div class="twrap" style="max-height:none"><table class="t"><thead><tr><th class="l">Sección</th><th>Gerencia</th><th>Vendedor</th></tr></thead><tbody id="sec-body"></tbody></table></div>
+        <h2>Secciones por tipo de usuario</h2><p class="note">Marca las secciones que ve cada tipo de usuario. Los cambios se aplican al instante a todos los usuarios conectados. Maestro siempre es solo para el administrador. Las descargas no cambian: Gerencia descarga; Vendedor y Kam Retail solo ven en pantalla.</p>
+        <div class="twrap" style="max-height:none"><table class="t"><thead><tr><th class="l">Sección</th><th>Gerencia</th><th>Vendedor</th><th>Kam Retail</th></tr></thead><tbody id="sec-body"></tbody></table></div>
         <div class="row"><button class="btn" type="button" id="sec-save">Guardar secciones</button><span class="hint" id="sec-st"></span></div>
       </div>
       <div class="card">
@@ -503,7 +503,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <div class="uform">
           <label class="field"><span>Usuario</span><input class="input" id="u-user" autocapitalize="none" spellcheck="false"></label>
           <label class="field"><span>Nombre</span><input class="input" id="u-name"></label>
-          <label class="field"><span>Rol</span><select class="input" id="u-rol"><option value="admin">Administrador</option><option value="gerencia">Gerencia</option><option value="vendedor">Vendedor</option></select></label>
+          <label class="field"><span>Rol</span><select class="input" id="u-rol"><option value="admin">Administrador</option><option value="gerencia">Gerencia</option><option value="vendedor">Vendedor</option><option value="kam">Kam Retail</option></select></label>
           <div class="field" id="u-pass-w"><span id="u-pass-l">Clave inicial (mín. 6)</span><div class="pw"><input class="input" id="u-pass" type="password" autocomplete="new-password"><button type="button" class="eye" data-eye="u-pass" aria-label="Mostrar clave" title="Mostrar clave"></button></div></div>
         </div>
         <div class="field" id="u-vend-wrap"><span>Carteras que ve (vendedor)</span><div class="vgrid" id="u-vend"></div></div>
@@ -700,7 +700,8 @@ const XLSX_URL='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min
 const FFLATE_URL='https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js';
 const $=(id)=>document.getElementById(id);
 const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-const ROL={admin:'Administrador',gerencia:'Gerencia',vendedor:'Vendedor'};
+const ROL={admin:'Administrador',gerencia:'Gerencia',vendedor:'Vendedor',kam:'Kam Retail'};
+const esV=(r)=>r==='vendedor'||r==='kam'; // roles con cartera asignada, sin descargas
 const TODOS='__todos';
 const nf=new Intl.NumberFormat('es-CL');
 const pf=new Intl.NumberFormat('es-CL',{style:'percent',maximumFractionDigits:0});
@@ -723,7 +724,7 @@ async function emailLogin(u){u=String(u||'').trim().toLowerCase();if(u.includes(
 let USERS=[];
 async function cargarUsuarios(){const q=await db.collection(COL_U).get();USERS=q.docs.map((d)=>({uid:d.id,...d.data()}));
   // usuarios antiguos sin claves de cartera: se completan para las reglas de seguridad
-  for(const u of USERS)if(u.rol==='vendedor'&&(!u.vk||u.vk.length!==(u.vend||[]).length)){u.vk=(u.vend||[]).map(vkey);db.collection(COL_U).doc(u.uid).update({vk:u.vk}).catch(()=>{});}}
+  for(const u of USERS)if(esV(u.rol)&&(!u.vk||u.vk.length!==(u.vend||[]).length)){u.vk=(u.vend||[]).map(vkey);db.collection(COL_U).doc(u.uid).update({vk:u.vk}).catch(()=>{});}}
 const findUser=(u)=>USERS.find((x)=>x.u===String(u).trim().toLowerCase());
 const errAuth=(e)=>{const c=e&&e.code||'';return c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found')||c.includes('invalid-email')?'Usuario o clave incorrectos.':c.includes('too-many-requests')?'Demasiados intentos. Espera unos minutos e intenta de nuevo.':c.includes('network')?'Sin conexión. Revisa tu internet.':c.includes('email-already-in-use')?'Ese usuario ya existe en Firebase.':c.includes('weak-password')?'La clave debe tener al menos 6 caracteres.':c.includes('permission-denied')?'No tienes permiso para esta acción.':(e&&e.message)||'Ocurrió un error.';};
 
@@ -932,10 +933,10 @@ auth.onAuthStateChanged(async(user)=>{
     S.user=p;S.f={...DEF};S.sort=null;
     $('who-name').textContent=p.nombre||p.u;$('who-rol').textContent='· '+ROL[p.rol];
     $('tab-maestro').hidden=p.rol!=='admin';$('my-pass').hidden=p.rol!=='admin';if(p.rol!=='admin'&&S.tab==='maestro')S.tab='resumen';
-    $('empty-t').textContent=p.rol==='admin'?'Ve a Maestro y sube los archivos de cartera y ventas.':p.rol==='vendedor'?'El administrador todavía no publica los datos de tu cartera.':'El administrador todavía no carga los archivos de cartera y ventas.';
-    document.body.classList.toggle('rol-vendedor',p.rol==='vendedor');
+    $('empty-t').textContent=p.rol==='admin'?'Ve a Maestro y sube los archivos de cartera y ventas.':esV(p.rol)?'El administrador todavía no publica los datos de tu cartera.':'El administrador todavía no carga los archivos de cartera y ventas.';
+    document.body.classList.toggle('rol-vendedor',esV(p.rol));
     if(p.rol==='admin')await cargarUsuarios().catch(()=>{});
-    if(p.rol==='vendedor')await escucharVend();else{await escucharDatos();escucharNV();}
+    if(esV(p.rol))await escucharVend();else{await escucharDatos();escucharNV();}
     await cargarMetas();registrarUso(p);G.reset();await escucharSecciones();
     $('v-login').hidden=true;$('v-app').hidden=false;mostrarTab(S.tab);
     gCargar().then(()=>gSync(true));
@@ -975,7 +976,7 @@ $('cov').addEventListener('click',(e)=>{const b=e.target.closest('button[data-g]
 $('t-head').addEventListener('click',(e)=>{const th=e.target.closest('th[data-f]');if(!th)return;const f=th.dataset.f;
   S.sort=S.sort&&S.sort.f===f?{f,dir:S.sort.dir==='asc'?'desc':'asc'}:{f,dir:th.classList.contains('l')?'asc':'desc'};render();});
 
-const alcance=()=>S.user.rol==='vendedor'?new Set(S.user.vend||[]):null;
+const alcance=()=>esV(S.user.rol)?new Set(S.user.vend||[]):null;
 function base(){const sc=alcance(),f=S.f;return S.M.pairs.filter((p)=>(!sc||sc.has(p.v))&&(f.estado==='Todos'||p.c.estado===f.estado)&&(f.cond==='Todas'||p.c.cond===f.cond));}
 function stats(pairs,y){const cli=new Set(),con=new Set();let fa=0,ne=0;for(const p of pairs){if(p.inc){cli.add(p.c.cod);if(p.fy[y]>0)con.add(p.c.cod);}fa+=p.fy[y];ne+=p.ny[y];}return{cli:cli.size,con:con.size,sin:cli.size-con.size,cob:cli.size?con.size/cli.size:0,fa,ne};}
 
@@ -999,7 +1000,7 @@ function render(){
   const met=f.met==='neto'?'neto':'facturas';
   // vendedores visibles
   const vend=M.vendors.filter((v)=>!sc||sc.has(v));
-  const opts=[[TODOS,S.user.rol==='vendedor'?(vend.length>1?'Todas mis carteras':(vend[0]||'Sin carteras')):'Todos los vendedores'],...(S.user.rol==='vendedor'&&vend.length===1?[]:vend.map((v)=>[v,v]))];
+  const opts=[[TODOS,esV(S.user.rol)?(vend.length>1?'Todas mis carteras':(vend[0]||'Sin carteras')):'Todos los vendedores'],...(esV(S.user.rol)&&vend.length===1?[]:vend.map((v)=>[v,v]))];
   const grupo=opts.some((o)=>o[0]===f.grupo)?f.grupo:TODOS;
   $('f-grupo').replaceChildren(...opts.map(([v,t])=>new Option(t,v)));$('f-grupo').value=grupo;
   $('f-anio').replaceChildren(...anios.map((a)=>{const b=el('button',{type:'button',text:a});b.dataset.v=a;b.setAttribute('aria-pressed',a===anio);return b;}));
@@ -1015,7 +1016,7 @@ function render(){
   const parcial=ultimoMes.startsWith(anio)&&!ultimoMes.endsWith('-12');
   const etA=parcial?anio+' (hasta '+MES[+ultimoMes.slice(5)-1].toLowerCase()+')':anio;
   const B=base();const G=grupo===TODOS?B:B.filter((p)=>p.v===grupo);
-  const nomG=grupo===TODOS?(S.user.rol==='vendedor'?'tus carteras':'todos los vendedores'):grupo;
+  const nomG=grupo===TODOS?(esV(S.user.rol)?'tus carteras':'todos los vendedores'):grupo;
 
   if(S.tab==='resumen'){
     const st=stats(G,anio);
@@ -1413,7 +1414,7 @@ $('csv-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCSV)return;co
   const ws=XLSX.utils.json_to_sheet(data,{cellDates:true,dateNF:'dd-mm-yyyy'});ws['!cols']=[{wch:13},{wch:13},{wch:45},{wch:28},{wch:9},{wch:20},{wch:24},{wch:13}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Clientes sin ventas');XLSX.writeFile(wb,'Clientes_sin_ventas_'+({6:'6_meses',12:'1_ano',24:'2_anos'})[L.f.per]+'.xlsx');toast('Descargados '+nf.format(data.length)+' clientes.');});
 /* ---------- permisos de descarga ---------- */
-function puedeDescargar(){return !!S.user&&S.user.rol!=='vendedor';}
+function puedeDescargar(){return !!S.user&&!esV(S.user.rol);}
 const pad2=(n)=>String(n).padStart(2,'0');
 const hoyISO=()=>{const d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());};
 const sumaDias=(ymd,n)=>{const d=new Date(Date.parse(ymd+'T12:00:00Z')+n*864e5);return d.toISOString().slice(0,10);};
@@ -1638,7 +1639,7 @@ const RES_G=['Interesado, va a comprar','Pidió cotización','Generó pedido o N
 const G={items:new Map(),last:{},sync:0,reset(){this.items=new Map();this.last={};this.sync=0;}};
 const gKey=()=>'gest_'+(S.user?S.user.uid:'');
 async function gCargar(){const c=await IDB.get(gKey());if(c&&c.items){for(const x of c.items)G.items.set(x.vk+'/'+x.id,x);G.last=c.last||{};}if(S.tab==='gest'||S.tab==='riesgo')render();}
-const gVks=()=>S.user.rol==='vendedor'?[...new Set(S.user.vk&&S.user.vk.length?S.user.vk:(S.user.vend||[]).map(vkey))]:[...new Set((S.M?S.M.vendors:[]).map(vkey))];
+const gVks=()=>esV(S.user.rol)?[...new Set(S.user.vk&&S.user.vk.length?S.user.vk:(S.user.vend||[]).map(vkey))]:[...new Set((S.M?S.M.vendors:[]).map(vkey))];
 async function gSync(force){
   if(!S.user||(!force&&Date.now()-G.sync<120000))return;G.sync=Date.now();const vks=gVks();let n=0;
   await Promise.all(vks.map(async(vk)=>{try{const desde=(G.last[vk]||0)-864e5;const q=await db.collection(COL_G).doc(vk).collection('items').where('ts','>',desde).get();
@@ -1744,7 +1745,7 @@ function contactosDe(cod){const m=new Map();for(const x of [...G.items.values()]
 function gfContactos(){const cs=contactosDe(S.fichaCod);const sel=$('gf-con');sel.replaceChildren(...cs.map((c,i)=>new Option(conTxt(c),String(i))),new Option('+ Agregar contacto nuevo','nuevo'));sel.value=cs.length?'0':'nuevo';S.gfCons=cs;$('gf-con-w').hidden=!cs.length;gfNuevoVis();}
 const gfNuevoVis=()=>{const n=$('gf-con').value==='nuevo';document.querySelectorAll('.gf-nuevo').forEach((e)=>{e.hidden=!n;});};
 $('gf-con').addEventListener('change',()=>{gfNuevoVis();if($('gf-con').value==='nuevo')$('gf-cnom').focus();});
-function vendGestion(c){const M=S.M;if(S.user.rol==='vendedor'){const mios=S.user.vend||[];const en=c.cv.filter((v)=>mios.includes(v));return en.length?en:mios;}
+function vendGestion(c){const M=S.M;if(esV(S.user.rol)){const mios=S.user.vend||[];const en=c.cv.filter((v)=>mios.includes(v));return en.length?en:mios;}
   const vs=[...new Set([...c.cv,...M.pairs.filter((p)=>p.c===c&&p.f.some((x)=>x>0)).map((p)=>p.v)])];return vs.length?vs:M.vendors;}
 $('fi-gnew').addEventListener('click',()=>{const c=S.M.clients.get(S.fichaCod);if(!c)return;
   $('gf-fecha').value=hoyISO();$('gf-fecha').max=hoyISO();$('gf-prox').value='';$('gf-prox').min=hoyISO();$('gf-nota').value='';$('gf-err').textContent='';
@@ -1864,11 +1865,11 @@ function escucharSecciones(){if(S.unsubSec)S.unsubSec();let primero=true;
     if(primero){primero=false;resolve();}else if(S.user&&!$('v-app').hidden){if(!tabVisible(S.tab))mostrarTab(S.tab);if(S.tab==='maestro')renderSecciones();}},
     ()=>{S.ocultas={};if(primero){primero=false;resolve();}});});}
 function renderSecciones(){const o=S.ocultas||{};const ck=(rol,t)=>{const c=el('input',{type:'checkbox',checked:!((o[rol]||[]).includes(t))});c.dataset.rol=rol;c.dataset.t=t;c.setAttribute('aria-label',tabNombre(t)+' para '+ROL[rol]);return el('td',null,c);};
-  $('sec-body').replaceChildren(...TABS_.map((t)=>el('tr',null,el('td',{class:'l',text:tabNombre(t)}),ck('gerencia',t),ck('vendedor',t))));}
-$('sec-save').addEventListener('click',async()=>{const oc={gerencia:[],vendedor:[]};$('sec-body').querySelectorAll('input').forEach((c)=>{if(!c.checked)oc[c.dataset.rol].push(c.dataset.t);});
-  for(const r of ['gerencia','vendedor'])if(oc[r].length===TABS_.length){$('sec-st').textContent=ROL[r]+' debe ver al menos una sección.';return;}
+  $('sec-body').replaceChildren(...TABS_.map((t)=>el('tr',null,el('td',{class:'l',text:tabNombre(t)}),ck('gerencia',t),ck('vendedor',t),ck('kam',t))));}
+$('sec-save').addEventListener('click',async()=>{const oc={gerencia:[],vendedor:[],kam:[]};$('sec-body').querySelectorAll('input').forEach((c)=>{if(!c.checked)oc[c.dataset.rol].push(c.dataset.t);});
+  for(const r of ['gerencia','vendedor','kam'])if(oc[r].length===TABS_.length){$('sec-st').textContent=ROL[r]+' debe ver al menos una sección.';return;}
   try{await db.collection(COL_M).doc('secciones').set({ocultas:oc,por:auth.currentUser.email,ts:new Date().toISOString()});S.ocultas=oc;
-    const txt=(r)=>oc[r].length?'oculta '+oc[r].map(tabNombre).join(', '):'ve todas';$('sec-st').textContent='Guardado. Gerencia '+txt('gerencia')+'. Vendedor '+txt('vendedor')+'.';toast('Secciones guardadas.');}
+    const txt=(r)=>oc[r].length?'oculta '+oc[r].map(tabNombre).join(', '):'ve todas';$('sec-st').textContent='Guardado. Gerencia '+txt('gerencia')+'. Vendedor '+txt('vendedor')+'. Kam Retail '+txt('kam')+'.';toast('Secciones guardadas.');}
   catch(e){$('sec-st').textContent=errAuth(e);}});
 /* ---------- maestro: carga de datos ---------- */
 let nvInfoLater=false;
@@ -1943,7 +1944,7 @@ function renderUsuarios(){
       if(u.rol==='admin'&&USERS.filter((x)=>x.rol==='admin').length<2){toast('Debe quedar al menos un Administrador.');return;}
       try{await db.collection(COL_U).doc(u.uid).delete();await db.collection(COL_L).doc(u.u).delete().catch(()=>{});USERS=USERS.filter((x)=>x!==u);renderUsuarios();toast('Usuario '+u.u+' eliminado: ya no puede entrar.');}catch(e){toast(errAuth(e));}});
     return el('tr',null,el('td',{class:'l',text:u.u}),el('td',{class:'l',text:u.nombre||''}),el('td',{class:'l',text:ROL[u.rol]||u.rol}),
-      el('td',{class:'l',text:u.rol==='vendedor'?((u.vend||[]).join(', ')||'— ninguna —'):'Todas'}),el('td',null,el('span',{class:'row',style:'justify-content:flex-end'},ed,del)));}));
+      el('td',{class:'l',text:esV(u.rol)?((u.vend||[]).join(', ')||'— ninguna —'):'Todas'}),el('td',null,el('span',{class:'row',style:'justify-content:flex-end'},ed,del)));}));
 }
 function abrirForm(u){editando=u||null;$('u-form-card').hidden=false;$('u-form-title').textContent=u?'Editar usuario '+u.u:'Nuevo usuario';
   $('u-user').value=u?u.u:'';$('u-user').disabled=!!u;$('u-name').value=u?u.nombre||'':'';$('u-rol').value=u?u.rol:'vendedor';$('u-pass').value='';$('u-pass').type='password';
@@ -1951,7 +1952,7 @@ function abrirForm(u){editando=u||null;$('u-form-card').hidden=false;$('u-form-t
   const sel=new Set(u&&u.vend||[]);const vs=S.M?S.M.vendors:[];
   $('u-vend').replaceChildren(...(vs.length?vs.map((v)=>{const cb=el('input',{type:'checkbox',value:v,checked:sel.has(v)});return el('label',null,cb,v);}):[el('span',{class:'hint',text:'Carga primero los datos para ver las carteras.'})]));
   vendVis();$('u-form-card').scrollIntoView({behavior:'smooth',block:'start'});$(u?'u-name':'u-user').focus();}
-const vendVis=()=>{$('u-vend-wrap').hidden=$('u-rol').value!=='vendedor';};
+const vendVis=()=>{$('u-vend-wrap').hidden=!esV($('u-rol').value);};
 $('u-rol').addEventListener('change',vendVis);
 $('u-new').addEventListener('click',()=>abrirForm(null));
 $('u-cancel').addEventListener('click',()=>{$('u-form-card').hidden=true;editando=null;});
@@ -1968,18 +1969,18 @@ $('u-save').addEventListener('click',async()=>{
   const vend=[...$('u-vend').querySelectorAll('input:checked')].map((i)=>i.value);const err=$('u-err');err.textContent='';
   if(!editando){if(!/^[a-z0-9._-]{3,30}$/.test(u)){err.textContent='El usuario debe tener 3 a 30 letras, números, punto o guion, sin espacios.';return;}
     if(findUser(u)){err.textContent='Ya existe el usuario '+u+'.';return;}if(pw.length<6){err.textContent='La clave debe tener al menos 6 caracteres.';return;}}
-  if(rol==='vendedor'&&!vend.length){err.textContent='Elige al menos una cartera para el vendedor.';return;}
+  if(esV(rol)&&!vend.length){err.textContent='Elige al menos una cartera para el vendedor.';return;}
   if(editando&&editando.rol==='admin'&&rol!=='admin'&&USERS.filter((x)=>x.rol==='admin').length<2){err.textContent='Debe quedar al menos un Administrador.';return;}
   if(editando&&pw&&pw.length<6&&editando.uid!==S.user.uid){err.textContent='La clave debe tener al menos 6 caracteres.';return;}
   const b=$('u-save');b.disabled=true;
   try{
-    if(editando){const upd={nombre,rol,vend:rol==='vendedor'?vend:[],vk:rol==='vendedor'?vend.map(vkey):[]};
+    if(editando){const upd={nombre,rol,vend:esV(rol)?vend:[],vk:esV(rol)?vend.map(vkey):[]};
       if(pw&&editando.uid!==S.user.uid){if(pw.length<6){err.textContent='La clave debe tener al menos 6 caracteres.';return;}
         const viejo=editando.uid;const {uid,email}=await crearCuenta(editando.u,pw);const {uid:_x,...resto}=editando;
         const doc={...resto,...upd,email,clave:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(editando.u,email);await db.collection(COL_U).doc(viejo).delete();
         Object.assign(editando,doc,{uid});}
       else{await db.collection(COL_U).doc(editando.uid).update(upd);Object.assign(editando,upd);if(S.user.uid===editando.uid)Object.assign(S.user,upd);}}
-    else{const {uid,email}=await crearCuenta(u,pw);const doc={u,email,nombre,rol,vend:rol==='vendedor'?vend:[],vk:rol==='vendedor'?vend.map(vkey):[],creado:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(u,email);USERS.push({uid,...doc});}
+    else{const {uid,email}=await crearCuenta(u,pw);const doc={u,email,nombre,rol,vend:esV(rol)?vend:[],vk:esV(rol)?vend.map(vkey):[],creado:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(u,email);USERS.push({uid,...doc});}
     $('u-form-card').hidden=true;const nm=editando?editando.u:u;const yoMismo=editando&&editando.uid===S.user.uid;editando=null;renderUsuarios();toast('Usuario '+nm+' guardado'+(pw&&!yoMismo?' con su clave nueva':'')+'.');
   }catch(e){err.textContent=errAuth(e)+(e&&e.code&&e.code.includes('email-already-in-use')?'':'');}
   finally{b.disabled=false;}});
