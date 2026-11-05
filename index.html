@@ -264,6 +264,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
       <button class="tab" role="tab" data-tab="gest" aria-selected="false">Gestiones</button>
       <button class="tab" role="tab" data-tab="vpc" aria-selected="false">Ventas por cliente</button>
       <button class="tab" role="tab" data-tab="retail" aria-selected="false">Retail</button>
+      <button class="tab" role="tab" data-tab="nov" aria-selected="false">Novedades</button>
       <button class="tab" role="tab" data-tab="nv" aria-selected="false">Emisión NV x Vendedor</button>
       <button class="tab" role="tab" data-tab="maestro" aria-selected="false" id="tab-maestro" hidden>Maestro</button>
     </nav>
@@ -354,6 +355,65 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <div class="row"><label class="f"><span>Año</span><select class="sel" id="m-anio"></select></label><label class="f" id="m-mes-w"><span>Mes</span><select class="sel" id="m-mes"></select></label><button class="btn sec sm dl" type="button" id="m-export">Descargar Excel</button></div></div>
       <div class="twrap" style="max-height:34rem"><table class="t" id="m-table"><thead><tr id="m-head"></tr></thead><tbody id="m-body"></tbody><tfoot><tr id="m-foot"></tr></tfoot></table></div>
       <div class="row" id="m-edit"><button class="btn" type="button" id="m-btn-edit">Editar metas</button><button class="btn" type="button" id="m-save" hidden>Guardar metas</button><button class="btn sec" type="button" id="m-cancel" hidden>Cancelar</button><span class="hint" id="m-st"></span></div>
+    </section>
+
+    <!-- NOVEDADES -->
+    <section id="p-nov" class="wrap" style="padding:0" hidden>
+      <div class="seg" id="nov-sub" role="group" aria-label="Subsección"><button type="button" data-v="camb">Cambios de vendedor</button><button type="button" data-v="recl">Reclamos de atención</button></div>
+      <datalist id="nov-dl"></datalist>
+      <div id="nov-camb" class="wrap" style="padding:0">
+        <div class="card">
+          <div class="tbar"><div><h2>Cambios de vendedor</h2><p class="note" id="cb-note">—</p></div><div class="row"><button class="btn sm" type="button" id="cb-new">Registrar cambio</button><button class="btn sec sm" type="button" id="cb-sync">Actualizar</button><button class="btn sec sm dl" type="button" id="cb-export">Descargar Excel</button></div></div>
+          <div id="cb-form" class="gl" hidden>
+            <div class="uform">
+              <label class="field"><span>Fecha del cambio</span><input class="input" type="date" id="cb-fecha"></label>
+              <label class="field" style="grid-column:span 2"><span>Cliente</span><input class="input" id="cb-cli" list="nov-dl" autocomplete="off" placeholder="Escribe nombre, código o RUT"></label>
+            </div>
+            <p class="hint" id="cb-cli-info"></p>
+            <div class="uform">
+              <label class="field"><span>Vendedor original</span><select class="input" id="cb-vo"></select></label>
+              <label class="field"><span>Vendedor nuevo</span><select class="input" id="cb-vn"></select></label>
+            </div>
+            <label class="field"><span>Motivo (opcional)</span><textarea class="input" id="cb-mot" rows="2" maxlength="400" placeholder="Por qué se cambia el vendedor"></textarea></label>
+            <p class="err" id="cb-err"></p>
+            <div class="row"><button class="btn" type="button" id="cb-save">Guardar cambio</button><button class="btn sec" type="button" id="cb-cancel">Cancelar</button></div>
+          </div>
+          <div class="filters" style="padding:0;border:0">
+            <label class="f"><span>Vendedor</span><select class="sel" id="cb-fven"></select></label>
+            <label class="f"><span>Buscar</span><input class="input" type="search" id="cb-q" placeholder="Cliente o código" style="padding:6px 9px"></label>
+          </div>
+          <div class="twrap"><table class="t"><thead><tr id="cb-head"></tr></thead><tbody id="cb-body"></tbody></table></div>
+        </div>
+      </div>
+      <div id="nov-recl" class="wrap" style="padding:0" hidden>
+        <div class="card"><h2>Reclamos por vendedor</h2><p class="note">Llamadas a oficina de clientes que no logran ser atendidos por su vendedor.</p>
+          <div class="twrap" style="max-height:20rem"><table class="t"><thead><tr><th class="l">Vendedor</th><th>Últimos 30 días</th><th>Total</th><th>Pendientes</th><th class="l">Último reclamo</th></tr></thead><tbody id="rc-res"></tbody></table></div></div>
+        <div class="card">
+          <div class="tbar"><div><h2>Reclamos de atención</h2><p class="note" id="rc-count">—</p></div><div class="row"><button class="btn sm" type="button" id="rc-new">Registrar reclamo</button><button class="btn sec sm" type="button" id="rc-sync">Actualizar</button><button class="btn sec sm dl" type="button" id="rc-export">Descargar Excel</button></div></div>
+          <div id="rc-form" class="gl" hidden>
+            <div class="uform">
+              <label class="field" style="grid-column:span 2"><span>Cliente</span><input class="input" id="rc-cli" list="nov-dl" autocomplete="off" placeholder="Escribe nombre, código o RUT"></label>
+              <label class="field"><span>Vendedor asignado</span><select class="input" id="rc-ven"></select></label>
+            </div>
+            <p class="hint" id="rc-cli-info"></p>
+            <div class="uform">
+              <label class="field"><span>Persona que llamó</span><input class="input" id="rc-pnom" maxlength="80" autocomplete="off" placeholder="Nombre y apellido"></label>
+              <label class="field"><span>Teléfono</span><input class="input" id="rc-tel" type="tel" inputmode="tel" maxlength="20" autocomplete="off" placeholder="+56 9 1234 5678"></label>
+              <label class="field"><span>Correo</span><input class="input" id="rc-mail" type="email" inputmode="email" maxlength="80" autocomplete="off" placeholder="nombre@empresa.cl"></label>
+            </div>
+            <div class="field"><span>Motivo (marca uno o más)</span><div class="vgrid" id="rc-mot"></div></div>
+            <label class="field"><span>Nota (opcional)</span><textarea class="input" id="rc-nota" rows="2" maxlength="600" placeholder="Qué necesita el cliente"></textarea></label>
+            <p class="err" id="rc-err"></p>
+            <div class="row"><button class="btn" type="button" id="rc-save">Guardar reclamo</button><button class="btn sec" type="button" id="rc-cancel">Cancelar</button></div>
+          </div>
+          <div class="filters" style="padding:0;border:0">
+            <label class="f"><span>Estado</span><select class="sel" id="rc-fest"><option value="pendiente">Pendientes</option><option value="resuelto">Resueltos</option><option value="todos">Todos</option></select></label>
+            <label class="f"><span>Vendedor</span><select class="sel" id="rc-fven"></select></label>
+            <label class="f"><span>Buscar</span><input class="input" type="search" id="rc-q" placeholder="Cliente, persona o nota" style="padding:6px 9px"></label>
+          </div>
+          <div class="gl" id="rc-list"></div>
+        </div>
+      </div>
     </section>
 
     <!-- CLIENTES EN RIESGO -->
@@ -514,7 +574,8 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
           <label class="field"><span>Rol</span><select class="input" id="u-rol"><option value="admin">Administrador</option><option value="gerencia">Gerencia</option><option value="vendedor">Vendedor</option><option value="kam">Kam Retail</option></select></label>
           <div class="field" id="u-pass-w"><span id="u-pass-l">Clave inicial (mín. 6)</span><div class="pw"><input class="input" id="u-pass" type="password" autocomplete="new-password"><button type="button" class="eye" data-eye="u-pass" aria-label="Mostrar clave" title="Mostrar clave"></button></div></div>
         </div>
-        <div class="field" id="u-vend-wrap"><span>Carteras que ve (vendedor)</span><div class="vgrid" id="u-vend"></div></div>
+        <div class="field" id="u-vend-wrap"><span>Carteras que ve (vendedor)</span><div class="vgrid" id="u-vend"></div>
+          <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:14px;color:var(--fg)"><input type="checkbox" id="u-ofi" style="margin-top:3px"> <span style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--fg)">Atiende oficina: puede registrar reclamos de atención y cambios de vendedor de cualquier cliente, y ver todos los de Novedades (solo nombre, código y vendedor de los clientes; no ve ventas ajenas)</span></label></div>
         <p class="hint" id="u-edit-hint" hidden>Para cambiarle la clave, escribe la nueva en "Nueva clave". El usuario sigue entrando con el mismo nombre de usuario y la clave nueva; la anterior deja de funcionar.</p>
         <p class="err" id="u-err"></p>
         <div class="row"><button class="btn" type="button" id="u-save">Guardar</button><button class="btn sec" type="button" id="u-cancel">Cancelar</button></div>
@@ -830,6 +891,7 @@ async function publicarPaquetes(raw,nv,version){
     for(let i=0;i<n;i++)await db.collection(COL_V).doc(vk+'__'+i).set({version,i,d:firebase.firestore.Blob.fromUint8Array(bytes.slice(i*PARTE,(i+1)*PARTE))});
     await ref.set({version,partes:n,vend:pk[vk].vend,corte:raw.ventas.corte||'',bytes:bytes.length});
     for(let i=n;i<pn;i++)await db.collection(COL_V).doc(vk+'__'+i).delete().catch(()=>{});}
+  try{busy(true,'Publicando directorio de clientes…');await publicarDir(raw);}catch(e){}
   S.paqInfo={version,n:ks.length};return ks.length;
 }
 async function bajarPaquete(vk,meta){
@@ -946,7 +1008,7 @@ auth.onAuthStateChanged(async(user)=>{
     document.body.classList.toggle('rol-vendedor',esV(p.rol));
     if(p.rol==='admin')await cargarUsuarios().catch(()=>{});
     if(esV(p.rol))await escucharVend();else{await escucharDatos();escucharNV();}
-    await cargarMetas();registrarUso(p);G.reset();await escucharSecciones();
+    await cargarMetas();registrarUso(p);G.reset();NV.reset();S.dir=null;await escucharSecciones();
     $('v-login').hidden=true;$('v-app').hidden=false;mostrarTab(S.tab);
     gCargar().then(()=>gSync(true));
   }catch(e){busy(false);$('l-err').textContent=errAuth(e);await auth.signOut().catch(()=>{});}
@@ -962,9 +1024,9 @@ $('p-save').addEventListener('click',async()=>{const u=auth.currentUser,cur=$('p
 
 /* ---------- pestañas ---------- */
 document.querySelectorAll('.tab').forEach((b)=>b.addEventListener('click',()=>mostrarTab(b.dataset.tab)));
-function mostrarTab(t){if(!S.user)return;if(t==='maestro'&&S.user.rol!=='admin')t='resumen';if(!tabVisible(t))t=TABS_.find(tabVisible)||'resumen';S.tab=t;
+function mostrarTab(t){if(!S.user)return;if(t==='maestro'&&S.user.rol!=='admin')t='resumen';if(!tabVisible(t))t=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).find(tabVisible)||'resumen';S.tab=t;
   document.querySelectorAll('.tab').forEach((b)=>b.setAttribute('aria-selected',b.dataset.tab===t));
-  for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=!['resumen','cobertura','clientes','retail'].includes(t);
+  for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','nov','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=!['resumen','cobertura','clientes','retail'].includes(t);
   $('sec-title').textContent=(TUT[t]||{}).sec||'';
   if(['metas','cobertura','resumen'].includes(t)&&Date.now()-(S.metasTs||0)>60000){S.metasTs=Date.now();cargarMetas().then(()=>{if(S.tab===t)render();});}
   $('w-grupo').hidden=t==='cobertura'||t==='retail';$('w-estado').hidden=t==='retail';$('w-cond').hidden=t==='retail';
@@ -997,10 +1059,11 @@ function render(){
   if(S.tab==='csv'&&S.M){$('empty').hidden=true;renderCSV();return;}
   if(S.tab==='riesgo'&&S.M){$('empty').hidden=true;renderRiesgo();return;}
   if(S.tab==='metas'&&S.M){$('empty').hidden=true;renderMetas();return;}
+  if(S.tab==='nov'&&S.M){$('empty').hidden=true;renderNov();return;}
   if(S.tab==='comp'&&S.M){$('empty').hidden=true;renderComp();return;}
   if(S.tab==='gest'&&S.M){$('empty').hidden=true;renderGest();return;}
   $('empty').hidden=!!S.M||S.tab==='maestro';
-  if(!S.M){$('data-info').textContent='Sin datos cargados';for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest'])$('p-'+k).hidden=true;$('filters').hidden=true;if(S.tab==='maestro')renderMaestro();return;}
+  if(!S.M){$('data-info').textContent='Sin datos cargados';for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','nov'])$('p-'+k).hidden=true;$('filters').hidden=true;if(S.tab==='maestro')renderMaestro();return;}
   const M=S.M,f=S.f,sc=alcance();
   const corte=S.raw.ventas.corte||'';
   $('data-info').textContent='Ventas al '+fdate(corte)+' · cartera cargada el '+fdate(S.raw.cartera.cargado);
@@ -1851,6 +1914,13 @@ const TUT={
     'Cada fila muestra las facturas o el neto de cada mes, el total del año, el histórico, los meses con y sin compra y la última compra.',
     'Busca un socio escribiendo parte de su nombre.'],
     tip:'Un socio aparece una vez por cada vendedor que le ha vendido, aunque ese vendedor no le haya vendido este año.'},
+  nov:{sec:'Novedades',intro:'Registros comerciales importantes: cambios de vendedor de un cliente y reclamos de clientes que no logran ser atendidos por su vendedor.',pasos:[
+    'Arriba eliges la subsección: "Cambios de vendedor" o "Reclamos de atención".',
+    'Cambios de vendedor: con "Registrar cambio" anotas la fecha, el cliente, el vendedor original y el nuevo. La app compara solo las facturas de cada uno a ese cliente: el mismo número de meses cerrados antes y después del cambio (el mes del cambio no se cuenta). El semáforo muestra si el vendedor nuevo vende igual o más que el anterior.',
+    'Reclamos de atención: la oficina registra cada llamada de un cliente que no logra contactar a su vendedor, con la persona que llamó, teléfono, correo y motivo.',
+    'Cada reclamo queda "Pendiente" hasta que gerencia u oficina lo marca como "Resuelto". El vendedor reclamado ve sus reclamos y puede dejar su respuesta.',
+    'Cada vendedor ve solo lo de sus clientes: los cambios en que él es el vendedor nuevo y los reclamos sobre él.'],
+    tip:'El cambio de vendedor queda como registro; la cartera se actualiza con el Excel de cartera, como siempre.'},
   nv:{sec:'Emisión NV x Vendedor',intro:'Cuántas notas de venta emite cada vendedor por mes, semana y día, y en qué parte del mes las concentra.',pasos:[
     'Elige el mes (o todos) y los vendedores que quieres ver en los gráficos.',
     'La tabla semanal usa semanas de lunes a domingo.',
@@ -1877,13 +1947,14 @@ $('tut-close').addEventListener('click',()=>{$('tut').hidden=true;});$('tut').ad
 
 
 /* ---------- secciones visibles por tipo de usuario ---------- */
-const TABS_=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).filter((x)=>x!=='maestro');
-const tabNombre=(t)=>{const b=document.querySelector('.tab[data-tab="'+t+'"]');return b?b.textContent.trim():t;};
-const tabVisible=(t)=>{if(!S.user)return true;if(t==='maestro')return S.user.rol==='admin';if(S.user.rol==='admin')return true;const o=S.ocultas&&S.ocultas[S.user.rol];return !(o&&o.includes(t));};
+const TABS_=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).filter((x)=>x!=='maestro').flatMap((x)=>x==='nov'?['nov_camb','nov_recl']:[x]);
+const SUBN={nov_camb:'Novedades · Cambios de vendedor',nov_recl:'Novedades · Reclamos de atención'};
+const tabNombre=(t)=>{if(SUBN[t])return SUBN[t];const b=document.querySelector('.tab[data-tab="'+t+'"]');return b?b.textContent.trim():t;};
+const tabVisible=(t)=>{if(!S.user)return true;if(t==='nov')return tabVisible('nov_camb')||tabVisible('nov_recl');if(t==='maestro')return S.user.rol==='admin';if(S.user.rol==='admin')return true;const o=S.ocultas&&S.ocultas[S.user.rol];return !(o&&o.includes(t));};
 function aplicarSecciones(){if(!S.user)return;document.querySelectorAll('.tab').forEach((b)=>{if(b.dataset.tab!=='maestro')b.hidden=!tabVisible(b.dataset.tab);});}
 function escucharSecciones(){if(S.unsubSec)S.unsubSec();let primero=true;
   return new Promise((resolve)=>{S.unsubSec=db.collection(COL_M).doc('secciones').onSnapshot((d)=>{S.ocultas=d.exists?(d.data().ocultas||{}):{};S.ntfy=d.exists?(d.data().ntfy||null):null;aplicarSecciones();
-    if(primero){primero=false;resolve();}else if(S.user&&!$('v-app').hidden){if(!tabVisible(S.tab))mostrarTab(S.tab);if(S.tab==='maestro')renderSecciones();}},
+    if(primero){primero=false;resolve();}else if(S.user&&!$('v-app').hidden){if(!tabVisible(S.tab))mostrarTab(S.tab);else if(S.tab==='nov')render();if(S.tab==='maestro')renderSecciones();}},
     ()=>{S.ocultas={};if(primero){primero=false;resolve();}});});}
 function renderSecciones(){const o=S.ocultas||{};const ck=(rol,t)=>{const c=el('input',{type:'checkbox',checked:!((o[rol]||[]).includes(t))});c.dataset.rol=rol;c.dataset.t=t;c.setAttribute('aria-label',tabNombre(t)+' para '+ROL[rol]);return el('td',null,c);};
   $('sec-body').replaceChildren(...TABS_.map((t)=>el('tr',null,el('td',{class:'l',text:tabNombre(t)}),ck('gerencia',t),ck('vendedor',t),ck('kam',t))));}
@@ -1911,6 +1982,153 @@ $('nt-save').addEventListener('click',async()=>{const tema=$('nt-tema').value.tr
 $('nt-test').addEventListener('click',async()=>{const tema=$('nt-tema').value.trim();if(!temaOk(tema)){$('nt-st').textContent='Revisa el tema.';return;}
   try{const r=await enviarNtfy(tema,'Prueba · APP CRM Cobertura','Si ves este mensaje, los avisos de gestiones llegarán a este celular.',['white_check_mark']);$('nt-st').textContent=r.ok?'Aviso de prueba enviado. Revisa la app ntfy.':'NTFY respondió con un error ('+r.status+').';}
   catch(e){$('nt-st').textContent='No se pudo conectar con ntfy.sh. Revisa tu conexión.';}});
+/* ---------- Novedades: cambios de vendedor y reclamos de atención ---------- */
+const COL_CB='crm_camb',COL_RC='crm_recl',COL_DIR='crm_dir';
+const esOfi=()=>!!S.user&&S.user.ofi===true;
+const puedeNov=()=>!!S.user&&(S.user.rol==='admin'||S.user.rol==='gerencia'||esOfi()); // registra y ve todo
+const MOT_RC=['No contesta el teléfono','No contesta correos','No contesta WhatsApp','No lo visita','Otro'];
+S.novSub='camb';S.dir=null;
+const NV={camb:new Map(),recl:new Map(),last:{camb:{},recl:{}},sync:0,reset(){this.camb=new Map();this.recl=new Map();this.last={camb:{},recl:{}};this.sync=0;}};
+const nKey=()=>'nov_'+(S.user?S.user.uid:'');
+// directorio de clientes: código, nombre, RUT y vendedores (sin ventas)
+function dirDesdeM(){const M=S.M;return{clientes:M.cartera.map((c)=>[c.cod,c.nom,c.rut||'',c.cv.join('|')]),vendors:M.vendors.slice()};}
+async function publicarDir(raw){const M=combinar(raw.cartera,raw.ventas);const d={clientes:M.cartera.map((c)=>[c.cod,c.nom,c.rut||'',c.cv.join('|')]),vendors:M.vendors};
+  const bytes=await gzip(JSON.stringify(d));const version=new Date().toISOString();await db.collection(COL_DIR).doc('clientes').set({version,d:firebase.firestore.Blob.fromUint8Array(bytes)});}
+async function cargarDir(){if(S.dir)return S.dir;
+  if(S.user.rol==='admin'||S.user.rol==='gerencia'){if(!S.M)return null;S.dir=dirDesdeM();}
+  else if(esOfi()){try{const d=await db.collection(COL_DIR).doc('clientes').get();if(d.exists){const m=d.data();const c=await IDB.get('dir');
+      if(c&&c.version===m.version)S.dir=c.d;else{S.dir=JSON.parse(await gunzip(m.d.toUint8Array()));IDB.put('dir',{version:m.version,d:S.dir});}}}catch(e){}
+    if(!S.dir&&S.M)S.dir=dirDesdeM();}
+  else if(S.M)S.dir=dirDesdeM();
+  if(S.dir){S.dir.map=new Map(S.dir.clientes.map((r)=>[r[0],r]));}return S.dir;}
+const nVks=()=>{if(puedeNov()){const vs=S.dir?S.dir.vendors:(S.M?S.M.vendors:[]);return [...new Set(vs.map(vkey))];}return [...new Set(S.user.vk&&S.user.vk.length?S.user.vk:(S.user.vend||[]).map(vkey))];};
+async function nCargar(){const c=await IDB.get(nKey());if(c){for(const x of c.camb||[])NV.camb.set(x.vk+'/'+x.id,x);for(const x of c.recl||[])NV.recl.set(x.vk+'/'+x.id,x);NV.last=c.last||NV.last;}}
+const nGuardarCache=()=>IDB.put(nKey(),{camb:[...NV.camb.values()],recl:[...NV.recl.values()],last:NV.last});
+async function nSync(force){if(!S.user||(!force&&Date.now()-NV.sync<120000))return;NV.sync=Date.now();await cargarDir();const vks=nVks();
+  for(const [k,col] of [['camb',COL_CB],['recl',COL_RC]])await Promise.all(vks.map(async(vk)=>{try{const desde=(NV.last[k][vk]||0)-864e5;
+    const q=await db.collection(col).doc(vk).collection('items').where('ts','>',desde).get();for(const d of q.docs){const x={...d.data(),id:d.id,vk};NV[k].set(vk+'/'+d.id,x);if(x.ts>(NV.last[k][vk]||0))NV.last[k][vk]=x.ts;}}catch(e){}}));
+  nGuardarCache();await recalcCambios();if(S.tab==='nov')render();}
+// comparación: mismos meses cerrados antes y después del mes del cambio
+function ultimoCerrado(){const c=S.M.corte;const y=+c.slice(0,4),m=+c.slice(5,7),d=+c.slice(8,10);const fin=new Date(Date.UTC(y,m,0)).getUTCDate();return d>=fin?c.slice(0,7):(m===1?(y-1)+'-12':y+'-'+pad2(m-1));}
+function calcCambio(x){const M=S.M;const cm=x.fecha.slice(0,7),lc=ultimoCerrado();const desp=M.months.filter((m)=>m>cm&&m<=lc);const n=desp.length;
+  const ia=M.months.indexOf(cm);const antes=ia<0?[]:M.months.slice(Math.max(0,ia-n),ia);
+  const par=(v)=>M.pairs.find((p)=>p.v===v&&p.c.cod===x.cod);const po=par(x.vOrig),pn=par(x.vNuevo);
+  const sum=(p,ms,k)=>p?ms.reduce((s,m)=>s+p[k][M.months.indexOf(m)],0):0;
+  return{ver:S.raw.ventas.cargado+'|'+M.corte,n,na:antes.length,ad:antes[0]||'',ah:antes[antes.length-1]||'',dd:desp[0]||'',dh:desp[desp.length-1]||'',fo:sum(po,antes,'f'),no:Math.round(sum(po,antes,'n')),fn:sum(pn,desp,'f'),nn:Math.round(sum(pn,desp,'n'))};}
+async function recalcCambios(){if(!S.M||!(S.user.rol==='admin'||S.user.rol==='gerencia'))return;const ver=S.raw.ventas.cargado+'|'+S.M.corte;
+  for(const x of NV.camb.values()){if(x.borrada||(x.cmp&&x.cmp.ver===ver))continue;const cmp=calcCambio(x);const ts=Date.now();
+    try{await db.collection(COL_CB).doc(x.vk).collection('items').doc(x.id).update({cmp,ts});x.cmp=cmp;x.ts=ts;}catch(e){}}
+  nGuardarCache();}
+// ---- interfaz ----
+const novVis=(k)=>tabVisible(k==='camb'?'nov_camb':'nov_recl');
+$('nov-sub').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;S.novSub=b.dataset.v;render();});
+function renderNov(){
+  if(!novVis(S.novSub))S.novSub=novVis('camb')?'camb':'recl';
+  $('nov-sub').querySelectorAll('button').forEach((b)=>{b.hidden=!novVis(b.dataset.v);b.setAttribute('aria-pressed',b.dataset.v===S.novSub);});
+  $('nov-camb').hidden=S.novSub!=='camb';$('nov-recl').hidden=S.novSub!=='recl';
+  $('cb-new').hidden=!puedeNov();$('rc-new').hidden=!puedeNov();
+  if(!NV.sync){nCargar().then(()=>nSync(true));}else nSync(false);
+  S.novSub==='camb'?renderCambios():renderReclamos();}
+const vendSel=(id,vs,todos)=>{const s=$(id);const cur=s.value;s.replaceChildren(...(todos?[new Option('Todos','Todos')]:[]),...vs.map((v)=>new Option(v,v)));if([...s.options].some((o)=>o.value===cur))s.value=cur;};
+// buscador de clientes con sugerencias
+function buscarCli(q){const D=S.dir;if(!D)return [];q=norm(q).trim();if(q.length<2)return [];const out=[];for(const r of D.clientes){if(norm(r[1]).includes(q)||r[0].includes(q)||norm(r[2]).includes(q)){out.push(r);if(out.length>=40)break;}}return out;}
+function cliDeInput(v){const D=S.dir;if(!D||!v)return null;const m=v.match(/·\s*([^·]+)$/);const cod=m?m[1].trim():v.trim();return D.map.get(cod)||D.clientes.find((r)=>norm(r[1])===norm(v).trim())||null;}
+for(const id of ['cb-cli','rc-cli']){let tm;$(id).addEventListener('input',(e)=>{clearTimeout(tm);tm=setTimeout(()=>{$('nov-dl').replaceChildren(...buscarCli(e.target.value).map((r)=>el('option',{value:r[1]+' · '+r[0]})));
+  const r=cliDeInput(e.target.value);(id==='cb-cli'?cbCliSel:rcCliSel)(r);},150);});}
+// ---- cambios de vendedor ----
+function cbCliSel(r){const D=S.dir;const vs=D?D.vendors:[];const cv=r?r[3].split('|').filter(Boolean):[];
+  $('cb-cli-info').textContent=r?'Código '+r[0]+(r[2]?' · RUT '+r[2]:'')+' · cartera actual: '+(cv.join(', ')||'sin vendedor'):'';
+  vendSel('cb-vo',cv.length?[...cv,...vs.filter((v)=>!cv.includes(v))]:vs);vendSel('cb-vn',vs);}
+$('cb-new').addEventListener('click',async()=>{await cargarDir();$('cb-form').hidden=false;$('cb-new').hidden=true;$('cb-fecha').value=hoyISO();$('cb-fecha').max=hoyISO();$('cb-cli').value='';$('cb-mot').value='';$('cb-err').textContent='';cbCliSel(null);$('cb-cli').focus();});
+$('cb-cancel').addEventListener('click',()=>{$('cb-form').hidden=true;$('cb-new').hidden=!puedeNov();});
+$('cb-save').addEventListener('click',async()=>{const err=$('cb-err');err.textContent='';const r=cliDeInput($('cb-cli').value);const fecha=$('cb-fecha').value,vOrig=$('cb-vo').value,vNuevo=$('cb-vn').value,motivo=$('cb-mot').value.trim().slice(0,400);
+  if(!r){err.textContent='Elige el cliente de la lista (escribe parte del nombre o el código).';return;}if(!fecha||fecha>hoyISO()){err.textContent='Indica una fecha de cambio válida (no futura).';return;}
+  if(!vOrig||!vNuevo){err.textContent='Elige el vendedor original y el nuevo.';return;}if(vOrig===vNuevo){err.textContent='El vendedor nuevo debe ser distinto del original.';return;}
+  const vk=vkey(vNuevo),id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const doc={fecha,cod:r[0],cli:r[1],vOrig,vNuevo,vkO:vkey(vOrig),motivo,autor:S.user.uid,autorNom:S.user.nombre||S.user.u,ts:Date.now()};
+  if(S.M&&(S.user.rol==='admin'||S.user.rol==='gerencia'))doc.cmp=calcCambio(doc);
+  const b=$('cb-save');b.disabled=true;
+  try{await db.collection(COL_CB).doc(vk).collection('items').doc(id).set(doc);NV.camb.set(vk+'/'+id,{...doc,id,vk});nGuardarCache();$('cb-form').hidden=true;toast('Cambio de vendedor registrado.');render();}
+  catch(e){err.textContent=errAuth(e);}finally{b.disabled=false;}});
+S.cbf={ven:'Todos',q:''};
+$('cb-fven').addEventListener('change',(e)=>{S.cbf.ven=e.target.value;render();});
+{let tm;$('cb-q').addEventListener('input',(e)=>{clearTimeout(tm);tm=setTimeout(()=>{S.cbf.q=e.target.value;render();},200);});}
+$('cb-sync').addEventListener('click',()=>nSync(true).then(()=>toast('Cambios de vendedor al día.')));
+function renderCambios(){
+  const sinNeto=esV(S.user.rol);const q=norm(S.cbf.q);
+  let xs=[...NV.camb.values()].filter((x)=>!x.borrada);const vs=[...new Set(xs.flatMap((x)=>[x.vOrig,x.vNuevo]))].sort((a,b)=>a.localeCompare(b,'es'));vendSel('cb-fven',vs,true);$('cb-fven').value=vs.includes(S.cbf.ven)?S.cbf.ven:'Todos';
+  xs=xs.filter((x)=>(S.cbf.ven==='Todos'||x.vOrig===S.cbf.ven||x.vNuevo===S.cbf.ven)&&(!q||norm(x.cli).includes(q)||x.cod.includes(q))).sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.ts-a.ts);
+  S.lastCamb=xs;
+  $('cb-note').textContent='Se compara el mismo número de meses cerrados antes y después del mes del cambio (el mes del cambio no se cuenta). Ejemplo: cambio en julio y ventas cerradas a octubre → agosto a octubre del vendedor nuevo contra abril a junio del vendedor original. Solo se cuentan las facturas de cada vendedor a ese cliente.'+(puedeNov()&&!(S.user.rol==='admin'||S.user.rol==='gerencia')?' Las cifras se calculan cuando gerencia o el administrador abren esta sección.':'');
+  const rng=(a,b)=>a?mesTxt(a)+(b&&b!==a?' a '+mesTxt(b):''):'—';
+  const cols=['Fecha cambio','Cliente','Vendedor original','Vendedor nuevo','Meses comparados','Antes · vendedor original','Después · vendedor nuevo','Variación neto','Motivo','Registró',''];
+  $('cb-head').replaceChildren(...cols.map((h,i)=>el('th',{scope:'col',class:i<5||i>7?'l':'',text:h})));
+  $('cb-body').replaceChildren(...xs.map((x)=>{const c=x.cmp;const tc=el('td',{class:'l cli',text:x.cli});if(S.M&&S.M.clients.has(x.cod)){tc.dataset.ficha=x.cod;tc.title='Ver ficha de '+x.cli;}
+    const blk=(f,n,a,b)=>el('td',null,nf.format(f)+' facturas',sinNeto?'':el('br'),sinNeto?'':'$'+nf.format(n),el('div',{class:'hint',text:rng(a,b)}));
+    let tds;if(!c)tds=[el('td',{class:'l z',text:'Pendiente de cálculo'}),el('td',{text:'—'}),el('td',{text:'—'}),el('td',{text:'—'})];
+    else if(!c.n)tds=[el('td',{class:'l',text:'Aún no hay meses cerrados después del cambio'}),el('td',{text:'—'}),el('td',{text:'—'}),el('td',{text:'—'})];
+    else{const v=c.no>0?(c.nn-c.no)/c.no:null;const tv=el('td',{text:v==null?(c.nn>0?'Nuevo':'—'):(v>0?'+':'')+pf.format(v)});if(v!=null){tv.prepend(semaforo(c.nn/c.no));tv.classList.add(v>=0?'pos':'neg');}else if(c.nn>0)tv.prepend(semaforo(1));
+      tds=[el('td',{class:'l',text:nf.format(c.n)+(c.n===1?' mes':' meses')+(c.na<c.n?' (antes solo '+c.na+')':'')}),blk(c.fo,c.no,c.ad,c.ah),blk(c.fn,c.nn,c.dd,c.dh),tv];}
+    const acc=el('td');if(S.user.rol==='admin'||x.autor===S.user.uid){const b=el('button',{type:'button',class:'btn danger sm',text:'Eliminar'});b.addEventListener('click',async()=>{if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent='¿Eliminar? Confirmar';setTimeout(()=>{b.dataset.c='';b.textContent='Eliminar';},4000);return;}
+      try{const ts=Date.now();await db.collection(COL_CB).doc(x.vk).collection('items').doc(x.id).update({borrada:true,ts});x.borrada=true;x.ts=ts;nGuardarCache();render();toast('Registro eliminado.');}catch(e){toast(errAuth(e));}});acc.append(b);}
+    return el('tr',null,el('td',{class:'l',text:fdate(x.fecha)}),tc,el('td',{class:'l vend',text:x.vOrig}),el('td',{class:'l vend',text:x.vNuevo}),...tds,el('td',{class:'l',text:x.motivo||'—'}),el('td',{class:'l',text:x.autorNom||''}),acc);}),
+    ...(xs.length?[]:[el('tr',null,el('td',{class:'l',colSpan:cols.length,text:NV.sync?'No hay cambios de vendedor registrados.':'Cargando…'}))]));
+}
+$('cb-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCamb)return;libroXLSX([['Cambios de vendedor',S.lastCamb.map((x)=>{const c=x.cmp||{};return{'Fecha cambio':x.fecha,'Cliente':x.cli,'Código':x.cod,'Vendedor original':x.vOrig,'Vendedor nuevo':x.vNuevo,'Meses comparados':c.n??'','Antes desde':c.ad||'','Antes hasta':c.ah||'','Facturas antes':c.fo??'','Neto antes':c.no??'','Después desde':c.dd||'','Después hasta':c.dh||'','Facturas después':c.fn??'','Neto después':c.nn??'','Variación %':c.no>0?Math.round((c.nn-c.no)/c.no*1000)/10:'','Motivo':x.motivo||'','Registró':x.autorNom||''};}),[11,45,12,26,26,10,9,9,9,14,9,9,9,14,10,40,22]]],'Cambios_de_vendedor_'+hoyISO()+'.xlsx');});
+// ---- reclamos de atención ----
+function rcCliSel(r){const D=S.dir;const vs=D?D.vendors:[];const cv=r?r[3].split('|').filter(Boolean):[];
+  $('rc-cli-info').textContent=r?'Código '+r[0]+(r[2]?' · RUT '+r[2]:'')+' · vendedor asignado: '+(cv.join(', ')||'sin vendedor'):($('rc-cli').value.trim().length>2?'No está en la cartera: se guarda con el nombre escrito. Elige el vendedor a mano.':'');
+  vendSel('rc-ven',cv.length?cv:vs);}
+$('rc-new').addEventListener('click',async()=>{await cargarDir();$('rc-form').hidden=false;$('rc-new').hidden=true;for(const id of ['rc-cli','rc-pnom','rc-tel','rc-mail','rc-nota'])$(id).value='';$('rc-err').textContent='';
+  $('rc-mot').replaceChildren(...MOT_RC.map((m)=>el('label',null,el('input',{type:'checkbox',value:m}),' '+m)));rcCliSel(null);$('rc-cli').focus();});
+$('rc-cancel').addEventListener('click',()=>{$('rc-form').hidden=true;$('rc-new').hidden=!puedeNov();});
+$('rc-save').addEventListener('click',async()=>{const err=$('rc-err');err.textContent='';const txt=$('rc-cli').value.trim();const r=cliDeInput(txt);const vend=$('rc-ven').value;
+  const pnom=$('rc-pnom').value.trim().replace(/\s+/g,' '),tel=$('rc-tel').value.trim(),mail=$('rc-mail').value.trim().toLowerCase(),nota=$('rc-nota').value.trim().slice(0,600);
+  const motivos=[...$('rc-mot').querySelectorAll('input:checked')].map((i)=>i.value);
+  if(!r&&txt.length<3){err.textContent='Escribe el cliente (elige de la lista o escribe su nombre si no está en cartera).';return;}if(!vend){err.textContent='Elige el vendedor asignado.';return;}
+  if(pnom.length<2){err.textContent='Escribe el nombre de la persona que llamó.';return;}
+  {const dg=tel.replace(/\D/g,'');if(dg.length<8||dg.length>12){err.textContent='Escribe un teléfono válido (8 a 12 dígitos).';return;}}
+  if(!MAIL_RE.test(mail)){err.textContent='Escribe un correo válido (por ejemplo nombre@empresa.cl).';return;}
+  if(!motivos.length){err.textContent='Marca al menos un motivo del reclamo.';return;}
+  const vk=vkey(vend),id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);const now=new Date();
+  const doc={fecha:hoyISO(),hora:pad2(now.getHours())+':'+pad2(now.getMinutes()),cod:r?r[0]:'',cli:r?r[1]:txt,vend,pnom,tel,mail,motivos,nota,estado:'pendiente',autor:S.user.uid,autorNom:S.user.nombre||S.user.u,ts:Date.now()};
+  const b=$('rc-save');b.disabled=true;
+  try{await db.collection(COL_RC).doc(vk).collection('items').doc(id).set(doc);NV.recl.set(vk+'/'+id,{...doc,id,vk});nGuardarCache();$('rc-form').hidden=true;toast('Reclamo registrado.');render();
+    const n=S.ntfy;if(n&&n.on&&n.tema){try{enviarNtfy(n.tema,'Reclamo de atención · '+vend,[doc.cli+(doc.cod?' ('+doc.cod+')':''),'Llamó: '+pnom,'Motivo: '+motivos.join(', '),...(nota?['Nota: '+nota]:[]),'Registró '+doc.autorNom].join('\n'),['warning']).catch(()=>{});}catch(e){}}}
+  catch(e){err.textContent=errAuth(e);}finally{b.disabled=false;}});
+S.rcf={est:'pendiente',ven:'Todos',q:''};
+$('rc-fest').addEventListener('change',(e)=>{S.rcf.est=e.target.value;render();});$('rc-fven').addEventListener('change',(e)=>{S.rcf.ven=e.target.value;render();});
+{let tm;$('rc-q').addEventListener('input',(e)=>{clearTimeout(tm);tm=setTimeout(()=>{S.rcf.q=e.target.value;render();},200);});}
+$('rc-sync').addEventListener('click',()=>nSync(true).then(()=>toast('Reclamos al día.')));
+async function rcUpdate(x,upd,msg){try{const ts=Date.now();upd.ts=ts;await db.collection(COL_RC).doc(x.vk).collection('items').doc(x.id).update(upd);Object.assign(x,upd);nGuardarCache();render();toast(msg);}catch(e){toast(errAuth(e));}}
+function renderReclamos(){
+  const all=[...NV.recl.values()].filter((x)=>!x.borrada);const hoy=hoyISO(),d30=sumaDias(hoy,-30);const f=S.rcf,q=norm(f.q);
+  const vs=[...new Set(all.map((x)=>x.vend))].sort((a,b)=>a.localeCompare(b,'es'));vendSel('rc-fven',vs,true);$('rc-fven').value=vs.includes(f.ven)?f.ven:'Todos';$('rc-fest').value=f.est;
+  // resumen por vendedor
+  const res=vs.map((v)=>{const xs=all.filter((x)=>x.vend===v);return{v,t:xs.length,p:xs.filter((x)=>x.estado!=='resuelto').length,m:xs.filter((x)=>x.fecha>=d30).length,u:xs.reduce((m,x)=>x.fecha>m?x.fecha:m,'')};}).sort((a,b)=>b.m-a.m||b.t-a.t);
+  $('rc-res').replaceChildren(...res.map((r)=>{const p=el('td',{text:nf.format(r.p)});if(r.p)p.classList.add('z');return el('tr',null,el('td',{class:'l vend',text:r.v}),el('td',{text:nf.format(r.m)}),el('td',{text:nf.format(r.t)}),p,el('td',{class:'l',text:fdate(r.u)}));}),
+    ...(res.length?[]:[el('tr',null,el('td',{class:'l',colSpan:5,text:'Sin reclamos registrados.'}))]));
+  const xs=all.filter((x)=>(f.est==='todos'||(f.est==='resuelto'?x.estado==='resuelto':x.estado!=='resuelto'))&&(f.ven==='Todos'||x.vend===f.ven)&&(!q||norm(x.cli).includes(q)||norm(x.pnom).includes(q)||String(x.cod).includes(q)||norm(x.nota).includes(q))).sort((a,b)=>b.ts-a.ts);
+  S.lastRecl=xs;$('rc-count').textContent=nf.format(xs.length)+' reclamos';
+  const yo=S.user;const esSuyo=(x)=>esV(yo.rol)&&(yo.vk||[]).includes(x.vk);
+  $('rc-list').replaceChildren(...xs.map((x)=>{const res=x.estado==='resuelto';
+    const box=el('div',{class:'gi'},el('div',{class:'gh'},el('span',{text:fdate(x.fecha)+(x.hora?' '+x.hora:'')+' · '+x.vend}),el('span',{class:'nivel '+(res?'':'riesgo'),text:res?'Resuelto':'Pendiente'})),
+      el('div',null,(()=>{const b=el('b',{text:x.cli});if(x.cod&&S.M&&S.M.clients.has(x.cod)){b.dataset.ficha=x.cod;b.title='Ver ficha';}return b;})(),x.cod?' · '+x.cod:' (no está en cartera)'),
+      el('div',{class:'hint'},'Llamó: '+x.pnom+' · ',el('a',{href:'tel:'+telNorm(x.tel),text:x.tel}),' · ',mailA(x.mail)),
+      el('div',null,'Motivo: '+(x.motivos||[]).join(', ')+(x.nota?' — '+x.nota:'')),el('div',{class:'hint',text:'Registró '+(x.autorNom||'—')}),
+      x.resp?el('div',{class:'tutip',style:'margin-top:6px'},el('b',{text:'Respuesta del vendedor ('+(x.resp.nom||'')+', '+fdate(new Date(x.resp.ts).toISOString().slice(0,10))+'): '}),x.resp.texto):null,
+      res?el('div',{class:'hint',text:'Resuelto por '+(x.resNom||'—')+' el '+fdate(new Date(x.resTs||x.ts).toISOString().slice(0,10))+(x.resNota?' — '+x.resNota:'')}):null);
+    const acts=el('div',{class:'row',style:'margin-top:6px'});
+    if(esSuyo(x)){const b=el('button',{type:'button',class:'btn sec sm',text:x.resp?'Cambiar mi respuesta':'Responder'});b.addEventListener('click',()=>{const w=el('div',{class:'gl'});const ta=el('textarea',{class:'input',rows:3,maxLength:600,value:x.resp?x.resp.texto:'',placeholder:'Qué pasó y qué hiciste para atender al cliente…'});
+      const ok=el('button',{type:'button',class:'btn sm',text:'Guardar respuesta'});ok.addEventListener('click',()=>{const t=ta.value.trim();if(t.length<3){toast('Escribe tu respuesta.');return;}rcUpdate(x,{resp:{texto:t,nom:yo.nombre||yo.u,uid:yo.uid,ts:Date.now()}},'Respuesta guardada.');});
+      w.append(ta,ok);acts.replaceWith(w);ta.focus();});acts.append(b);}
+    if(puedeNov()){if(!res){const b=el('button',{type:'button',class:'btn sm',text:'Marcar resuelto'});b.addEventListener('click',()=>{const w=el('div',{class:'gl'});const ta=el('input',{class:'input',maxLength:300,placeholder:'Cómo se resolvió (opcional)'});
+        const ok=el('button',{type:'button',class:'btn sm',text:'Confirmar resuelto'});ok.addEventListener('click',()=>rcUpdate(x,{estado:'resuelto',resPor:yo.uid,resNom:yo.nombre||yo.u,resTs:Date.now(),resNota:ta.value.trim()},'Reclamo marcado como resuelto.'));w.append(ta,ok);acts.replaceWith(w);ta.focus();});acts.append(b);}
+      else{const b=el('button',{type:'button',class:'btn sec sm',text:'Reabrir'});b.addEventListener('click',()=>rcUpdate(x,{estado:'pendiente'},'Reclamo reabierto.'));acts.append(b);}}
+    if(acts.children.length)box.append(acts);return box;}),...(xs.length?[]:[el('p',{class:'note',text:NV.sync?'No hay reclamos con este filtro.':'Cargando…'})]));
+}
+$('rc-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastRecl)return;libroXLSX([['Reclamos de atención',S.lastRecl.map((x)=>({'Fecha':x.fecha,'Hora':x.hora||'','Cliente':x.cli,'Código':x.cod||'','Vendedor':x.vend,'Persona que llamó':x.pnom,'Teléfono':x.tel,'Correo':x.mail,'Motivo':(x.motivos||[]).join(', '),'Nota':x.nota||'','Estado':x.estado==='resuelto'?'Resuelto':'Pendiente','Respuesta vendedor':x.resp?x.resp.texto:'','Resuelto por':x.resNom||'','Cómo se resolvió':x.resNota||'','Registró':x.autorNom||''})),[11,6,45,12,26,26,16,28,40,50,10,50,22,40,22]]],'Reclamos_de_atencion_'+hoyISO()+'.xlsx');});
+
 /* ---------- maestro: carga de datos ---------- */
 let nvInfoLater=false;
 function renderMaestro(){
@@ -1983,13 +2201,13 @@ function renderUsuarios(){
       if(u.uid===S.user.uid){toast('No puedes eliminar tu propio usuario.');return;}
       if(u.rol==='admin'&&USERS.filter((x)=>x.rol==='admin').length<2){toast('Debe quedar al menos un Administrador.');return;}
       try{await db.collection(COL_U).doc(u.uid).delete();await db.collection(COL_L).doc(u.u).delete().catch(()=>{});USERS=USERS.filter((x)=>x!==u);renderUsuarios();toast('Usuario '+u.u+' eliminado: ya no puede entrar.');}catch(e){toast(errAuth(e));}});
-    return el('tr',null,el('td',{class:'l',text:u.u}),el('td',{class:'l',text:u.nombre||''}),el('td',{class:'l',text:ROL[u.rol]||u.rol}),
+    return el('tr',null,el('td',{class:'l',text:u.u}),el('td',{class:'l',text:u.nombre||''}),el('td',{class:'l',text:(ROL[u.rol]||u.rol)+(u.ofi?' · oficina':'')}),
       el('td',{class:'l',text:esV(u.rol)?((u.vend||[]).join(', ')||'— ninguna —'):'Todas'}),el('td',null,el('span',{class:'row',style:'justify-content:flex-end'},ed,del)));}));
 }
 function abrirForm(u){editando=u||null;$('u-form-card').hidden=false;$('u-form-title').textContent=u?'Editar usuario '+u.u:'Nuevo usuario';
   $('u-user').value=u?u.u:'';$('u-user').disabled=!!u;$('u-name').value=u?u.nombre||'':'';$('u-rol').value=u?u.rol:'vendedor';$('u-pass').value='';$('u-pass').type='password';
   const yo=u&&u.uid===S.user.uid;$('u-pass-w').hidden=!!yo;$('u-pass-l').textContent=u?'Nueva clave (vacío = no cambia)':'Clave inicial (mín. 6)';$('u-edit-hint').hidden=!u||yo;$('u-err').textContent='';
-  const sel=new Set(u&&u.vend||[]);const vs=S.M?S.M.vendors:[];
+  $('u-ofi').checked=!!(u&&u.ofi);const sel=new Set(u&&u.vend||[]);const vs=S.M?S.M.vendors:[];
   $('u-vend').replaceChildren(...(vs.length?vs.map((v)=>{const cb=el('input',{type:'checkbox',value:v,checked:sel.has(v)});return el('label',null,cb,v);}):[el('span',{class:'hint',text:'Carga primero los datos para ver las carteras.'})]));
   vendVis();$('u-form-card').scrollIntoView({behavior:'smooth',block:'start'});$(u?'u-name':'u-user').focus();}
 const vendVis=()=>{$('u-vend-wrap').hidden=!esV($('u-rol').value);};
@@ -2014,13 +2232,13 @@ $('u-save').addEventListener('click',async()=>{
   if(editando&&pw&&pw.length<6&&editando.uid!==S.user.uid){err.textContent='La clave debe tener al menos 6 caracteres.';return;}
   const b=$('u-save');b.disabled=true;
   try{
-    if(editando){const upd={nombre,rol,vend:esV(rol)?vend:[],vk:esV(rol)?vend.map(vkey):[]};
+    if(editando){const upd={nombre,rol,vend:esV(rol)?vend:[],vk:esV(rol)?vend.map(vkey):[],ofi:esV(rol)&&$('u-ofi').checked};
       if(pw&&editando.uid!==S.user.uid){if(pw.length<6){err.textContent='La clave debe tener al menos 6 caracteres.';return;}
         const viejo=editando.uid;const {uid,email}=await crearCuenta(editando.u,pw);const {uid:_x,...resto}=editando;
         const doc={...resto,...upd,email,clave:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(editando.u,email);await db.collection(COL_U).doc(viejo).delete();
         Object.assign(editando,doc,{uid});}
       else{await db.collection(COL_U).doc(editando.uid).update(upd);Object.assign(editando,upd);if(S.user.uid===editando.uid)Object.assign(S.user,upd);}}
-    else{const {uid,email}=await crearCuenta(u,pw);const doc={u,email,nombre,rol,vend:esV(rol)?vend:[],vk:esV(rol)?vend.map(vkey):[],creado:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(u,email);USERS.push({uid,...doc});}
+    else{const {uid,email}=await crearCuenta(u,pw);const doc={u,email,nombre,rol,vend:esV(rol)?vend:[],vk:esV(rol)?vend.map(vkey):[],ofi:esV(rol)&&$('u-ofi').checked,creado:new Date().toISOString()};await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(u,email);USERS.push({uid,...doc});}
     $('u-form-card').hidden=true;const nm=editando?editando.u:u;const yoMismo=editando&&editando.uid===S.user.uid;editando=null;renderUsuarios();toast('Usuario '+nm+' guardado'+(pw&&!yoMismo?' con su clave nueva':'')+'.');
   }catch(e){err.textContent=errAuth(e)+(e&&e.code&&e.code.includes('email-already-in-use')?'':'');}
   finally{b.disabled=false;}});
