@@ -490,6 +490,14 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <div class="row"><button class="btn" type="button" id="sec-save">Guardar secciones</button><span class="hint" id="sec-st"></span></div>
       </div>
       <div class="card">
+        <h2>Avisos de gestiones (NTFY)</h2><p class="note">Cada vez que alguien registra una gestión, llega una notificación al celular con vendedor, cliente, tipo, resultado, nota y próximo contacto. No se envían teléfono ni correo del contacto. Para recibirla: instala la app ntfy (Android o iPhone), toca "+" y suscríbete al tema de abajo. El tema funciona como una clave: quien lo conozca puede leer los avisos, así que no lo compartas.</p>
+        <div class="uform">
+          <label class="field"><span>Tema de NTFY</span><input class="input" id="nt-tema" maxlength="64" autocomplete="off" spellcheck="false"></label>
+          <label class="field" style="flex-direction:row;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="nt-on"> <span style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--fg)">Enviar avisos</span></label>
+        </div>
+        <div class="row"><button class="btn" type="button" id="nt-save">Guardar</button><button class="btn sec" type="button" id="nt-test">Enviar aviso de prueba</button><button class="btn sec" type="button" id="nt-gen">Generar tema nuevo</button><span class="hint" id="nt-st"></span></div>
+      </div>
+      <div class="card">
         <div class="tbar"><div><h2>Uso de la app</h2><p class="note">Quién entra y cuándo (un registro por usuario y día).</p></div><button class="btn sec sm" type="button" id="uso-load">Actualizar</button></div>
         <div class="twrap" style="max-height:28rem"><table class="t"><thead><tr><th class="l">Usuario</th><th class="l">Nombre</th><th class="l">Rol</th><th class="l">Último ingreso</th><th>Días con ingreso (7 días)</th><th>Días con ingreso (30 días)</th><th>Ingresos (30 días)</th></tr></thead><tbody id="uso-body"></tbody></table></div>
       </div>
@@ -545,6 +553,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <label class="field" id="gf-con-w"><span>Contacto</span><select class="input" id="gf-con"></select></label>
         <label class="field gf-nuevo"><span>Nombre contacto</span><input class="input" id="gf-cnom" maxlength="80" autocomplete="off" placeholder="Nombre y apellido"></label>
         <label class="field gf-nuevo"><span>Teléfono contacto</span><input class="input" id="gf-ctel" type="tel" inputmode="tel" maxlength="20" autocomplete="off" placeholder="+56 9 1234 5678"></label>
+        <label class="field" id="gf-cmail-w"><span id="gf-cmail-l">Correo contacto</span><input class="input" id="gf-cmail" type="email" inputmode="email" maxlength="80" autocomplete="off" placeholder="nombre@empresa.cl"></label>
       </div>
       <label class="field"><span>Nota</span><textarea class="input" id="gf-nota" rows="3" maxlength="600" placeholder="Qué se conversó, qué se ofreció, qué quedó pendiente…"></textarea></label>
       <p class="err" id="gf-err"></p>
@@ -1687,7 +1696,7 @@ function renderGest(){
     return el('tr',null,el('td',{class:'l',text:fdate(x.fecha)}),tc,el('td',{class:'l vend',text:x.vend}),conCel(x),el('td',{class:'l',text:x.tipo}),el('td',{class:'l',text:x.resultado}),el('td',{class:'l',text:x.nota||''}),el('td',{class:'l',text:x.prox?fdate(x.prox):'—'}),el('td',{class:'l',text:x.autorNom||''}));}),
     ...(hist.length?[]:[el('tr',null,el('td',{class:'l',colSpan:9,text:G.sync?'No hay gestiones con este filtro.':'Cargando gestiones…'}))]));
 }
-$('g-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastGest)return;libroXLSX([['Gestiones',S.lastGest.map((x)=>({'Fecha':x.fecha,'Cliente':x.cli,'Código':x.cod,'Vendedor':x.vend,'Contacto':x.cnom||'','Teléfono contacto':x.ctel||'','Tipo':x.tipo,'Resultado':x.resultado,'Nota':x.nota||'','Próximo contacto':x.prox||'','Registró':x.autorNom||''})),[11,45,12,28,28,16,18,28,60,14,24]]],'Gestiones_'+hoyISO()+'.xlsx');});
+$('g-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastGest)return;libroXLSX([['Gestiones',S.lastGest.map((x)=>({'Fecha':x.fecha,'Cliente':x.cli,'Código':x.cod,'Vendedor':x.vend,'Contacto':x.cnom||'','Teléfono contacto':x.ctel||'','Correo contacto':x.cmail||'','Tipo':x.tipo,'Resultado':x.resultado,'Nota':x.nota||'','Próximo contacto':x.prox||'','Registró':x.autorNom||''})),[11,45,12,28,28,16,28,18,28,60,14,24]]],'Gestiones_'+hoyISO()+'.xlsx');});
 
 /* ---------- ficha de cliente ---------- */
 document.addEventListener('click',(e)=>{const t=e.target.closest('[data-ficha]');if(t&&S.M){e.preventDefault();abrirFicha(t.dataset.ficha);}});
@@ -1729,22 +1738,27 @@ function abrirFicha(cod){
   gSync(false);$('fi-close').focus();
 }
 function fichaGest(){const cod=S.fichaCod;if(!cod)return;
-  {const cs=contactosDe(cod);$('fi-gcont').replaceChildren(...(cs.length?[el('p',{class:'note',style:'margin:0 0 6px',text:'Contactos registrados ('+cs.length+'). No se modifican; para uno distinto, agrégalo al registrar una gestión.'}),el('div',{class:'cont'},...cs.map((c)=>el('span',null,c.cnom+(c.ctel?' · ':''),c.ctel?el('a',{href:'tel:'+telNorm(c.ctel),text:c.ctel}):'')))]:[]));}const xs=gVivas().filter((x)=>x.cod===cod&&gScope(x)).sort(gOrden);
+  {const cs=contactosDe(cod);$('fi-gcont').replaceChildren(...(cs.length?[el('p',{class:'note',style:'margin:0 0 6px',text:'Contactos registrados ('+cs.length+'). No se modifican; para uno distinto, agrégalo al registrar una gestión.'}),el('div',{class:'cont'},...cs.map((c)=>el('span',null,...conNodos(c))))]:[]));}const xs=gVivas().filter((x)=>x.cod===cod&&gScope(x)).sort(gOrden);
   $('fi-glist').replaceChildren(...xs.map((x)=>{const box=el('div',{class:'gi'},el('div',{class:'gh'},el('span',{text:fdate(x.fecha)+' · '+x.tipo+' · '+x.vend}),el('span',{text:'Registró '+(x.autorNom||'—')})),
-      x.cnom?el('div',{class:'hint'},'Contacto: '+x.cnom+(x.ctel?' · ':''),x.ctel?el('a',{href:'tel:'+telNorm(x.ctel),text:x.ctel}):''):null,
+      x.cnom?el('div',{class:'hint'},'Contacto: ',...conNodos(x)):null,
       el('div',null,el('b',{text:x.resultado}),x.nota?' — '+x.nota:''),x.prox?el('div',{class:'hint',text:'Próximo contacto: '+fdate(x.prox)}):null);
     if(x.autor===S.user.uid||S.user.rol==='admin'){const b=el('button',{type:'button',class:'btn danger sm',text:'Eliminar'});b.style.marginTop='6px';
       b.addEventListener('click',async()=>{if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent='¿Eliminar? Confirmar';setTimeout(()=>{b.dataset.c='';b.textContent='Eliminar';},4000);return;}
         try{const ts=Date.now();await db.collection(COL_G).doc(x.vk).collection('items').doc(x.id).update({borrada:true,ts});x.borrada=true;x.ts=ts;IDB.put(gKey(),{items:[...G.items.values()],last:G.last});fichaGest();if(S.tab==='gest'||S.tab==='riesgo')render();toast('Gestión eliminada.');}catch(e){toast(errAuth(e));}});box.append(b);}
     return box;}),...(xs.length?[]:[el('p',{class:'note',text:'Todavía no hay gestiones registradas para este cliente.'})]));}
 const telNorm=(s)=>String(s||'').replace(/[^\d+]/g,'');
-const conTxt=(x)=>x&&x.cnom?x.cnom+(x.ctel?' · '+x.ctel:''):'';
-const conCel=(x)=>{const td=el('td',{class:'l'});if(x.cnom){td.append(x.cnom);if(x.ctel){td.append(' · ',el('a',{href:'tel:'+telNorm(x.ctel),text:x.ctel}));}}else td.textContent='—';return td;};
+const conTxt=(x)=>x&&x.cnom?x.cnom+(x.ctel?' · '+x.ctel:'')+(x.cmail?' · '+x.cmail:''):'';
+const MAIL_RE=/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+const mailA=(m)=>el('a',{href:'mailto:'+m,text:m});
+const conNodos=(x)=>[x.cnom,...(x.ctel?[' · ',el('a',{href:'tel:'+telNorm(x.ctel),text:x.ctel})]:[]),...(x.cmail?[' · ',mailA(x.cmail)]:[])];
+const conCel=(x)=>{const td=el('td',{class:'l'});if(x.cnom)td.append(...conNodos(x));else td.textContent='—';return td;};
 // contactos del cliente: salen de las gestiones (también de las eliminadas), no se editan
-function contactosDe(cod){const m=new Map();for(const x of [...G.items.values()].filter((y)=>y.cod===cod&&y.cnom&&gScope(y)).sort((a,b)=>b.ts-a.ts)){const k=norm(x.cnom).trim()+'|'+telNorm(x.ctel);if(!m.has(k))m.set(k,{cnom:x.cnom,ctel:x.ctel||'',ult:x.fecha});}return [...m.values()];}
+function contactosDe(cod){const m=new Map();for(const x of [...G.items.values()].filter((y)=>y.cod===cod&&y.cnom&&gScope(y)).sort((a,b)=>b.ts-a.ts)){const k=norm(x.cnom).trim()+'|'+telNorm(x.ctel);if(!m.has(k))m.set(k,{cnom:x.cnom,ctel:x.ctel||'',cmail:'',ult:x.fecha});const c=m.get(k);if(!c.cmail&&x.cmail)c.cmail=x.cmail;}return [...m.values()];}
 function gfContactos(){const cs=contactosDe(S.fichaCod);const sel=$('gf-con');sel.replaceChildren(...cs.map((c,i)=>new Option(conTxt(c),String(i))),new Option('+ Agregar contacto nuevo','nuevo'));sel.value=cs.length?'0':'nuevo';S.gfCons=cs;$('gf-con-w').hidden=!cs.length;gfNuevoVis();}
-const gfNuevoVis=()=>{const n=$('gf-con').value==='nuevo';document.querySelectorAll('.gf-nuevo').forEach((e)=>{e.hidden=!n;});};
-$('gf-con').addEventListener('change',()=>{gfNuevoVis();if($('gf-con').value==='nuevo')$('gf-cnom').focus();});
+const gfNuevoVis=()=>{const n=$('gf-con').value==='nuevo';document.querySelectorAll('.gf-nuevo').forEach((e)=>{e.hidden=!n;});
+  const c0=n?null:(S.gfCons||[])[+$('gf-con').value];const falta=!n&&c0&&!c0.cmail;$('gf-cmail-w').hidden=!(n||falta);$('gf-cmail').value='';
+  $('gf-cmail-l').textContent=falta?'Correo contacto (falta, complétalo una vez)':'Correo contacto';};
+$('gf-con').addEventListener('change',()=>{gfNuevoVis();if($('gf-con').value==='nuevo')$('gf-cnom').focus();else if(!$('gf-cmail-w').hidden)$('gf-cmail').focus();});
 function vendGestion(c){const M=S.M;if(esV(S.user.rol)){const mios=S.user.vend||[];const en=c.cv.filter((v)=>mios.includes(v));return en.length?en:mios;}
   const vs=[...new Set([...c.cv,...M.pairs.filter((p)=>p.c===c&&p.f.some((x)=>x>0)).map((p)=>p.v)])];return vs.length?vs:M.vendors;}
 $('fi-gnew').addEventListener('click',()=>{const c=S.M.clients.get(S.fichaCod);if(!c)return;
@@ -1758,15 +1772,16 @@ $('gf-save').addEventListener('click',async()=>{const c=S.M.clients.get(S.fichaC
   const fecha=$('gf-fecha').value,tipo=$('gf-tipo').value,resultado=$('gf-res').value,nota=$('gf-nota').value.trim().slice(0,600),prox=$('gf-prox').value,vend=$('gf-ven').value;
   if(!fecha){err.textContent='Indica la fecha de la gestión.';return;}if(fecha>hoyISO()){err.textContent='La fecha no puede ser futura.';return;}
   if(!resultado){err.textContent='Elige el resultado de la gestión.';return;}if(prox&&prox<fecha){err.textContent='El próximo contacto debe ser posterior a la gestión.';return;}if(!vend){err.textContent='Elige el vendedor.';return;}
-  let cnom,ctel;if($('gf-con').value==='nuevo'){cnom=$('gf-cnom').value.trim().replace(/\s+/g,' ');ctel=$('gf-ctel').value.trim();
+  let cnom,ctel,cmail='';if($('gf-con').value==='nuevo'){cnom=$('gf-cnom').value.trim().replace(/\s+/g,' ');ctel=$('gf-ctel').value.trim();
     if(cnom.length<2){err.textContent='Escribe el nombre del contacto.';$('gf-cnom').focus();return;}
     const dg=ctel.replace(/\D/g,'');if(dg.length<8||dg.length>12){err.textContent='Escribe un teléfono válido (8 a 12 dígitos, por ejemplo +56 9 1234 5678).';$('gf-ctel').focus();return;}}
-  else{const c0=S.gfCons[+$('gf-con').value];cnom=c0.cnom;ctel=c0.ctel;}
+  else{const c0=S.gfCons[+$('gf-con').value];cnom=c0.cnom;ctel=c0.ctel;cmail=c0.cmail||'';}
+  if(!cmail){cmail=$('gf-cmail').value.trim().toLowerCase();if(!MAIL_RE.test(cmail)){err.textContent='Escribe un correo válido del contacto (por ejemplo nombre@empresa.cl).';$('gf-cmail').focus();return;}}
   const vk=vkey(vend);const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-  const doc={cod:c.cod,cli:c.nom,vend,vk,autor:S.user.uid,autorNom:S.user.nombre||S.user.u,ts:Date.now(),fecha,tipo,resultado,nota,prox:prox||'',cnom,ctel};
+  const doc={cod:c.cod,cli:c.nom,vend,vk,autor:S.user.uid,autorNom:S.user.nombre||S.user.u,ts:Date.now(),fecha,tipo,resultado,nota,prox:prox||'',cnom,ctel,cmail};
   const b=$('gf-save');b.disabled=true;
   try{await db.collection(COL_G).doc(vk).collection('items').doc(id).set(doc);G.items.set(vk+'/'+id,{...doc,id});IDB.put(gKey(),{items:[...G.items.values()],last:G.last});
-    $('fi-gform').hidden=true;$('fi-gnew').hidden=false;fichaGest();toast('Gestión guardada.');if(S.tab==='gest'||S.tab==='riesgo')render();}
+    $('fi-gform').hidden=true;$('fi-gnew').hidden=false;fichaGest();toast('Gestión guardada.');avisoNtfy(doc);if(S.tab==='gest'||S.tab==='riesgo')render();}
   catch(e){err.textContent=errAuth(e);}finally{b.disabled=false;}});
 
 /* ---------- tutoriales ---------- */
@@ -1815,7 +1830,7 @@ const TUT={
     'Toca el nombre de un cliente para abrir su ficha.'],
     tip:'Incluye todas las facturas de cada vendedor, también a clientes que hoy no están en su cartera. Por eso los totales pueden diferir un poco de la sección Cobertura.'},
   gest:{sec:'Gestiones',intro:'El registro de lo que cada vendedor hace con sus clientes: llamadas, visitas, cotizaciones, con notas y fecha del próximo contacto.',pasos:[
-    'Para registrar una gestión, toca el nombre de cualquier cliente (en esta u otra sección), y en su ficha usa "Registrar gestión". Indica fecha, tipo, resultado, el contacto (nombre y teléfono), una nota y, si corresponde, el próximo contacto. Puedes registrar varias gestiones con el mismo cliente; todas quedan en su historial.',
+    'Para registrar una gestión, toca el nombre de cualquier cliente (en esta u otra sección), y en su ficha usa "Registrar gestión". Indica fecha, tipo, resultado, el contacto (nombre, teléfono y correo), una nota y, si corresponde, el próximo contacto. Puedes registrar varias gestiones con el mismo cliente; todas quedan en su historial.',
     '"Próximos contactos" lista los clientes con contacto agendado, desde los atrasados (en rojo) hasta los próximos 14 días.',
     '"Gestión por vendedor" muestra, en los últimos 30 días, cuántas gestiones hizo cada vendedor y qué parte de sus clientes sin compra gestionó.',
     'El historial se filtra por vendedor, tipo, resultado, fechas o texto. Cada gestión la puede eliminar quien la registró.'],
@@ -1839,6 +1854,7 @@ const TUT={
   maestro:{sec:'Maestro',intro:'Solo para el administrador: carga de archivos, secciones por tipo de usuario, usuarios y registro de uso.',pasos:[
     'Arrastra o elige los Excel de cartera, ventas y NV. La app reconoce cada archivo por sus columnas y publica los datos para todos.',
     'En "Secciones por tipo de usuario" marca qué secciones ve Gerencia y cuáles ve Vendedor, y presiona "Guardar secciones". Se aplica al instante.',
+    'En "Avisos de gestiones (NTFY)" activas las notificaciones al celular cada vez que alguien registra una gestión. Usa "Enviar aviso de prueba" para comprobar que llegan.',
     '"Uso de la app" muestra cuándo entró cada usuario por última vez y cuántos días ingresó en la última semana y el último mes.',
     'En "Usuarios" creas, editas o eliminas usuarios y les asignas sus carteras. Solo tú puedes cambiar claves.'],
     tip:'Cada vendedor descarga solo los datos de su cartera. Si cambias la cartera asignada a un vendedor, sus datos se ajustan solos.'},
@@ -1846,7 +1862,7 @@ const TUT={
     'Arriba están sus datos: vendedor, condición de pago, última compra, cada cuánto compra normalmente y si tiene alerta de riesgo.',
     'El gráfico muestra lo que compró cada mes; abajo, el resumen por año, las NV emitidas y los productos que compra.',
     'En "Gestiones" presiona "Registrar gestión": elige tipo, resultado y el contacto con quien hablaste, escribe una nota y, si quedaste de volver a llamar, el próximo contacto. Puedes registrar todas las gestiones que necesites con el mismo cliente.',
-    'Contactos: la primera vez escribes nombre y teléfono. Quedan guardados y no se modifican; en la siguiente gestión los eliges de la lista o agregas otro con "+ Agregar contacto nuevo".',
+    'Contactos: la primera vez escribes nombre, teléfono y correo (los tres son obligatorios). Quedan guardados y no se modifican; en la siguiente gestión los eliges de la lista o agregas otro con "+ Agregar contacto nuevo". Si un contacto antiguo no tiene correo, la app lo pide una sola vez.',
     'Cierra la ficha con "Cerrar", la tecla Esc o tocando fuera de ella.'],
     tip:'Si eres vendedor, la ficha muestra lo que tú le has vendido al cliente.'}};
 function abrirTut(k){const T=TUT[k];if(!T)return;$('tut-title').textContent='Tutorial · '+T.sec;$('tut-intro').textContent=T.intro;$('tut-pasos').replaceChildren(...T.pasos.map((p)=>el('li',{text:p})));$('tut-tip').textContent='Consejo: '+T.tip;$('tut').hidden=false;$('tut-close').focus();}
@@ -1861,16 +1877,35 @@ const tabNombre=(t)=>{const b=document.querySelector('.tab[data-tab="'+t+'"]');r
 const tabVisible=(t)=>{if(!S.user)return true;if(t==='maestro')return S.user.rol==='admin';if(S.user.rol==='admin')return true;const o=S.ocultas&&S.ocultas[S.user.rol];return !(o&&o.includes(t));};
 function aplicarSecciones(){if(!S.user)return;document.querySelectorAll('.tab').forEach((b)=>{if(b.dataset.tab!=='maestro')b.hidden=!tabVisible(b.dataset.tab);});}
 function escucharSecciones(){if(S.unsubSec)S.unsubSec();let primero=true;
-  return new Promise((resolve)=>{S.unsubSec=db.collection(COL_M).doc('secciones').onSnapshot((d)=>{S.ocultas=d.exists?(d.data().ocultas||{}):{};aplicarSecciones();
+  return new Promise((resolve)=>{S.unsubSec=db.collection(COL_M).doc('secciones').onSnapshot((d)=>{S.ocultas=d.exists?(d.data().ocultas||{}):{};S.ntfy=d.exists?(d.data().ntfy||null):null;aplicarSecciones();
     if(primero){primero=false;resolve();}else if(S.user&&!$('v-app').hidden){if(!tabVisible(S.tab))mostrarTab(S.tab);if(S.tab==='maestro')renderSecciones();}},
     ()=>{S.ocultas={};if(primero){primero=false;resolve();}});});}
 function renderSecciones(){const o=S.ocultas||{};const ck=(rol,t)=>{const c=el('input',{type:'checkbox',checked:!((o[rol]||[]).includes(t))});c.dataset.rol=rol;c.dataset.t=t;c.setAttribute('aria-label',tabNombre(t)+' para '+ROL[rol]);return el('td',null,c);};
   $('sec-body').replaceChildren(...TABS_.map((t)=>el('tr',null,el('td',{class:'l',text:tabNombre(t)}),ck('gerencia',t),ck('vendedor',t),ck('kam',t))));}
 $('sec-save').addEventListener('click',async()=>{const oc={gerencia:[],vendedor:[],kam:[]};$('sec-body').querySelectorAll('input').forEach((c)=>{if(!c.checked)oc[c.dataset.rol].push(c.dataset.t);});
   for(const r of ['gerencia','vendedor','kam'])if(oc[r].length===TABS_.length){$('sec-st').textContent=ROL[r]+' debe ver al menos una sección.';return;}
-  try{await db.collection(COL_M).doc('secciones').set({ocultas:oc,por:auth.currentUser.email,ts:new Date().toISOString()});S.ocultas=oc;
+  try{await db.collection(COL_M).doc('secciones').set({ocultas:oc,por:auth.currentUser.email,ts:new Date().toISOString()},{merge:true});S.ocultas=oc;
     const txt=(r)=>oc[r].length?'oculta '+oc[r].map(tabNombre).join(', '):'ve todas';$('sec-st').textContent='Guardado. Gerencia '+txt('gerencia')+'. Vendedor '+txt('vendedor')+'. Kam Retail '+txt('kam')+'.';toast('Secciones guardadas.');}
   catch(e){$('sec-st').textContent=errAuth(e);}});
+
+/* ---------- avisos NTFY de gestiones ---------- */
+const NTFY_SUG='petroflex-crm-0w78mygfiq';
+const temaNuevo=()=>'petroflex-crm-'+Array.from(crypto.getRandomValues(new Uint8Array(10)),(b)=>'abcdefghijkmnpqrstuvwxyz23456789'[b%32]).join('');
+function renderNtfy(){const n=S.ntfy||{};if(document.activeElement!==$('nt-tema'))$('nt-tema').value=n.tema||NTFY_SUG;$('nt-on').checked=!!n.on;}
+function enviarNtfy(tema,title,message,tags){return fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:tema,title,message,tags,click:location.origin+location.pathname})});}
+// se envía en segundo plano: si falla, la gestión ya quedó guardada y nada más se ve afectado
+function avisoNtfy(x){const n=S.ntfy;if(!n||!n.on||!n.tema)return;
+  const msg=[x.cli+' ('+x.cod+')',x.tipo+' · '+x.resultado,...(x.nota?['Nota: '+x.nota]:[]),...(x.prox?['Próximo contacto: '+fdate(x.prox)]:[]),'Fecha gestión: '+fdate(x.fecha)+' · registró '+(x.autorNom||'—')].join('\n');
+  try{enviarNtfy(n.tema,'Gestión · '+x.vend,msg,['memo']).catch(()=>{});}catch(e){}}
+const temaOk=(s)=>/^[A-Za-z0-9_-]{8,64}$/.test(s);
+$('nt-gen').addEventListener('click',()=>{$('nt-tema').value=temaNuevo();$('nt-st').textContent='Tema nuevo generado. Presiona Guardar y suscríbete a él en la app ntfy.';});
+$('nt-save').addEventListener('click',async()=>{const tema=$('nt-tema').value.trim(),on=$('nt-on').checked;
+  if(!temaOk(tema)){$('nt-st').textContent='El tema debe tener 8 a 64 letras, números, guion o guion bajo, sin espacios.';return;}
+  try{await db.collection(COL_M).doc('secciones').set({ntfy:{tema,on}},{merge:true});S.ntfy={tema,on};$('nt-st').textContent=on?'Guardado. Los avisos están activos.':'Guardado. Los avisos están desactivados.';toast('Avisos NTFY guardados.');}
+  catch(e){$('nt-st').textContent=errAuth(e);}});
+$('nt-test').addEventListener('click',async()=>{const tema=$('nt-tema').value.trim();if(!temaOk(tema)){$('nt-st').textContent='Revisa el tema.';return;}
+  try{const r=await enviarNtfy(tema,'Prueba · APP CRM Cobertura','Si ves este mensaje, los avisos de gestiones llegarán a este celular.',['white_check_mark']);$('nt-st').textContent=r.ok?'Aviso de prueba enviado. Revisa la app ntfy.':'NTFY respondió con un error ('+r.status+').';}
+  catch(e){$('nt-st').textContent='No se pudo conectar con ntfy.sh. Revisa tu conexión.';}});
 /* ---------- maestro: carga de datos ---------- */
 let nvInfoLater=false;
 function renderMaestro(){
@@ -1879,7 +1914,7 @@ function renderMaestro(){
   $('file-info').replaceChildren(
     el('div',{class:'fileinfo'},el('b',{text:'Cartera de clientes'}),el('span',{text:c.nombre||'—'}),el('span',{class:'hint',text:nf.format(c.rows.length)+' filas · cargada el '+fdate(c.cargado)+(c.nuevos!=null?' · '+nf.format(c.nuevos)+' clientes nuevos en esa carga':' · carga base (sin nuevos)')})),
     el('div',{class:'fileinfo'},el('b',{text:'Ventas (facturas)'}),el('span',{text:v.nombre||'—'}),el('span',{class:'hint',text:'Ventas hasta el '+fdate(v.corte)+' · cargada el '+fdate(v.cargado)})));
-  nvInfo();renderUsuarios();renderSecciones();if(!S.usoCargado){S.usoCargado=true;cargarUso();}
+  nvInfo();renderUsuarios();renderSecciones();renderNtfy();if(!S.usoCargado){S.usoCargado=true;cargarUso();}
   $('paq-info').textContent='Cada vendedor descarga solo los datos de su cartera (no puede bajar los de otros). Se publican solos cada vez que cargas un Excel de ventas, cartera o NV.'+(S.paqInfo?' Última publicación: '+nf.format(S.paqInfo.n)+' carteras.':'');
 }
 function nvInfo(){const n=S.nv;const box=el('div',{class:'fileinfo'},el('b',{text:'Emisión de NV'}),el('span',{text:n?n.nombre:'Sin cargar'}),
