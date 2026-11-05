@@ -539,7 +539,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
     <div class="card"><h2>Por año</h2><div class="twrap" style="max-height:none"><table class="t"><thead><tr><th class="l">Año</th><th>Facturas</th><th>Neto $</th><th>Meses con compra</th></tr></thead><tbody id="fi-anios"></tbody></table></div></div>
     <div class="card"><h2>NV emitidas</h2><p class="note" id="fi-nv-note">—</p><div class="twrap" style="max-height:none"><table class="t"><thead><tr><th class="l">Mes</th><th>NV</th></tr></thead><tbody id="fi-nv"></tbody></table></div></div>
   </div>
-  <div class="card"><h2>Productos que compra</h2><p class="note">Ordenados por neto total desde 2024. "Última compra" muestra el último mes en que se le vendió cada producto.</p><div class="twrap" style="max-height:24rem"><table class="t"><thead><tr><th class="l">Código</th><th class="l">Producto</th><th class="l">UM</th><th>Cantidad</th><th>Neto $</th><th class="l">Última compra</th></tr></thead><tbody id="fi-prod"></tbody></table></div></div>
+  <div class="card"><h2>Productos que compra</h2><p class="note" id="fi-prod-note">Ordenados por neto total desde 2024. "Última compra" muestra el último mes en que se le vendió cada producto.</p><div class="twrap" style="max-height:24rem"><table class="t"><thead><tr><th class="l">Código</th><th class="l">Producto</th><th class="l">UM</th><th>Cantidad</th><th class="fi-neto">Neto $</th><th class="l">Última compra</th></tr></thead><tbody id="fi-prod"></tbody></table></div></div>
   <div class="card"><div class="tbar"><h2>Gestiones</h2><button class="btn sm" type="button" id="fi-gnew">Registrar gestión</button></div>
     <div id="fi-gform" hidden class="gl">
       <div class="uform">
@@ -1006,7 +1006,10 @@ function render(){
   $('data-info').textContent='Ventas al '+fdate(corte)+' · cartera cargada el '+fdate(S.raw.cartera.cargado);
   if(S.tab==='maestro'){renderMaestro();return;}
   const anios=M.years;const anio=f.anio&&anios.includes(String(f.anio))?String(f.anio):anios[anios.length-1];
-  const met=f.met==='neto'?'neto':'facturas';
+  // vendedor y Kam Retail no ven el neto en Clientes × mes
+  const sinNetoCm=esV(S.user.rol)&&S.tab==='clientes';
+  const met=f.met==='neto'&&!sinNetoCm?'neto':'facturas';
+  {const bn=$('f-met').querySelector('button[data-v=neto]');bn.hidden=sinNetoCm;$('f-met').closest('.f').hidden=sinNetoCm;}
   // vendedores visibles
   const vend=M.vendors.filter((v)=>!sc||sc.has(v));
   const opts=[[TODOS,esV(S.user.rol)?(vend.length>1?'Todas mis carteras':(vend[0]||'Sin carteras')):'Todos los vendedores'],...(esV(S.user.rol)&&vend.length===1?[]:vend.map((v)=>[v,v]))];
@@ -1355,9 +1358,9 @@ function renderVPC(){
   const agg=new Map();for(const r of sel){const k=r.cod+'|'+r.so+'|'+r.v+'|'+r.pi+(f.porMes?'|'+r.i:'');let a=agg.get(k);if(!a){a={cod:r.cod,cli:r.cli,so:r.so,v:r.v,pi:r.pi,mes:f.porMes?M.months[r.i]:'',q:0,n:0};agg.set(k,a);}a.q+=r.q;a.n+=r.n;}
   let rows=[...agg.values()];
   const cols=[{k:'cli',h:'Cliente',l:1,cls:'cli stk stk1'},{k:'so',h:'Socio',l:1,cls:'hide-sm vend stk stk2'},{k:'v',h:'Vendedor',l:1,cls:'hide-sm vend stk stk3 stkl'},...(f.porMes?[{k:'mes',h:'Mes',l:1}]:[]),
-    {k:'pc',h:'Código prod.',l:1},{k:'pn',h:'Producto',l:1,cls:'cli'},{k:'um',h:'UM',l:1},{k:'q',h:'Cantidad',num:1},{k:'n',h:'Neto $',num:1}];
+    {k:'pc',h:'Código prod.',l:1},{k:'pn',h:'Producto',l:1,cls:'cli'},{k:'um',h:'UM',l:1},{k:'q',h:'Cantidad',num:1},...(esV(S.user.rol)?[]:[{k:'n',h:'Neto $',num:1}])];
   const val=(a,c)=>c.k==='pc'?P[a.pi][0]:c.k==='pn'?P[a.pi][1]:c.k==='um'?P[a.pi][2]:a[c.k];
-  const ss=S.vsort&&cols.some((c)=>c.k===S.vsort.f)?S.vsort:{f:'n',dir:'desc'};const scol=cols.find((c)=>c.k===ss.f);
+  const ss=S.vsort&&cols.some((c)=>c.k===S.vsort.f)?S.vsort:{f:'n',dir:'desc'};const scol=cols.find((c)=>c.k===ss.f)||{k:'n'};
   rows.sort((a,b)=>{const A=val(a,scol),B=val(b,scol);const c=typeof A==='number'?A-B:String(A).localeCompare(String(B),'es');return (ss.dir==='asc'?c:-c)||b.n-a.n;});
   const totN=rows.reduce((s,a)=>s+a.n,0);const porUM=new Map();for(const a of rows){const u=P[a.pi][2]||'Sin UM';porUM.set(u,(porUM.get(u)||0)+a.q);}
   const per=selA.slice().sort().join(', ')+(selM&&selM.size<12?' · '+[...selM].sort().map((m)=>MES[+m-1]).join(', '):'');
@@ -1728,9 +1731,11 @@ function abrirFicha(cod){
     $('fi-nv').replaceChildren(...ms.map((m)=>el('tr',null,el('td',{class:'l',text:mesLbl(m)}),el('td',{text:nf.format(by.get(m))}))),...(ms.length?[]:[el('tr',null,el('td',{class:'l',colSpan:2,text:'Sin NV en el período.'}))]));}
   else{$('fi-nv-note').textContent=nv?(S.user.rol==='admin'?'Vuelve a cargar el archivo de NV en Maestro para ver las NV de cada cliente.':'El administrador debe volver a cargar el archivo de NV para ver las NV de cada cliente.'):'No hay archivo de NV cargado.';$('fi-nv').replaceChildren();}
   // productos
+  const sinNeto=esV(S.user.rol);document.querySelectorAll('.fi-neto').forEach((e)=>{e.hidden=sinNeto;});
+  $('fi-prod-note').textContent=(sinNeto?'Ordenados de mayor a menor venta desde 2024.':'Ordenados por neto total desde 2024.')+' "Última compra" muestra el último mes en que se le vendió cada producto.';
   if(M.hayVpc){const P_=M.prods,ag=new Map();for(const x of M.vpc){if(x.cod!==cod||(sc&&!sc.has(x.v)))continue;let a=ag.get(x.pi);if(!a){a={pi:x.pi,q:0,n:0,u:-1};ag.set(x.pi,a);}a.q+=x.q;a.n+=x.n;if(x.i>a.u)a.u=x.i;}
     const pr=[...ag.values()].sort((a,b)=>b.n-a.n);
-    $('fi-prod').replaceChildren(...pr.slice(0,200).map((a)=>el('tr',null,el('td',{class:'l',text:P_[a.pi][0]}),el('td',{class:'l cli',text:P_[a.pi][1],title:P_[a.pi][1]}),el('td',{class:'l',text:P_[a.pi][2]}),el('td',{text:fmtQ.format(a.q)}),el('td',{text:'$'+nf.format(Math.round(a.n))}),el('td',{class:'l',text:mesTxt(M.months[a.u])}))),...(pr.length?[]:[el('tr',null,el('td',{class:'l',colSpan:6,text:'Sin productos facturados.'}))]));}
+    $('fi-prod').replaceChildren(...pr.slice(0,200).map((a)=>el('tr',null,el('td',{class:'l',text:P_[a.pi][0]}),el('td',{class:'l cli',text:P_[a.pi][1],title:P_[a.pi][1]}),el('td',{class:'l',text:P_[a.pi][2]}),el('td',{text:fmtQ.format(a.q)}),...(sinNeto?[]:[el('td',{text:'$'+nf.format(Math.round(a.n))})]),el('td',{class:'l',text:mesTxt(M.months[a.u])}))),...(pr.length?[]:[el('tr',null,el('td',{class:'l',colSpan:sinNeto?5:6,text:'Sin productos facturados.'}))]));}
   else $('fi-prod').replaceChildren(el('tr',null,el('td',{class:'l',colSpan:6,text:'Para ver los productos, el administrador debe volver a cargar el Excel de ventas.'})));
   $('fi-gform').hidden=true;$('fi-gnew').hidden=false;fichaGest();
   $('ficha').hidden=false;document.body.style.overflow='hidden';$('ficha').scrollTop=0;
@@ -1810,7 +1815,7 @@ const TUT={
     'Escribe en "Buscar" parte del nombre o el código de un cliente.',
     'Toca el nombre de un cliente para abrir su ficha: compras mes a mes, productos, NV y gestiones, y para registrar una gestión.',
     'Toca un encabezado para ordenar; por ejemplo, por "Última factura" para ver quién lleva más tiempo sin comprar.'],
-    tip:'Los ceros en gris son meses sin compra. Una fila llena de grises con "Sin facturas" es un cliente para llamar.'},
+    tip:'Los ceros en gris son meses sin compra. Una fila llena de grises con "Sin facturas" es un cliente para llamar. El neto de esta tabla está en miles de pesos (M$).'},
   riesgo:{sec:'Clientes en riesgo',intro:'Clientes que todavía compran, pero que están tardando mucho más de lo normal en volver a hacerlo. Sirve para actuar antes de perderlos.',pasos:[
     'Para cada cliente se calcula cada cuánto compra normalmente: el tiempo promedio entre una compra y otra, desde su primera hasta su última compra de los últimos 24 meses (se necesitan al menos 3 meses con compra). Ejemplo: si compró en 12 meses repartidos en 16 meses, compra en promedio cada 1,5 meses.',
     'Si lleva sin comprar el doble de ese tiempo, queda "En riesgo"; si lleva el triple o más, "Alto riesgo". Ejemplo: un cliente que compra todos los meses y lleva 2 meses sin comprar está en riesgo.',
