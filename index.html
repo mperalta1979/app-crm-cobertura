@@ -328,6 +328,25 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
 
     <!-- RETAIL -->
     <section id="p-retail" class="wrap" style="padding:0" hidden>
+      <div class="seg" id="ret-sub" role="group" aria-label="Subsección"><button type="button" data-v="soc">Socios mes a mes</button><button type="button" data-v="comp">Comparativo</button></div>
+      <div id="ret-comp" class="wrap" style="padding:0" hidden>
+        <div class="card">
+          <div class="tbar"><div><h2>Comparativo de socios</h2><p class="note" id="rc2-note">—</p></div><button class="btn sec sm dl" type="button" id="rc2-export">Descargar Excel</button></div>
+          <div class="filters" style="padding:0;border:0">
+            <label class="f"><span>Cliente retail</span><select class="sel" id="rc2-cli"></select></label>
+            <label class="f"><span>Vendedor</span><select class="sel" id="rc2-ven"></select></label>
+            <div class="f"><span>Medida</span><div class="seg" id="rc2-met" role="group"><button type="button" data-v="neto">Neto $</button><button type="button" data-v="facturas">Facturas</button></div></div>
+            <label class="f"><span>Buscar</span><input class="input" type="search" id="rc2-q" placeholder="Socio" style="padding:6px 9px"></label>
+          </div>
+          <div class="field"><span>Años (marca 2 o 3)</span><div class="vgrid" id="rc2-anios"></div></div>
+          <div class="field"><span>Meses</span><div class="vgrid" id="rc2-meses"></div>
+            <div class="row" style="margin-top:6px"><button class="btn sec sm" type="button" id="rc2-todos">Todos los meses</button><button class="btn sec sm" type="button" id="rc2-cerr">Meses cerrados del último año</button></div></div>
+        </div>
+        <div class="kpis" id="rc2-res"></div>
+        <div class="card"><p class="note" id="rc2-count">—</p>
+          <div class="twrap" style="max-height:36rem"><table class="t" id="rc2-table"><thead><tr id="rc2-head"></tr></thead><tbody id="rc2-body"></tbody><tfoot><tr id="rc2-foot"></tr></tfoot></table></div></div>
+      </div>
+      <div id="ret-soc" class="wrap" style="padding:0">
       <div class="kpis">
         <div class="kpi"><span>Socios</span><b id="r-tot">—</b><small>con alguna compra en el historial</small></div>
         <div class="kpi"><span id="r-l-con">Compraron en el año</span><b id="r-con">—</b><small>al menos una factura</small></div>
@@ -346,6 +365,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         </div><button class="btn sec sm dl" type="button" id="r-export">Descargar Excel</button></div>
         <p class="note" id="r-count">—</p>
         <div class="twrap"><table class="t" id="r-table"><thead><tr id="r-head"></tr></thead><tbody id="r-body"></tbody></table></div>
+      </div>
       </div>
     </section>
 
@@ -1026,7 +1046,7 @@ $('p-save').addEventListener('click',async()=>{const u=auth.currentUser,cur=$('p
 document.querySelectorAll('.tab').forEach((b)=>b.addEventListener('click',()=>mostrarTab(b.dataset.tab)));
 function mostrarTab(t){if(!S.user)return;if(t==='maestro'&&S.user.rol!=='admin')t='resumen';if(!tabVisible(t))t=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).find(tabVisible)||'resumen';S.tab=t;
   document.querySelectorAll('.tab').forEach((b)=>b.setAttribute('aria-selected',b.dataset.tab===t));
-  for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','nov','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=!['resumen','cobertura','clientes','retail'].includes(t);
+  for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','nov','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=!['resumen','cobertura','clientes','retail'].includes(t)||(t==='retail'&&retSub()==='comp');
   $('sec-title').textContent=(TUT[t]||{}).sec||'';
   if(['metas','cobertura','resumen'].includes(t)&&Date.now()-(S.metasTs||0)>60000){S.metasTs=Date.now();cargarMetas().then(()=>{if(S.tab===t)render();});}
   $('w-grupo').hidden=t==='cobertura'||t==='retail';$('w-estado').hidden=t==='retail';$('w-cond').hidden=t==='retail';
@@ -1060,6 +1080,8 @@ function render(){
   if(S.tab==='riesgo'&&S.M){$('empty').hidden=true;renderRiesgo();return;}
   if(S.tab==='metas'&&S.M){$('empty').hidden=true;renderMetas();return;}
   if(S.tab==='nov'&&S.M){$('empty').hidden=true;renderNov();return;}
+  if(S.tab==='retail'&&S.M){const sub=retSub();$('ret-sub').querySelectorAll('button').forEach((b)=>{b.hidden=!tabVisible(b.dataset.v==='comp'?'ret_comp':'ret_soc');b.setAttribute('aria-pressed',b.dataset.v===sub);});
+    $('ret-sub').hidden=!(tabVisible('ret_comp')&&tabVisible('ret_soc'));$('ret-comp').hidden=sub!=='comp';$('ret-soc').hidden=sub==='comp';if(sub==='comp'){$('empty').hidden=true;renderRetComp();return;}}
   if(S.tab==='comp'&&S.M){$('empty').hidden=true;renderComp();return;}
   if(S.tab==='gest'&&S.M){$('empty').hidden=true;renderGest();return;}
   $('empty').hidden=!!S.M||S.tab==='maestro';
@@ -1909,7 +1931,9 @@ const TUT={
     'Marca "Separar por mes" para ver una fila por mes en lugar del total del período.',
     'Arriba de la tabla se muestra el neto total y las cantidades sumadas por unidad de medida.'],
     tip:'Toca el nombre del cliente para ver su ficha completa.'},
-  retail:{sec:'Retail',intro:'Ventas a clientes retail separadas por socio (local o sucursal), con una fila por socio y vendedor.',pasos:[
+  retail:{sec:'Retail',intro:'Ventas a clientes retail separadas por socio (local o sucursal). Tiene dos subsecciones: "Socios mes a mes" y "Comparativo" (este último, para administrador y gerencia).',pasos:[
+    'Comparativo: elige el cliente retail (por ejemplo Chilemat), marca 2 o 3 años y los meses que quieres ver. Cada mes se muestra por separado, con los años lado a lado y la variación %, y al final el total del período.',
+    'Comparativo: cambia la "Medida" entre Neto (miles de pesos) y Facturas. Arriba ves los socios nuevos (compraron este año y no el anterior) y los perdidos. Si eliges un mes incompleto, la app lo advierte.',
     'Filtra por cliente retail, por vendedor y por "Vista" (socios con o sin compra en el año).',
     'Cada fila muestra las facturas o el neto de cada mes, el total del año, el histórico, los meses con y sin compra y la última compra.',
     'Busca un socio escribiendo parte de su nombre.'],
@@ -1947,18 +1971,21 @@ $('tut-close').addEventListener('click',()=>{$('tut').hidden=true;});$('tut').ad
 
 
 /* ---------- secciones visibles por tipo de usuario ---------- */
-const TABS_=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).filter((x)=>x!=='maestro').flatMap((x)=>x==='nov'?['nov_camb','nov_recl']:[x]);
-const SUBN={nov_camb:'Novedades · Cambios de vendedor',nov_recl:'Novedades · Reclamos de atención'};
+const TABS_=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).filter((x)=>x!=='maestro').flatMap((x)=>x==='nov'?['nov_camb','nov_recl']:x==='retail'?['ret_soc','ret_comp']:[x]);
+const SUBN={nov_camb:'Novedades · Cambios de vendedor',nov_recl:'Novedades · Reclamos de atención',ret_soc:'Retail · Socios mes a mes',ret_comp:'Retail · Comparativo'};
+// configuración efectiva: las guardadas antes de esta versión no conocían las subsecciones de Retail
+function ocultasEf(){const o=S.ocultas||{};if(o.ver>=2)return o;const r={ver:2};for(const rol of ['gerencia','vendedor','kam']){const a=(o[rol]||[]).slice();if(a.includes('retail'))a.push('ret_soc','ret_comp');if(esV(rol)&&!a.includes('ret_comp'))a.push('ret_comp');r[rol]=a.filter((x)=>x!=='retail');}return r;}
+const retSub=()=>{const s=S.rSub==='comp'?'comp':'soc';if(s==='comp'&&!tabVisible('ret_comp'))return 'soc';if(s==='soc'&&!tabVisible('ret_soc'))return 'comp';return s;};
 const tabNombre=(t)=>{if(SUBN[t])return SUBN[t];const b=document.querySelector('.tab[data-tab="'+t+'"]');return b?b.textContent.trim():t;};
-const tabVisible=(t)=>{if(!S.user)return true;if(t==='nov')return tabVisible('nov_camb')||tabVisible('nov_recl');if(t==='maestro')return S.user.rol==='admin';if(S.user.rol==='admin')return true;const o=S.ocultas&&S.ocultas[S.user.rol];return !(o&&o.includes(t));};
+const tabVisible=(t)=>{if(!S.user)return true;if(t==='nov')return tabVisible('nov_camb')||tabVisible('nov_recl');if(t==='retail')return tabVisible('ret_soc')||tabVisible('ret_comp');if(t==='maestro')return S.user.rol==='admin';if(S.user.rol==='admin')return true;const o=ocultasEf()[S.user.rol];return !(o&&o.includes(t));};
 function aplicarSecciones(){if(!S.user)return;document.querySelectorAll('.tab').forEach((b)=>{if(b.dataset.tab!=='maestro')b.hidden=!tabVisible(b.dataset.tab);});}
 function escucharSecciones(){if(S.unsubSec)S.unsubSec();let primero=true;
   return new Promise((resolve)=>{S.unsubSec=db.collection(COL_M).doc('secciones').onSnapshot((d)=>{S.ocultas=d.exists?(d.data().ocultas||{}):{};S.ntfy=d.exists?(d.data().ntfy||null):null;aplicarSecciones();
-    if(primero){primero=false;resolve();}else if(S.user&&!$('v-app').hidden){if(!tabVisible(S.tab))mostrarTab(S.tab);else if(S.tab==='nov')render();if(S.tab==='maestro')renderSecciones();}},
+    if(primero){primero=false;resolve();}else if(S.user&&!$('v-app').hidden){if(!tabVisible(S.tab))mostrarTab(S.tab);else if(S.tab==='nov'||S.tab==='retail')render();if(S.tab==='maestro')renderSecciones();}},
     ()=>{S.ocultas={};if(primero){primero=false;resolve();}});});}
-function renderSecciones(){const o=S.ocultas||{};const ck=(rol,t)=>{const c=el('input',{type:'checkbox',checked:!((o[rol]||[]).includes(t))});c.dataset.rol=rol;c.dataset.t=t;c.setAttribute('aria-label',tabNombre(t)+' para '+ROL[rol]);return el('td',null,c);};
+function renderSecciones(){const o=ocultasEf();const ck=(rol,t)=>{const c=el('input',{type:'checkbox',checked:!((o[rol]||[]).includes(t))});c.dataset.rol=rol;c.dataset.t=t;c.setAttribute('aria-label',tabNombre(t)+' para '+ROL[rol]);return el('td',null,c);};
   $('sec-body').replaceChildren(...TABS_.map((t)=>el('tr',null,el('td',{class:'l',text:tabNombre(t)}),ck('gerencia',t),ck('vendedor',t),ck('kam',t))));}
-$('sec-save').addEventListener('click',async()=>{const oc={gerencia:[],vendedor:[],kam:[]};$('sec-body').querySelectorAll('input').forEach((c)=>{if(!c.checked)oc[c.dataset.rol].push(c.dataset.t);});
+$('sec-save').addEventListener('click',async()=>{const oc={ver:2,gerencia:[],vendedor:[],kam:[]};$('sec-body').querySelectorAll('input').forEach((c)=>{if(!c.checked)oc[c.dataset.rol].push(c.dataset.t);});
   for(const r of ['gerencia','vendedor','kam'])if(oc[r].length===TABS_.length){$('sec-st').textContent=ROL[r]+' debe ver al menos una sección.';return;}
   try{await db.collection(COL_M).doc('secciones').set({ocultas:oc,por:auth.currentUser.email,ts:new Date().toISOString()},{merge:true});S.ocultas=oc;
     const txt=(r)=>oc[r].length?'oculta '+oc[r].map(tabNombre).join(', '):'ve todas';$('sec-st').textContent='Guardado. Gerencia '+txt('gerencia')+'. Vendedor '+txt('vendedor')+'. Kam Retail '+txt('kam')+'.';toast('Secciones guardadas.');}
@@ -2128,6 +2155,87 @@ function renderReclamos(){
     if(acts.children.length)box.append(acts);return box;}),...(xs.length?[]:[el('p',{class:'note',text:NV.sync?'No hay reclamos con este filtro.':'Cargando…'})]));
 }
 $('rc-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastRecl)return;libroXLSX([['Reclamos de atención',S.lastRecl.map((x)=>({'Fecha':x.fecha,'Hora':x.hora||'','Cliente':x.cli,'Código':x.cod||'','Vendedor':x.vend,'Persona que llamó':x.pnom,'Teléfono':x.tel,'Correo':x.mail,'Motivo':(x.motivos||[]).join(', '),'Nota':x.nota||'','Estado':x.estado==='resuelto'?'Resuelto':'Pendiente','Respuesta vendedor':x.resp?x.resp.texto:'','Resuelto por':x.resNom||'','Cómo se resolvió':x.resNota||'','Registró':x.autorNom||''})),[11,6,45,12,26,26,16,28,40,50,10,50,22,40,22]]],'Reclamos_de_atencion_'+hoyISO()+'.xlsx');});
+
+/* ---------- Retail: comparativo de socios entre años ---------- */
+S.rSub='soc';S.rc={cli:null,ven:'Todos',met:'neto',anios:null,meses:null,q:''};S.rcSort=null;
+$('ret-sub').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;S.rSub=b.dataset.v;mostrarTab('retail');});
+const rcYearsSel=()=>{const ys=S.M.years;if(!S.rc.anios||!S.rc.anios.every((y)=>ys.includes(y)))S.rc.anios=ys.slice(-2);return S.rc.anios.slice().sort();};
+const mesesCerrados=()=>{const lc=ultimoCerrado();const y=S.M.years[S.M.years.length-1];const hasta=lc.startsWith(y)?+lc.slice(5,7):0;return Array.from({length:Math.max(hasta,1)},(_,i)=>i+1);};
+function rcControles(){
+  const M=S.M;const ys=M.years;const sel=rcYearsSel();
+  $('rc2-anios').replaceChildren(...ys.map((y)=>{const c=el('input',{type:'checkbox',checked:sel.includes(y),value:y});c.addEventListener('change',()=>{const v=[...$('rc2-anios').querySelectorAll('input:checked')].map((i)=>i.value);if(v.length<2){c.checked=true;toast('Marca al menos dos años para comparar.');return;}S.rc.anios=v;render();});return el('label',null,c,' '+y);}));
+  if(!S.rc.meses)S.rc.meses=mesesCerrados();
+  $('rc2-meses').replaceChildren(...MES.map((m,i)=>{const c=el('input',{type:'checkbox',checked:S.rc.meses.includes(i+1),value:i+1});c.addEventListener('change',()=>{const v=[...$('rc2-meses').querySelectorAll('input:checked')].map((x)=>+x.value);if(!v.length){c.checked=true;toast('Marca al menos un mes.');return;}S.rc.meses=v;render();});return el('label',null,c,' '+m);}));
+  $('rc2-met').querySelectorAll('button').forEach((b)=>b.setAttribute('aria-pressed',b.dataset.v===S.rc.met));
+}
+$('rc2-todos').addEventListener('click',()=>{S.rc.meses=Array.from({length:12},(_,i)=>i+1);render();});
+$('rc2-cerr').addEventListener('click',()=>{S.rc.meses=mesesCerrados();render();});
+$('rc2-met').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;S.rc.met=b.dataset.v;render();});
+$('rc2-cli').addEventListener('change',(e)=>{S.rc.cli=e.target.value;S.rc.ven='Todos';render();});
+$('rc2-ven').addEventListener('change',(e)=>{S.rc.ven=e.target.value;render();});
+{let tm;$('rc2-q').addEventListener('input',(e)=>{clearTimeout(tm);tm=setTimeout(()=>{S.rc.q=e.target.value;render();},200);});}
+ordenClick('rc2-head','rcSort');
+function rcDatos(){
+  const M=S.M,sc=alcance();const rows0=M.retail.filter((r)=>!sc||sc.has(r.v));
+  const clis=[...new Map(rows0.map((r)=>[r.cod,r.cli])).entries()].sort((a,b)=>a[1].localeCompare(b[1],'es'));
+  if(!S.rc.cli||(S.rc.cli!=='Todos'&&!clis.some((c)=>c[0]===S.rc.cli))){const ch=clis.find((c)=>/CHILEMAT/i.test(c[1]));S.rc.cli=ch?ch[0]:'Todos';}
+  $('rc2-cli').replaceChildren(new Option('Todos','Todos'),...clis.map(([k,n])=>new Option(n,k)));$('rc2-cli').value=S.rc.cli;
+  const rows1=rows0.filter((r)=>S.rc.cli==='Todos'||r.cod===S.rc.cli);
+  const vends=[...new Set(rows1.map((r)=>r.v))].sort((a,b)=>a.localeCompare(b,'es'));if(S.rc.ven!=='Todos'&&!vends.includes(S.rc.ven))S.rc.ven='Todos';
+  $('rc2-ven').replaceChildren(new Option('Todos','Todos'),...vends.map((v)=>new Option(v,v)));$('rc2-ven').value=S.rc.ven;
+  const N=M.months.length,agg=new Map();
+  for(const r of rows1){if(S.rc.ven!=='Todos'&&r.v!==S.rc.ven)continue;const k=r.cod+'|'+r.so;let a=agg.get(k);if(!a){a={k,so:r.so,cod:r.cod,cli:r.cli,vs:new Set(),f:new Float64Array(N),n:new Float64Array(N)};agg.set(k,a);}a.vs.add(r.v);a.f[r.i]+=r.n;a.n[r.i]+=r.neto;}
+  return [...agg.values()].map((a)=>({...a,ven:[...a.vs].sort().join(', ')}));}
+function renderRetComp(){
+  rcControles();const M=S.M;const ys=rcYearsSel();const ms=S.rc.meses.slice().sort((a,b)=>a-b);const met=S.rc.met;const mi=new Map(M.months.map((m,i)=>[m,i]));
+  const todosCli=S.rc.cli==='Todos';const q=norm(S.rc.q);
+  let socs=rcDatos();
+  const val=(a,y,m,k)=>{const i=mi.get(y+'-'+pad2(m));return i==null?0:a[k][i];};
+  const tot=(a,y,k)=>ms.reduce((s,m)=>s+val(a,y,m,k),0);
+  const K=met==='neto'?'n':'f';
+  // solo socios con alguna compra en los años y meses elegidos
+  socs=socs.filter((a)=>ys.some((y)=>tot(a,y,'f')>0)&&(!q||norm(a.so).includes(q)||norm(a.cli).includes(q)));
+  const vr=(b,c)=>b>0?(c-b)/b:(c>0?Infinity:null);
+  const cols=[{k:'so',h:'Socio',l:1,cls:'cli stk stk1',get:(a)=>a.so},...(todosCli?[{k:'cli',h:'Cliente',l:1,cls:'hide-sm',get:(a)=>a.cli}]:[]),{k:'ven',h:'Vendedor',l:1,cls:'vend',get:(a)=>a.ven}];
+  const grupo=(lab,getY)=>{ys.forEach((y)=>cols.push({k:lab+'_'+y,h:lab+' '+y,num:1,y,get:(a)=>getY(a,y)}));for(let j=1;j<ys.length;j++){const y0=ys[j-1],y1=ys[j];cols.push({k:lab+'_v'+y1,h:'Var. '+y1+' vs '+y0,vr:1,get:(a)=>vr(getY(a,y0),getY(a,y1))});}};
+  for(const m of ms)grupo(MES[m-1],(a,y)=>val(a,y,m,K));
+  grupo('Total',(a,y)=>tot(a,y,K));
+  const ss=S.rcSort&&cols.some((c)=>c.k===S.rcSort.f)?S.rcSort:{f:'Total_'+ys[ys.length-1],dir:'desc'};
+  ordenar(socs,cols,ss,(a,c)=>{const v=c.get(a);return v===Infinity?1e17:v;});
+  // fila total
+  const T={so:'Total',cli:'',ven:'',f:new Float64Array(M.months.length),n:new Float64Array(M.months.length)};for(const a of socs)for(let i=0;i<M.months.length;i++){T.f[i]+=a.f[i];T.n[i]+=a.n[i];}
+  // resumen
+  const yL=ys[ys.length-1],yP=ys[ys.length-2];const con=(y)=>socs.filter((a)=>tot(a,y,'f')>0).length;
+  const nuevos=socs.filter((a)=>tot(a,yL,'f')>0&&!(tot(a,yP,'f')>0)).length,perd=socs.filter((a)=>tot(a,yP,'f')>0&&!(tot(a,yL,'f')>0)).length;
+  const per=ms.length===12?'todo el año':ms.map((m)=>MES[m-1]).join(', ');
+  $('rc2-res').replaceChildren(...ys.map((y)=>el('div',{class:'kpi'},el('span',{text:y+' · '+per}),el('b',{text:mm(tot(T,y,'n'))}),el('small',{text:nf.format(tot(T,y,'f'))+' facturas · '+nf.format(con(y))+' socios con compra'}))),
+    (()=>{const v=vr(tot(T,yP,'n'),tot(T,yL,'n'));return el('div',{class:'kpi'},el('span',{text:'Variación neto '+yL+' vs '+yP}),el('b',{class:v==null||v===Infinity?'':v>=0?'pos':'neg',text:v==null?'—':v===Infinity?'Nuevo':(v>0?'+':'')+pf.format(v)}),el('small',{text:'mismos meses en ambos años'}));})(),
+    el('div',{class:'kpi'},el('span',{text:'Socios nuevos '+yL}),el('b',{text:nf.format(nuevos)}),el('small',{text:'compraron en '+yL+' y no en '+yP})),
+    el('div',{class:'kpi warn'},el('span',{text:'Socios perdidos '+yL}),el('b',{text:nf.format(perd)}),el('small',{text:'compraron en '+yP+' y no en '+yL})));
+  // avisos de meses incompletos
+  const c=M.corte,cy=c.slice(0,4),cmo=+c.slice(5,7);const lc=ultimoCerrado();const avisos=[];
+  for(const y of ys)for(const m of ms){const ym=y+'-'+pad2(m);if(ym>c.slice(0,7))avisos.push(MESES_L[m-1]+' '+y+' (aún sin ventas)');else if(ym>lc)avisos.push(MESES_L[m-1]+' '+y+' (incompleto, ventas al '+fdate(c)+')');}
+  $('rc2-note').textContent=(met==='neto'?'Neto en miles de pesos (M$).':'Número de facturas.')+' Cada fila es un socio, sumando todos sus vendedores. La variación compara cada año con el anterior marcado, en el mismo mes.'+(avisos.length?' Atención: '+avisos.join('; ')+'.':'');
+  $('rc2-note').classList.toggle('z',!!avisos.length);
+  $('rc2-count').textContent=nf.format(socs.length)+' socios con compra en los años y meses elegidos'+(socs.length>800?' · se muestran los primeros 800, el Excel trae todos':'');
+  S.lastRc={socs,cols,ys,ms,T,todosCli};
+  cabecera('rc2-head',cols,ss);
+  const fmtV=(v,met_)=>met_==='neto'?miles(v):nf.format(v);
+  const cel=(a,cc,tot_)=>{const td=document.createElement('td');if(cc.l)td.className='l';if(cc.cls)td.classList.add(...cc.cls.split(' '));const v=cc.get(a);
+    if(cc.vr){td.textContent=v==null?'—':v===Infinity?'Nuevo':(v>0?'+':'')+pf.format(v);if(v!=null)td.classList.add(v>=0?'pos':'neg');}
+    else if(cc.num){td.textContent=fmtV(v,met);if(!v)td.classList.add('zc');if(cc.k.startsWith('Total'))td.style.fontWeight='600';}
+    else td.textContent=v||'';if(cc.k==='so'&&!tot_){td.title=a.so+' · '+a.cli;}return td;};
+  const fr=document.createDocumentFragment();for(const a of socs.slice(0,800)){const tr=document.createElement('tr');for(const cc of cols)tr.append(cel(a,cc));fr.append(tr);}
+  if(!socs.length)fr.append(el('tr',null,el('td',{class:'l',colSpan:cols.length,text:'No hay socios con compra en los años y meses elegidos.'})));
+  $('rc2-body').replaceChildren(fr);$('rc2-foot').replaceChildren(...cols.map((cc)=>{const td=cel(T,cc,true);if(cc.k==='so')td.textContent='Total ('+nf.format(socs.length)+' socios)';return td;}));
+  {const tb=$('rc2-table'),w=$('rc2-head').querySelector('.stk1');if(w)tb.style.setProperty('--stk2',w.getBoundingClientRect().width+'px');}
+}
+$('rc2-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastRc)return;const L=S.lastRc;const mi=new Map(S.M.months.map((m,i)=>[m,i]));
+  const hoja=(K)=>{const fila=(a,nom)=>{const o={'Socio':nom||a.so};if(L.todosCli)o['Cliente']=a.cli;o['Vendedor']=a.ven;const g=(y,m)=>{const i=mi.get(y+'-'+pad2(m));return i==null?0:a[K][i];};
+      const add=(lab,gy)=>{L.ys.forEach((y)=>{o[lab+' '+y]=Math.round(gy(y));});for(let j=1;j<L.ys.length;j++){const b=gy(L.ys[j-1]),c=gy(L.ys[j]);o['Var. '+lab+' '+L.ys[j]+' vs '+L.ys[j-1]+' %']=b>0?Math.round((c-b)/b*1000)/10:(c>0?'Nuevo':'');}};
+      for(const m of L.ms)add(MES[m-1],(y)=>g(y,m));add('Total',(y)=>L.ms.reduce((s,m)=>s+g(y,m),0));return o;};
+    return [...L.socs.map((a)=>fila(a)),fila(L.T,'TOTAL')];};
+  libroXLSX([['Neto (pesos)',hoja('n'),null],['Facturas',hoja('f'),null]],'Retail_comparativo_'+L.ys.join('-')+'.xlsx');});
 
 /* ---------- maestro: carga de datos ---------- */
 let nvInfoLater=false;
