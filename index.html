@@ -163,6 +163,8 @@ body.rol-vendedor .dl{display:none!important}
 .cont a{color:var(--accent-2)}
 .dias .vgrid{grid-template-columns:repeat(auto-fill,minmax(3.4rem,1fr))}
 .t tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+.t th.mes-act,.t td.mes-act{background:var(--accent-soft)}
+.t th.mes-act{color:var(--accent);font-weight:700}
 body.rol-vendedor .t,body.rol-vendedor .modal{-webkit-user-select:none;user-select:none}
 #vpc-anios .chip[aria-pressed=true],#vpc-meses .chip[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
@@ -398,9 +400,11 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <div class="kpis" id="vv-kpis"></div>
         <p class="note" id="vv-note" style="padding:0 4px">—</p>
         <div class="grid2">
-          <div class="card"><h2>Por vendedor</h2><div class="twrap" style="max-height:30rem"><table class="t"><thead><tr><th class="l">Vendedor</th><th>Neto $</th><th>Kilos</th><th>Neto por kilo</th><th>% del neto</th></tr></thead><tbody id="vv-tv"></tbody></table></div></div>
-          <div class="card"><h2>Por grupo</h2><div class="twrap" style="max-height:30rem"><table class="t"><thead><tr><th class="l">Grupo</th><th>Neto $</th><th>Kilos</th><th>Neto por kilo</th><th>% del neto</th></tr></thead><tbody id="vv-tg"></tbody></table></div></div>
+          <div class="card"><h2>Por vendedor</h2><div class="twrap" style="max-height:30rem"><table class="t"><thead><tr><th class="l">Vendedor</th><th>Neto $</th><th>Kilos</th><th>% del neto</th></tr></thead><tbody id="vv-tv"></tbody></table></div></div>
+          <div class="card"><h2>Por grupo</h2><div class="twrap" style="max-height:30rem"><table class="t"><thead><tr><th class="l">Grupo</th><th>Neto $</th><th>Kilos</th><th>% del neto</th></tr></thead><tbody id="vv-tg"></tbody></table></div></div>
         </div>
+        <div class="card"><h2>Por vendedor y grupo</h2><p class="note">Cada vendedor con el detalle de sus grupos, de mayor a menor neto. "% del vendedor" es el peso del grupo dentro de la venta de ese vendedor.</p>
+          <div class="twrap" style="max-height:36rem"><table class="t"><thead><tr><th class="l">Vendedor</th><th class="l">Grupo</th><th>Neto $</th><th>Kilos</th><th>% del vendedor</th><th>% del total</th></tr></thead><tbody id="vv-tvg"></tbody></table></div></div>
       </div>
       <div id="est-ce" class="wrap" style="padding:0" hidden>
         <div class="card">
@@ -2357,20 +2361,29 @@ function renderVV(){
   chips('vv-mes',MES.map((m,i)=>[i+1,m]),F.ms,set('ms'));
   chips('vv-dia',Array.from({length:31},(_,i)=>[i+1,String(i+1)]),F.ds,set('ds'));
   const vset=new Set(F.vs.map((v)=>E.vs.indexOf(v))),gset=new Set(F.gs),yset=new Set(F.ys),mset=new Set(F.ms),dset=new Set(F.ds);
-  const porV=new Map(),porG=new Map();let tn=0,tk=0,dias=new Set();
+  const porV=new Map(),porG=new Map(),porVG=new Map();let tn=0,tk=0,dias=new Set();
   for(const [v,,d,g,n,k] of E.dd){if(!vset.has(v)||!gset.has(g))continue;const y=Math.floor(d/10000),m=Math.floor(d/100)%100,dd_=d%100;if(!yset.has(y)||!mset.has(m)||!dset.has(dd_))continue;
-    tn+=n;tk+=k;dias.add(d);const a=porV.get(v)||[0,0];a[0]+=n;a[1]+=k;porV.set(v,a);const b=porG.get(g)||[0,0];b[0]+=n;b[1]+=k;porG.set(g,b);}
+    tn+=n;tk+=k;dias.add(d);const a=porV.get(v)||[0,0];a[0]+=n;a[1]+=k;porV.set(v,a);const b=porG.get(g)||[0,0];b[0]+=n;b[1]+=k;porG.set(g,b);const kvg=v+'|'+g;const c=porVG.get(kvg)||[0,0];c[0]+=n;c[1]+=k;porVG.set(kvg,c);}
   const kpi=(t,v,s)=>el('div',{class:'kpi'},el('span',{text:t}),el('b',{text:v}),el('small',{text:s}));
   $('vv-kpis').replaceChildren(kpi('Venta neta','$'+nf.format(Math.round(tn)),mm(tn)),kpi('Kilos',nf.format(Math.round(tk))+' kg',(tk/1000).toLocaleString('es-CL',{maximumFractionDigits:1})+' toneladas'),
     kpi('Neto por kilo',tk?'$'+nf.format(Math.round(tn/tk)):'—','promedio de la selección'),kpi('Días con venta',nf.format(dias.size),'días con al menos una factura'));
   const fsel=(xs,all)=>xs.length===all?'todos':xs.length===0?'ninguno':xs.length<=4?xs.join(', '):xs.length+' elegidos';
   $('vv-note').textContent='Vendedores: '+fsel(F.vs,E.vs.length)+' · Grupos: '+fsel(F.gs.map((i)=>E.gr[i]),E.gr.length)+' · Años: '+fsel(F.ys,ys.length)+' · Meses: '+fsel(F.ms.map((m)=>MES[m-1]),12)+' · Días: '+fsel(F.ds,31)+'. Solo facturas (tipo F, vigentes). Ventas al '+fdate(E.corte)+'.'+(E.kg?'':' El archivo de ventas no trae la columna Peso Total: los kilos aparecen en 0.');
   const filas=(map,nom)=>[...map.entries()].map(([i,a])=>({nom:nom(i),n:a[0],k:a[1]})).sort((a,b)=>b.n-a.n);
-  const tabla=(id,rows,lab)=>{$(id).replaceChildren(...rows.map((r)=>el('tr',null,el('td',{class:'l '+(lab==='v'?'vend':'cli'),text:r.nom}),el('td',{text:'$'+nf.format(Math.round(r.n))}),el('td',{text:nf.format(Math.round(r.k))}),el('td',{text:r.k?'$'+nf.format(Math.round(r.n/r.k)):'—'}),el('td',{text:tn?pf.format(r.n/tn):'—'}))),
-    ...(rows.length?[el('tr',{class:'tot'},el('td',{class:'l',text:'Total'}),el('td',{text:'$'+nf.format(Math.round(tn))}),el('td',{text:nf.format(Math.round(tk))}),el('td',{text:tk?'$'+nf.format(Math.round(tn/tk)):'—'}),el('td',{text:'100%'}))]:[el('tr',null,el('td',{class:'l',colSpan:5,text:'Sin ventas con esta selección.'}))]));};
-  const rv=filas(porV,(i)=>E.vs[i]).filter((r)=>r.n||r.k),rg=filas(porG,(i)=>E.gr[i]).filter((r)=>r.n||r.k);tabla('vv-tv',rv,'v');tabla('vv-tg',rg,'g');S.lastVV={rv,rg,tn,tk};}
-$('vv-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastVV)return;const L=S.lastVV;const f=(r)=>({'Neto':Math.round(r.n),'Kilos':Math.round(r.k),'Neto por kilo':r.k?Math.round(r.n/r.k):'','% del neto':L.tn?Math.round(r.n/L.tn*1000)/10:''});
-  libroXLSX([['Por vendedor',[...L.rv.map((r)=>({'Vendedor':r.nom,...f(r)})),{'Vendedor':'TOTAL',...f({n:L.tn,k:L.tk})}],[30,16,12,12,10]],['Por grupo',[...L.rg.map((r)=>({'Grupo':r.nom,...f(r)})),{'Grupo':'TOTAL',...f({n:L.tn,k:L.tk})}],[34,16,12,12,10]],['Filtros',[{'Selección':$('vv-note').textContent}],[120]]],'Ventas_por_vendedor_'+hoyISO()+'.xlsx');});
+  const tabla=(id,rows,lab)=>{$(id).replaceChildren(...rows.map((r)=>el('tr',null,el('td',{class:'l '+(lab==='v'?'vend':'cli'),text:r.nom}),el('td',{text:'$'+nf.format(Math.round(r.n))}),el('td',{text:nf.format(Math.round(r.k))}),el('td',{text:tn?pf.format(r.n/tn):'—'}))),
+    ...(rows.length?[el('tr',{class:'tot'},el('td',{class:'l',text:'Total'}),el('td',{text:'$'+nf.format(Math.round(tn))}),el('td',{text:nf.format(Math.round(tk))}),el('td',{text:'100%'}))]:[el('tr',null,el('td',{class:'l',colSpan:4,text:'Sin ventas con esta selección.'}))]));};
+  const rv=filas(porV,(i)=>E.vs[i]).filter((r)=>r.n||r.k),rg=filas(porG,(i)=>E.gr[i]).filter((r)=>r.n||r.k);tabla('vv-tv',rv,'v');tabla('vv-tg',rg,'g');
+  // vendedor y grupo juntos: subtotal por vendedor y su detalle por grupo
+  const rvg=[];for(const r of rv){const vi=E.vs.indexOf(r.nom);const gs=[...porVG.entries()].filter(([k])=>+k.split('|')[0]===vi).map(([k,a])=>({g:E.gr[+k.split('|')[1]],n:a[0],k:a[1]})).filter((x)=>x.n||x.k).sort((a,b)=>b.n-a.n);rvg.push({v:r.nom,n:r.n,k:r.k,gs});}
+  const fr=document.createDocumentFragment();
+  for(const x of rvg){fr.append(el('tr',{class:'tot'},el('td',{class:'l vend',text:x.v}),el('td',{class:'l',text:'Total vendedor'}),el('td',{text:'$'+nf.format(Math.round(x.n))}),el('td',{text:nf.format(Math.round(x.k))}),el('td',{text:'100%'}),el('td',{text:tn?pf.format(x.n/tn):'—'})));
+    for(const g of x.gs)fr.append(el('tr',null,el('td',{class:'l vend',text:x.v}),el('td',{class:'l',text:g.g}),el('td',{text:'$'+nf.format(Math.round(g.n))}),el('td',{text:nf.format(Math.round(g.k))}),el('td',{text:x.n?pf.format(g.n/x.n):'—'}),el('td',{text:tn?pf.format(g.n/tn):'—'})));}
+  if(!rvg.length)fr.append(el('tr',null,el('td',{class:'l',colSpan:6,text:'Sin ventas con esta selección.'})));
+  $('vv-tvg').replaceChildren(fr);
+  S.lastVV={rv,rg,rvg,tn,tk};}
+$('vv-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastVV)return;const L=S.lastVV;const f=(r)=>({'Neto':Math.round(r.n),'Kilos':Math.round(r.k),'% del neto':L.tn?Math.round(r.n/L.tn*1000)/10:''});
+  const vg=L.rvg.flatMap((x)=>x.gs.map((g)=>({'Vendedor':x.v,'Grupo':g.g,'Neto':Math.round(g.n),'Kilos':Math.round(g.k),'% del vendedor':x.n?Math.round(g.n/x.n*1000)/10:'','% del total':L.tn?Math.round(g.n/L.tn*1000)/10:''})));
+  libroXLSX([['Por vendedor',[...L.rv.map((r)=>({'Vendedor':r.nom,...f(r)})),{'Vendedor':'TOTAL',...f({n:L.tn,k:L.tk})}],[30,16,12,10]],['Por grupo',[...L.rg.map((r)=>({'Grupo':r.nom,...f(r)})),{'Grupo':'TOTAL',...f({n:L.tn,k:L.tk})}],[34,16,12,10]],['Vendedor y grupo',vg,[30,34,16,12,12,10]],['Filtros',[{'Selección':$('vv-note').textContent}],[120]]],'Ventas_por_vendedor_'+hoyISO()+'.xlsx');});
 /* ---- Clientes estratégicos ---- */
 const editaEst=()=>S.user.rol==='admin'||S.user.rol==='gerencia';
 async function cargarEstCli(){S.estCli={};try{if(editaEst()){const q=await db.collection(COL_ESTR).get();for(const d of q.docs)S.estCli[d.id]=d.data();}
@@ -2426,18 +2439,20 @@ $('ce-emed').addEventListener('click',(e)=>{const b=e.target.closest('button[dat
 function ceLeer(){$('ce-ebody').querySelectorAll('input[data-m]').forEach((i)=>{const x=S.ceDraft.cl[i.dataset.cod];if(!x)return;const ym=i.dataset.ym;const n=+i.value.replace(/\D/g,'')||0;const e=(x.m||(x.m={}))[ym]||[0,0];e[+i.dataset.j]=n;x.m[ym]=e;if(!e[0]&&!e[1])delete x.m[ym];});}
 function renderCEEdit(){
   const C=S.ce,D=S.ceDraft;const j=S.ceEdMed;$('ce-emed').querySelectorAll('button').forEach((b)=>b.setAttribute('aria-pressed',+b.dataset.v===j));
-  $('ce-etitle').textContent='Editar clientes estratégicos de '+C.ven+' · metas '+C.y+' en '+(j===0?'neto ($)':'kilos');
+  $('ce-etitle').textContent='Editar clientes estratégicos de '+C.ven+' · metas '+C.y+' en '+(j===0?'neto ($)':'kilos')+' · la columna destacada es '+MESES_L[C.m-1];
   const cart=S.M.cartera.filter((c)=>c.cv.includes(C.ven)).sort((a,b)=>a.nom.localeCompare(b.nom,'es'));
   $('ce-dl').replaceChildren(...cart.filter((c)=>!D.cl[c.cod]).map((c)=>el('option',{value:c.nom+' · '+c.cod})));
-  $('ce-ehead').replaceChildren(el('th',{class:'l cli stk stk1',scope:'col',text:'Cliente'}),...MES.map((m)=>el('th',{scope:'col',text:m})),el('th',{scope:'col',text:'Total año'}),el('th',{scope:'col',text:''}));
+  $('ce-ehead').replaceChildren(el('th',{class:'l cli stk stk1',scope:'col',text:'Cliente'}),...MES.map((m,mi)=>el('th',{scope:'col',class:mi+1===C.m?'mes-act':'',text:m,title:mi+1===C.m?'Mes que estás revisando':''})),el('th',{scope:'col',text:'Total año'}),el('th',{scope:'col',text:''}));
   const fmt=(n)=>n>0?nf.format(n):'';const cls=Object.entries(D.cl).sort((a,b)=>a[1].cli.localeCompare(b[1].cli,'es'));
   $('ce-ebody').replaceChildren(...cls.map(([cod,x],ri)=>{const tot=el('td',{class:'tot'});const tr=el('tr');
       const upd=()=>{let s=0;tr.querySelectorAll('input').forEach((i)=>{s+=+i.value.replace(/\D/g,'')||0;});tot.textContent=s?nf.format(s):'—';};
       const ins=MES.map((_,mi)=>{const ym=C.y+'-'+pad2(mi+1);const i=el('input',{class:'input metain',type:'text',inputMode:'numeric',value:fmt(((x.m||{})[ym]||[0,0])[j]),placeholder:j===0?'$':'kg'});i.style.width='7.5rem';
-        Object.assign(i.dataset,{cod,ym,j,m:mi,r:ri,c:mi});i.setAttribute('aria-label','Meta de '+x.cli+' en '+MESES_L[mi]);i.addEventListener('blur',()=>{const n=+i.value.replace(/\D/g,'');i.value=n?nf.format(n):'';});i.addEventListener('input',upd);return el('td',null,i);});
+        Object.assign(i.dataset,{cod,ym,j,m:mi,r:ri,c:mi});i.setAttribute('aria-label','Meta de '+x.cli+' en '+MESES_L[mi]);i.addEventListener('blur',()=>{const n=+i.value.replace(/\D/g,'');i.value=n?nf.format(n):'';});i.addEventListener('input',upd);return el('td',mi+1===C.m?{class:'mes-act'}:null,i);});
       const q=el('button',{type:'button',class:'btn danger sm',text:'Quitar'});q.addEventListener('click',()=>{ceLeer();delete D.cl[cod];renderCEEdit();});
       tr.append(el('td',{class:'l cli stk stk1',text:x.cli,title:cod}),...ins,tot,el('td',null,q));upd();return tr;}),
-    ...(cls.length?[]:[el('tr',null,el('td',{class:'l',colSpan:15,text:'Agrega clientes de la cartera de '+C.ven+' con el buscador de arriba.'}))]));}
+    ...(cls.length?[]:[el('tr',null,el('td',{class:'l',colSpan:15,text:'Agrega clientes de la cartera de '+C.ven+' con el buscador de arriba.'}))]));
+  // desplaza la tabla para que se vea el mes destacado
+  requestAnimationFrame(()=>{const th=$('ce-ehead').querySelector('th.mes-act'),first=$('ce-ehead').querySelector('th');const w=$('ce-ehead').closest('.twrap');if(th&&w)w.scrollLeft=Math.max(0,th.offsetLeft-(first?first.offsetWidth:0)-8);});}
 $('ce-add').addEventListener('click',()=>{const v=$('ce-addcli').value;const m=v.match(/·\s*([^·]+)$/);const cod=m?m[1].trim():v.trim();const c=S.M.clients.get(cod);
   if(!c||!c.cv.includes(S.ce.ven)){toast('Elige un cliente de la lista (cartera de '+S.ce.ven+').');return;}ceLeer();if(S.ceDraft.cl[cod]){toast('Ese cliente ya está en la lista.');return;}
   S.ceDraft.cl[cod]={cli:c.nom,m:{}};$('ce-addcli').value='';renderCEEdit();});
