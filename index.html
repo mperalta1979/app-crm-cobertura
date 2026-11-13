@@ -161,6 +161,8 @@ button,input,select{font:inherit;color:inherit}
 body.rol-vendedor .dl{display:none!important}
 .cont{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.cont span{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;background:var(--panel)}
 .cont a{color:var(--accent-2)}
+.dias .vgrid{grid-template-columns:repeat(auto-fill,minmax(3.4rem,1fr))}
+.t tr.tot td{font-weight:700;border-top:2px solid var(--line)}
 body.rol-vendedor .t,body.rol-vendedor .modal{-webkit-user-select:none;user-select:none}
 #vpc-anios .chip[aria-pressed=true],#vpc-meses .chip[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;color:var(--fg)}
@@ -264,6 +266,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
       <button class="tab" role="tab" data-tab="gest" aria-selected="false">Gestiones</button>
       <button class="tab" role="tab" data-tab="vpc" aria-selected="false">Ventas por cliente</button>
       <button class="tab" role="tab" data-tab="retail" aria-selected="false">Retail</button>
+      <button class="tab" role="tab" data-tab="est" aria-selected="false">Estrategia</button>
       <button class="tab" role="tab" data-tab="nov" aria-selected="false">Novedades</button>
       <button class="tab" role="tab" data-tab="nv" aria-selected="false">Emisión NV x Vendedor</button>
       <button class="tab" role="tab" data-tab="maestro" aria-selected="false" id="tab-maestro" hidden>Maestro</button>
@@ -375,6 +378,52 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <div class="row"><label class="f"><span>Año</span><select class="sel" id="m-anio"></select></label><label class="f" id="m-mes-w"><span>Mes</span><select class="sel" id="m-mes"></select></label><button class="btn sec sm dl" type="button" id="m-export">Descargar Excel</button></div></div>
       <div class="twrap" style="max-height:34rem"><table class="t" id="m-table"><thead><tr id="m-head"></tr></thead><tbody id="m-body"></tbody><tfoot><tr id="m-foot"></tr></tfoot></table></div>
       <div class="row" id="m-edit"><button class="btn" type="button" id="m-btn-edit">Editar metas</button><button class="btn" type="button" id="m-save" hidden>Guardar metas</button><button class="btn sec" type="button" id="m-cancel" hidden>Cancelar</button><span class="hint" id="m-st"></span></div>
+    </section>
+
+    <!-- ESTRATEGIA -->
+    <section id="p-est" class="wrap" style="padding:0" hidden>
+      <div class="seg" id="est-sub" role="group" aria-label="Subsección"><button type="button" data-v="vv">Ventas por vendedor</button><button type="button" data-v="ce">Clientes estratégicos</button></div>
+      <p class="status" id="est-falta" hidden></p>
+      <div id="est-vv" class="wrap" style="padding:0">
+        <div class="card">
+          <div class="tbar"><div><h2>Ventas por vendedor</h2><p class="note">Marca vendedores, grupos de producto, años, meses y días. Puedes elegir uno o varios de cada uno.</p></div><button class="btn sec sm dl" type="button" id="vv-export">Descargar Excel</button></div>
+          <div class="field"><span>Vendedores</span><div id="vv-ven"></div></div>
+          <div class="field"><span>Grupos de producto</span><div id="vv-gru"></div></div>
+          <div class="uform">
+            <div class="field"><span>Años</span><div id="vv-ani"></div></div>
+            <div class="field" style="grid-column:span 2"><span>Meses</span><div id="vv-mes"></div></div>
+          </div>
+          <div class="field"><span>Días</span><div id="vv-dia" class="dias"></div></div>
+        </div>
+        <div class="kpis" id="vv-kpis"></div>
+        <p class="note" id="vv-note" style="padding:0 4px">—</p>
+        <div class="grid2">
+          <div class="card"><h2>Por vendedor</h2><div class="twrap" style="max-height:30rem"><table class="t"><thead><tr><th class="l">Vendedor</th><th>Neto $</th><th>Kilos</th><th>Neto por kilo</th><th>% del neto</th></tr></thead><tbody id="vv-tv"></tbody></table></div></div>
+          <div class="card"><h2>Por grupo</h2><div class="twrap" style="max-height:30rem"><table class="t"><thead><tr><th class="l">Grupo</th><th>Neto $</th><th>Kilos</th><th>Neto por kilo</th><th>% del neto</th></tr></thead><tbody id="vv-tg"></tbody></table></div></div>
+        </div>
+      </div>
+      <div id="est-ce" class="wrap" style="padding:0" hidden>
+        <div class="card">
+          <div class="tbar"><div><h2>Clientes estratégicos</h2><p class="note" id="ce-note">—</p></div><div class="row"><button class="btn sm" type="button" id="ce-edit-btn">Editar clientes y metas</button><button class="btn sec sm dl" type="button" id="ce-export">Descargar Excel</button></div></div>
+          <div class="filters" style="padding:0;border:0">
+            <label class="f"><span>Vendedor</span><select class="sel" id="ce-ven"></select></label>
+            <label class="f"><span>Año</span><select class="sel" id="ce-ani"></select></label>
+            <label class="f"><span>Mes</span><select class="sel" id="ce-mes"></select></label>
+            <div class="f"><span>Medida</span><div class="seg" id="ce-med" role="group"><button type="button" data-v="neto">Neto</button><button type="button" data-v="kilos">Kilos</button><button type="button" data-v="ambos">Ambos</button></div></div>
+          </div>
+          <div class="field" id="ce-dia-w"><span>Días del mes a revisar</span><div id="ce-dia" class="dias"></div></div>
+        </div>
+        <div class="card" id="ce-view"><div class="twrap" style="max-height:34rem"><table class="t"><thead><tr id="ce-head"></tr></thead><tbody id="ce-body"></tbody></table></div></div>
+        <div class="card" id="ce-ed" hidden>
+          <h2 id="ce-etitle">Editar</h2>
+          <p class="note">Agrega clientes de la cartera del vendedor y escribe su meta de cada mes. Elige si estás editando las metas de neto o de kilos; un cliente puede tener una, la otra o ambas. Puedes pegar un bloque copiado desde Excel en la casilla de enero.</p>
+          <div class="row"><input class="input" id="ce-addcli" list="ce-dl" autocomplete="off" placeholder="Buscar cliente de la cartera" style="min-width:min(100%,24rem)"><button class="btn sm" type="button" id="ce-add">Agregar cliente</button>
+            <div class="seg" id="ce-emed" role="group" aria-label="Metas de"><button type="button" data-v="0">Metas de neto $</button><button type="button" data-v="1">Metas de kilos</button></div></div>
+          <datalist id="ce-dl"></datalist>
+          <div class="twrap" style="max-height:30rem"><table class="t"><thead><tr id="ce-ehead"></tr></thead><tbody id="ce-ebody"></tbody></table></div>
+          <div class="row"><button class="btn" type="button" id="ce-save">Guardar</button><button class="btn sec" type="button" id="ce-cancel">Cancelar</button></div>
+        </div>
+      </div>
     </section>
 
     <!-- NOVEDADES -->
@@ -660,7 +709,7 @@ function code_(v){if(v==null||v==='')return '';if(typeof v==='number')return Str
 function socio_(v){return v==null?'':String(v).replace(/_x000D_/gi,' ').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();}
 function idx_(h,names){for(const n of names){const i=h.findIndex(x=>String(x==null?'':x).trim().toLowerCase()===n.toLowerCase());if(i>=0)return i;}return -1;}
 // Lector de .xlsx por partes: descomprime y recorre la hoja en trozos, sin armar un único texto gigante.
-const KEEP_=['tipo_docto','estado_docto','folio_docto','fecha_docto','año','ano','mes','dia','día','vendedor','cod_cliente','rut_cliente','cliente','neto','cod_producto','producto','un_medida','socio','cantidad',
+const KEEP_=['grupo','peso total','tipo_docto','estado_docto','folio_docto','fecha_docto','año','ano','mes','dia','día','vendedor','cod_cliente','rut_cliente','cliente','neto','cod_producto','producto','un_medida','socio','cantidad',
   'venDes','codaux','nomaux','rutaux','actaux','bloqueado','catdes','cvedes','numero_nventa','fecha_emis','nvestado','estado'].map((x)=>x.toLowerCase());
 function xmlTxt_(s){return s.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi,(m,e)=>{e=e.toLowerCase();if(e==='amp')return'&';if(e==='lt')return'<';if(e==='gt')return'>';if(e==='quot')return'"';if(e==='apos')return"'";
   return String.fromCodePoint(e[1]==='x'?parseInt(e.slice(2),16):parseInt(e.slice(1),10));}).replace(/_x000D_/g,'\r');}
@@ -745,7 +794,7 @@ function cartera_(rows){
   return {tipo:'cartera',rows:out};
 }
 function ventas_(XLSX,rows){
-  const h=rows[0];const I={tipo:idx_(h,['Tipo_Docto']),est:idx_(h,['Estado_Docto']),folio:idx_(h,['Folio_Docto']),fecha:idx_(h,['Fecha_Docto']),anio:idx_(h,['Año','Ano']),mes:idx_(h,['Mes']),dia:idx_(h,['Dia','Día']),v:idx_(h,['Vendedor']),cod:idx_(h,['Cod_Cliente']),rut:idx_(h,['RUT_Cliente']),cli:idx_(h,['Cliente']),neto:idx_(h,['Neto']),pc:idx_(h,['Cod_Producto']),pn:idx_(h,['Producto']),um:idx_(h,['Un_Medida']),so:idx_(h,['Socio']),q:idx_(h,['Cantidad'])};
+  const h=rows[0];const I={tipo:idx_(h,['Tipo_Docto']),est:idx_(h,['Estado_Docto']),folio:idx_(h,['Folio_Docto']),fecha:idx_(h,['Fecha_Docto']),anio:idx_(h,['Año','Ano']),mes:idx_(h,['Mes']),dia:idx_(h,['Dia','Día']),v:idx_(h,['Vendedor']),cod:idx_(h,['Cod_Cliente']),rut:idx_(h,['RUT_Cliente']),cli:idx_(h,['Cliente']),neto:idx_(h,['Neto']),pc:idx_(h,['Cod_Producto']),pn:idx_(h,['Producto']),um:idx_(h,['Un_Medida']),so:idx_(h,['Socio']),q:idx_(h,['Cantidad']),gr:idx_(h,['Grupo']),kg:idx_(h,['Peso Total','Peso_Total'])};
   const req={tipo:'Tipo_Docto',est:'Estado_Docto',folio:'Folio_Docto',v:'Vendedor',cod:'Cod_Cliente',neto:'Neto'};
   const falta=Object.keys(req).filter(k=>I[k]<0).map(k=>req[k]);
   if(I.fecha<0&&(I.anio<0||I.mes<0))falta.push('Fecha_Docto (o Año y Mes)');
@@ -754,6 +803,8 @@ function ventas_(XLSX,rows){
     else{const f=r[I.fecha];if(typeof f==='number'){const p=XLSX.SSF.parse_date_code(f);y=p.y;m=p.m;d=p.d;}else if(f instanceof Date){y=f.getFullYear();m=f.getMonth()+1;d=f.getDate();}else if(f){const t=String(f).match(/(\d{4})-(\d{2})-(\d{2})/)||String(f).match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);if(t){if(t[1].length===4){y=+t[1];m=+t[2];d=+t[3]}else{y=+t[3];m=+t[2];d=+t[1]}}}}
     if(!y||!m)return null;return [y,m,d||1];};
   const acc=new Map();let corte='';const prods=[],pIdx=new Map(),cp=new Set(),rt=new Map(),rp=new Set(),vp=new Map(),ld=new Map();
+  // ventas por día (para Estrategia): vendedor, cliente, día, grupo → neto y kilos
+  const eV=[],eVi=new Map(),eC=[],eCi=new Map(),eG=[],eGi=new Map(),dd=new Map();const ix=(arr,map,k,val)=>{let i=map.get(k);if(i==null){i=arr.length;map.set(k,i);arr.push(val);}return i;};
   for(let i=1;i<rows.length;i++){const r=rows[i];
     if(s_(r[I.tipo])!=='F'||s_(r[I.est])!=='V')continue;
     const f=fecha(r);if(!f)continue;
@@ -763,6 +814,8 @@ function ventas_(XLSX,rows){
     const k=vend+'\u0001'+cod+'\u0001'+rut+'\u0001'+ym;
     let a=acc.get(k);if(!a){a={vend,cod,rut,ym,cli:I.cli<0?'':s_(r[I.cli]),fol:new Set(),neto:0};acc.set(k,a);}
     const folio=s_(r[I.folio]),neto=Number(r[I.neto])||0;a.fol.add(folio);a.neto+=neto;
+    {const vi=ix(eV,eVi,vend,vend),ci=ix(eC,eCi,cod+'\u0001'+rut,[cod,rut]),gn=I.gr<0?'':s_(r[I.gr]),gi=ix(eG,eGi,gn||'SIN GRUPO',gn||'SIN GRUPO');
+      const kd=vi+'|'+ci+'|'+ymd+'|'+gi;let e=dd.get(kd);if(!e){e=[0,0];dd.set(kd,e);}e[0]+=neto;e[1]+=I.kg<0?0:(Number(r[I.kg])||0);}
     let pi=-1;if(I.pc>=0){const pc=s_(r[I.pc]);if(pc){pi=pIdx.get(pc);if(pi==null){pi=prods.length;pIdx.set(pc,pi);prods.push([pc,I.pn<0?'':s_(r[I.pn]),I.um<0?'':s_(r[I.um])]);}cp.add(cod+'\u0001'+rut+'\u0001'+ym+'\u0001'+pi);
       const so0=I.so>=0?socio_(r[I.so]):'';const kv=cod+'\u0001'+rut+'\u0001'+so0+'\u0001'+vend+'\u0001'+ym+'\u0001'+pi;let c=vp.get(kv);if(!c){c=[0,0];vp.set(kv,c);}c[0]+=I.q<0?0:(Number(r[I.q])||0);c[1]+=neto;}}
     if(I.so>=0){const so=socio_(r[I.so]);if(so){const kk=vend+'\u0001'+cod+'\u0001'+rut+'\u0001'+so+'\u0001'+ym;let b=rt.get(kk);if(!b){b={vend,cod,rut,so,ym,cli:a.cli,fol:new Set(),neto:0};rt.set(kk,b);}b.fol.add(folio);b.neto+=neto;if(pi>=0)rp.add(vend+'\u0001'+cod+'\u0001'+rut+'\u0001'+so+'\u0001'+ym+'\u0001'+pi);}}}
@@ -774,7 +827,8 @@ function ventas_(XLSX,rows){
     rt:[...rt.values()].map((b)=>[b.vend,b.cod,b.rut,b.cli,b.so,b.ym,b.fol.size,Math.round(b.neto)]),
     rp:[...rp].map((k)=>{const x=sp(k);return [x[0],x[1],x[2],x[3],x[4],+x[5]];}),
     vp:[...vp.entries()].map(([k,c])=>{const x=sp(k);return [x[0],x[1],x[2],x[3],x[4],+x[5],Math.round(c[0]*100)/100,Math.round(c[1])];}),
-    ld:[...ld.entries()].map(([k,d])=>{const x=sp(k);return [x[0],x[1],d];})};
+    ld:[...ld.entries()].map(([k,d])=>{const x=sp(k);return [x[0],x[1],d];}),
+    est:{corte,kg:I.kg>=0,gr:eG,vs:eV,cs:eC,dd:[...dd.entries()].map(([k,e])=>{const x=k.split('|');return [+x[0],+x[1],+x[2].replace(/-/g,''),+x[3],Math.round(e[0]),Math.round(e[1]*10)/10];})}};
 }
 </script>
 
@@ -905,7 +959,8 @@ function armarPaquetes(raw,nv){
 }
 
 async function publicarPaquetes(raw,nv,version){
-  if(!raw||!raw.cartera||!raw.ventas)return 0;const pk=armarPaquetes(raw,nv);const ks=Object.keys(pk);version=version||new Date().toISOString();let k=0;
+  if(!raw||!raw.cartera||!raw.ventas)return 0;const pk=armarPaquetes(raw,nv);const ks=Object.keys(pk);
+  {const est=S.est||await cargarEst();if(est)for(const vk of ks)pk[vk].ventas.dd=ddVendedor(est,pk[vk].vend);}version=version||new Date().toISOString();let k=0;
   for(const vk of ks){k++;busy(true,'Publicando datos por vendedor…',k+' de '+ks.length+': '+pk[vk].vend);
     const bytes=await gzip(JSON.stringify(pk[vk]));const n=Math.ceil(bytes.length/PARTE);const ref=db.collection(COL_V).doc(vk);const prev=await ref.get().catch(()=>null);const pn=prev&&prev.exists?prev.data().partes||0:0;
     for(let i=0;i<n;i++)await db.collection(COL_V).doc(vk+'__'+i).set({version,i,d:firebase.firestore.Blob.fromUint8Array(bytes.slice(i*PARTE,(i+1)*PARTE))});
@@ -929,7 +984,7 @@ function unirPaquetes(bs){
   const cy=new Map();for(const b of bs)for(const [c,y,n] of b.ventas.cy||[])cy.set(c+'|'+y,[c,y,n]);
   const cm=new Map();for(const b of bs)for(const [c,s] of b.ventas.cm||[]){const st=cm.get(c)||new Set();s.split(',').forEach((x)=>st.add(x));cm.set(c,st);}
   const raw={cartera:{...first.cartera,alta:Object.assign({},...bs.map((b)=>b.cartera.alta||{})),rows:u(bs.flatMap((b)=>b.cartera.rows))},
-    ventas:{...first.ventas,rows:bs.flatMap((b)=>b.ventas.rows),cp:cat('cp'),rt:bs.flatMap((b)=>b.ventas.rt||[]),rp:bs.flatMap((b)=>b.ventas.rp||[]),vp:cat('vp'),ld:cat('ld'),cy:[...cy.values()],cm:[...cm].map(([c,s])=>[c,[...s].sort().join(',')])}};
+    ventas:{...first.ventas,rows:bs.flatMap((b)=>b.ventas.rows),cp:cat('cp'),rt:bs.flatMap((b)=>b.ventas.rt||[]),rp:bs.flatMap((b)=>b.ventas.rp||[]),vp:cat('vp'),ld:cat('ld'),dd:bs.some((b)=>b.ventas.dd)?bs.flatMap((b)=>b.ventas.dd||[]):undefined,cy:[...cy.values()],cm:[...cm].map(([c,s])=>[c,[...s].sort().join(',')])}};
   const nvs=bs.filter((b)=>b.nv);const nv=nvs.length?{...nvs[0].nv,rows:nvs.flatMap((b)=>b.nv.rows),cl:nvs.flatMap((b)=>b.nv.cl||[]),total:nvs.reduce((a,b)=>a+b.nv.rows.reduce((s,r)=>s+r[2],0),0)}:null;
   return{raw,nv};
 }
@@ -1028,7 +1083,7 @@ auth.onAuthStateChanged(async(user)=>{
     document.body.classList.toggle('rol-vendedor',esV(p.rol));
     if(p.rol==='admin')await cargarUsuarios().catch(()=>{});
     if(esV(p.rol))await escucharVend();else{await escucharDatos();escucharNV();}
-    await cargarMetas();registrarUso(p);G.reset();NV.reset();S.dir=null;await escucharSecciones();
+    await cargarMetas();registrarUso(p);G.reset();NV.reset();S.dir=null;S.est=null;S.estIntento=false;S.estCli=null;S.ce=null;S.vv=null;S.ceEdit=false;await escucharSecciones();
     $('v-login').hidden=true;$('v-app').hidden=false;mostrarTab(S.tab);
     gCargar().then(()=>gSync(true));
   }catch(e){busy(false);$('l-err').textContent=errAuth(e);await auth.signOut().catch(()=>{});}
@@ -1046,7 +1101,7 @@ $('p-save').addEventListener('click',async()=>{const u=auth.currentUser,cur=$('p
 document.querySelectorAll('.tab').forEach((b)=>b.addEventListener('click',()=>mostrarTab(b.dataset.tab)));
 function mostrarTab(t){if(!S.user)return;if(t==='maestro'&&S.user.rol!=='admin')t='resumen';if(!tabVisible(t))t=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).find(tabVisible)||'resumen';S.tab=t;
   document.querySelectorAll('.tab').forEach((b)=>b.setAttribute('aria-selected',b.dataset.tab===t));
-  for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','nov','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=!['resumen','cobertura','clientes','retail'].includes(t)||(t==='retail'&&retSub()==='comp');
+  for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','est','nov','nv','maestro'])$('p-'+k).hidden=t!==k;$('filters').hidden=!['resumen','cobertura','clientes','retail'].includes(t)||(t==='retail'&&retSub()==='comp');
   $('sec-title').textContent=(TUT[t]||{}).sec||'';
   if(['metas','cobertura','resumen'].includes(t)&&Date.now()-(S.metasTs||0)>60000){S.metasTs=Date.now();cargarMetas().then(()=>{if(S.tab===t)render();});}
   $('w-grupo').hidden=t==='cobertura'||t==='retail';$('w-estado').hidden=t==='retail';$('w-cond').hidden=t==='retail';
@@ -1080,12 +1135,13 @@ function render(){
   if(S.tab==='riesgo'&&S.M){$('empty').hidden=true;renderRiesgo();return;}
   if(S.tab==='metas'&&S.M){$('empty').hidden=true;renderMetas();return;}
   if(S.tab==='nov'&&S.M){$('empty').hidden=true;renderNov();return;}
+  if(S.tab==='est'&&S.M){$('empty').hidden=true;renderEst();return;}
   if(S.tab==='retail'&&S.M){const sub=retSub();$('ret-sub').querySelectorAll('button').forEach((b)=>{b.hidden=!tabVisible(b.dataset.v==='comp'?'ret_comp':'ret_soc');b.setAttribute('aria-pressed',b.dataset.v===sub);});
     $('ret-sub').hidden=!(tabVisible('ret_comp')&&tabVisible('ret_soc'));$('ret-comp').hidden=sub!=='comp';$('ret-soc').hidden=sub==='comp';if(sub==='comp'){$('empty').hidden=true;renderRetComp();return;}}
   if(S.tab==='comp'&&S.M){$('empty').hidden=true;renderComp();return;}
   if(S.tab==='gest'&&S.M){$('empty').hidden=true;renderGest();return;}
   $('empty').hidden=!!S.M||S.tab==='maestro';
-  if(!S.M){$('data-info').textContent='Sin datos cargados';for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','nov'])$('p-'+k).hidden=true;$('filters').hidden=true;if(S.tab==='maestro')renderMaestro();return;}
+  if(!S.M){$('data-info').textContent='Sin datos cargados';for(const k of ['resumen','cobertura','metas','clientes','retail','vpc','csv','riesgo','comp','gest','est','nov'])$('p-'+k).hidden=true;$('filters').hidden=true;if(S.tab==='maestro')renderMaestro();return;}
   const M=S.M,f=S.f,sc=alcance();
   const corte=S.raw.ventas.corte||'';
   $('data-info').textContent='Ventas al '+fdate(corte)+' · cartera cargada el '+fdate(S.raw.cartera.cargado);
@@ -1938,6 +1994,12 @@ const TUT={
     'Cada fila muestra las facturas o el neto de cada mes, el total del año, el histórico, los meses con y sin compra y la última compra.',
     'Busca un socio escribiendo parte de su nombre.'],
     tip:'Un socio aparece una vez por cada vendedor que le ha vendido, aunque ese vendedor no le haya vendido este año.'},
+  est:{sec:'Estrategia',intro:'Herramientas para gerencia: ventas por vendedor con filtros libres y seguimiento de clientes estratégicos con metas mensuales.',pasos:[
+    'Ventas por vendedor: marca uno o varios vendedores, grupos de producto, años, meses y días (por ejemplo, solo los días 3, 4 y 10). Arriba aparecen la venta neta, los kilos y el neto por kilo; abajo, el detalle por vendedor y por grupo.',
+    'Clientes estratégicos: elige el vendedor, el año, el mes y los días que quieres revisar. Cada cliente muestra lo vendido en cada semana (lunes a domingo), el total de los días elegidos, la meta del mes y el avance con semáforo.',
+    'Para elegir clientes y metas (administrador y gerencia): presiona "Editar clientes y metas", agrega clientes de la cartera del vendedor y escribe la meta de cada mes en neto, en kilos o en ambos. Luego "Guardar". Puedes cambiarlas cuando quieras.',
+    'Cada vendedor ve solo sus propios clientes estratégicos y su avance, sin poder editar.'],
+    tip:'Los kilos salen de la columna "Peso Total" del archivo de ventas. Solo se cuentan facturas vigentes.'},
   nov:{sec:'Novedades',intro:'Registros comerciales importantes: cambios de vendedor de un cliente y reclamos de clientes que no logran ser atendidos por su vendedor.',pasos:[
     'Arriba eliges la subsección: "Cambios de vendedor" o "Reclamos de atención".',
     'Cambios de vendedor: con "Registrar cambio" anotas la fecha, el cliente, el vendedor original y el nuevo. La app compara solo las facturas de cada uno a ese cliente: el mismo número de meses cerrados antes y después del cambio (el mes del cambio no se cuenta). El semáforo muestra si el vendedor nuevo vende igual o más que el anterior.',
@@ -1971,21 +2033,23 @@ $('tut-close').addEventListener('click',()=>{$('tut').hidden=true;});$('tut').ad
 
 
 /* ---------- secciones visibles por tipo de usuario ---------- */
-const TABS_=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).filter((x)=>x!=='maestro').flatMap((x)=>x==='nov'?['nov_camb','nov_recl']:x==='retail'?['ret_soc','ret_comp']:[x]);
-const SUBN={nov_camb:'Novedades · Cambios de vendedor',nov_recl:'Novedades · Reclamos de atención',ret_soc:'Retail · Socios mes a mes',ret_comp:'Retail · Comparativo'};
+const TABS_=[...document.querySelectorAll('.tab')].map((b)=>b.dataset.tab).filter((x)=>x!=='maestro').flatMap((x)=>x==='nov'?['nov_camb','nov_recl']:x==='retail'?['ret_soc','ret_comp']:x==='est'?['est_vv','est_ce']:[x]);
+const SUBN={nov_camb:'Novedades · Cambios de vendedor',nov_recl:'Novedades · Reclamos de atención',ret_soc:'Retail · Socios mes a mes',ret_comp:'Retail · Comparativo',est_vv:'Estrategia · Ventas por vendedor',est_ce:'Estrategia · Clientes estratégicos'};
 // configuración efectiva: las guardadas antes de esta versión no conocían las subsecciones de Retail
-function ocultasEf(){const o=S.ocultas||{};if(o.ver>=2)return o;const r={ver:2};for(const rol of ['gerencia','vendedor','kam']){const a=(o[rol]||[]).slice();if(a.includes('retail'))a.push('ret_soc','ret_comp');if(esV(rol)&&!a.includes('ret_comp'))a.push('ret_comp');r[rol]=a.filter((x)=>x!=='retail');}return r;}
+function ocultasEf(){const o=S.ocultas||{};if(o.ver>=3)return o;const v=o.ver||0;const r={ver:3};for(const rol of ['gerencia','vendedor','kam']){let a=(o[rol]||[]).slice();
+    if(v<2){if(a.includes('retail'))a.push('ret_soc','ret_comp');if(esV(rol)&&!a.includes('ret_comp'))a.push('ret_comp');a=a.filter((x)=>x!=='retail');}
+    if(v<3&&esV(rol)&&!a.includes('est_vv'))a.push('est_vv');r[rol]=a;}return r;}
 const retSub=()=>{const s=S.rSub==='comp'?'comp':'soc';if(s==='comp'&&!tabVisible('ret_comp'))return 'soc';if(s==='soc'&&!tabVisible('ret_soc'))return 'comp';return s;};
 const tabNombre=(t)=>{if(SUBN[t])return SUBN[t];const b=document.querySelector('.tab[data-tab="'+t+'"]');return b?b.textContent.trim():t;};
-const tabVisible=(t)=>{if(!S.user)return true;if(t==='nov')return tabVisible('nov_camb')||tabVisible('nov_recl');if(t==='retail')return tabVisible('ret_soc')||tabVisible('ret_comp');if(t==='maestro')return S.user.rol==='admin';if(S.user.rol==='admin')return true;const o=ocultasEf()[S.user.rol];return !(o&&o.includes(t));};
+const tabVisible=(t)=>{if(!S.user)return true;if(t==='nov')return tabVisible('nov_camb')||tabVisible('nov_recl');if(t==='retail')return tabVisible('ret_soc')||tabVisible('ret_comp');if(t==='est')return tabVisible('est_vv')||tabVisible('est_ce');if(t==='maestro')return S.user.rol==='admin';if(S.user.rol==='admin')return true;const o=ocultasEf()[S.user.rol];return !(o&&o.includes(t));};
 function aplicarSecciones(){if(!S.user)return;document.querySelectorAll('.tab').forEach((b)=>{if(b.dataset.tab!=='maestro')b.hidden=!tabVisible(b.dataset.tab);});}
 function escucharSecciones(){if(S.unsubSec)S.unsubSec();let primero=true;
   return new Promise((resolve)=>{S.unsubSec=db.collection(COL_M).doc('secciones').onSnapshot((d)=>{S.ocultas=d.exists?(d.data().ocultas||{}):{};S.ntfy=d.exists?(d.data().ntfy||null):null;aplicarSecciones();
-    if(primero){primero=false;resolve();}else if(S.user&&!$('v-app').hidden){if(!tabVisible(S.tab))mostrarTab(S.tab);else if(S.tab==='nov'||S.tab==='retail')render();if(S.tab==='maestro')renderSecciones();}},
+    if(primero){primero=false;resolve();}else if(S.user&&!$('v-app').hidden){if(!tabVisible(S.tab))mostrarTab(S.tab);else if(S.tab==='nov'||S.tab==='retail'||S.tab==='est')render();if(S.tab==='maestro')renderSecciones();}},
     ()=>{S.ocultas={};if(primero){primero=false;resolve();}});});}
 function renderSecciones(){const o=ocultasEf();const ck=(rol,t)=>{const c=el('input',{type:'checkbox',checked:!((o[rol]||[]).includes(t))});c.dataset.rol=rol;c.dataset.t=t;c.setAttribute('aria-label',tabNombre(t)+' para '+ROL[rol]);return el('td',null,c);};
   $('sec-body').replaceChildren(...TABS_.map((t)=>el('tr',null,el('td',{class:'l',text:tabNombre(t)}),ck('gerencia',t),ck('vendedor',t),ck('kam',t))));}
-$('sec-save').addEventListener('click',async()=>{const oc={ver:2,gerencia:[],vendedor:[],kam:[]};$('sec-body').querySelectorAll('input').forEach((c)=>{if(!c.checked)oc[c.dataset.rol].push(c.dataset.t);});
+$('sec-save').addEventListener('click',async()=>{const oc={ver:3,gerencia:[],vendedor:[],kam:[]};$('sec-body').querySelectorAll('input').forEach((c)=>{if(!c.checked)oc[c.dataset.rol].push(c.dataset.t);});
   for(const r of ['gerencia','vendedor','kam'])if(oc[r].length===TABS_.length){$('sec-st').textContent=ROL[r]+' debe ver al menos una sección.';return;}
   try{await db.collection(COL_M).doc('secciones').set({ocultas:oc,por:auth.currentUser.email,ts:new Date().toISOString()},{merge:true});S.ocultas=oc;
     const txt=(r)=>oc[r].length?'oculta '+oc[r].map(tabNombre).join(', '):'ve todas';$('sec-st').textContent='Guardado. Gerencia '+txt('gerencia')+'. Vendedor '+txt('vendedor')+'. Kam Retail '+txt('kam')+'.';toast('Secciones guardadas.');}
@@ -2237,6 +2301,153 @@ $('rc2-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastRc)return;con
     return [...L.socs.map((a)=>fila(a)),fila(L.T,'TOTAL')];};
   libroXLSX([['Neto (pesos)',hoja('n'),null],['Facturas',hoja('f'),null]],'Retail_comparativo_'+L.ys.join('-')+'.xlsx');});
 
+/* ---------- Estrategia: datos diarios ---------- */
+const COL_EST='crm_est',COL_ESTR='crm_estr';
+S.est=null;S.estCli=null;
+async function publicarEst(est){const bytes=await gzip(JSON.stringify(est));const n=Math.ceil(bytes.length/PARTE);const version=new Date().toISOString();
+  const ref=db.collection(COL_EST).doc('meta');const prev=await ref.get().catch(()=>null);const pn=prev&&prev.exists?prev.data().partes||0:0;
+  for(let i=0;i<n;i++){busy(true,'Guardando ventas diarias…','Parte '+(i+1)+' de '+n);await db.collection(COL_EST).doc('parte_'+i).set({version,i,d:firebase.firestore.Blob.fromUint8Array(bytes.slice(i*PARTE,(i+1)*PARTE))});}
+  await ref.set({version,partes:n,corte:est.corte,bytes:bytes.length});for(let i=n;i<pn;i++)await db.collection(COL_EST).doc('parte_'+i).delete().catch(()=>{});
+  await IDB.put('est',{version,est});S.est=est;S.estVer=version;}
+async function cargarEst(){if(S.est)return S.est;if(!(S.user.rol==='admin'||S.user.rol==='gerencia'))return null;
+  try{const m=await db.collection(COL_EST).doc('meta').get();if(!m.exists)return null;const meta=m.data();const c=await IDB.get('est');if(c&&c.version===meta.version){S.est=c.est;S.estVer=meta.version;return S.est;}
+    busy(true,'Descargando ventas diarias…');const parts=await Promise.all(Array.from({length:meta.partes},(_,i)=>db.collection(COL_EST).doc('parte_'+i).get()));
+    if(!parts.every((p)=>p.exists&&p.data().version===meta.version))return null;const arrs=parts.map((p)=>p.data().d.toUint8Array());const tot=new Uint8Array(arrs.reduce((a,x)=>a+x.length,0));let o=0;for(const a of arrs){tot.set(a,o);o+=a.length;}
+    S.est=JSON.parse(await gunzip(tot));S.estVer=meta.version;await IDB.put('est',{version:meta.version,est:S.est});return S.est;}catch(e){return null;}finally{busy(false);}}
+// ventas diarias de un vendedor a sus clientes: cod → Map(ymd → [neto,kilos])
+function ventasDiaVend(vend){
+  const M=S.M;const out=new Map();const res=resolverCod();const add=(cod,d,n,k)=>{let m=out.get(cod);if(!m){m=new Map();out.set(cod,m);}const e=m.get(d)||[0,0];e[0]+=n;e[1]+=k;m.set(d,e);};
+  if(S.est){const E=S.est;const vi=E.vs.indexOf(vend);if(vi<0)return out;for(const [v,ci,d,,n,k] of E.dd)if(v===vi){const [c,r]=E.cs[ci];add(res(c,r),d,n,k);}return out;}
+  for(const [c,r,d,n,k,v] of (S.raw&&S.raw.ventas.dd)||[])if(v===vend)add(res(c,r),d,n,k);return out;}
+function resolverCod(){const R=S.raw.cartera.rows;const cs=new Set(R.map((r)=>r[1])),r2c=new Map();for(const r of R)if(r[3])r2c.set(r[3],r[1]);return (c,rut)=>cs.has(c)?c:(r2c.get(rut)||c);}
+// paquete del vendedor: sus ventas diarias por cliente (sin grupo)
+function ddVendedor(est,vend){const vi=est.vs.indexOf(vend);if(vi<0)return [];const m=new Map();for(const [v,ci,d,,n,k] of est.dd){if(v!==vi)continue;const key=ci+'|'+d;const e=m.get(key)||[0,0];e[0]+=n;e[1]+=k;m.set(key,e);}
+  return [...m.entries()].map(([key,e])=>{const [ci,d]=key.split('|');const [c,r]=est.cs[+ci];return [c,r,+d,e[0],Math.round(e[1]*10)/10,vend];});}
+const dInt=(y,m,d)=>y*10000+m*100+d;
+const diasMes=(y,m)=>new Date(Date.UTC(y,m,0)).getUTCDate();
+const corteInt=()=>+S.M.corte.replace(/-/g,'');
+// casillas de selección múltiple con "Todos" y "Ninguno"
+function chips(id,items,sel,onChange){const box=$(id);const set=new Set(sel);
+  const todos=el('button',{type:'button',class:'btn sec sm',text:'Todos'}),nin=el('button',{type:'button',class:'btn sec sm',text:'Ninguno'});
+  todos.addEventListener('click',()=>onChange(items.map((x)=>x[0])));nin.addEventListener('click',()=>onChange([]));
+  box.replaceChildren(el('div',{class:'row',style:'margin-bottom:6px'},todos,nin),el('div',{class:'vgrid'},...items.map(([v,l])=>{const c=el('input',{type:'checkbox',checked:set.has(v)});c.addEventListener('change',()=>{c.checked?set.add(v):set.delete(v);onChange(items.map((x)=>x[0]).filter((x)=>set.has(x)));});return el('label',null,c,' '+l);})));}
+/* ---------- interfaz Estrategia ---------- */
+S.estSub='vv';
+$('est-sub').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;S.estSub=b.dataset.v;render();});
+const estSubVis=(k)=>tabVisible(k==='vv'?'est_vv':'est_ce');
+async function renderEst(){
+  if(!estSubVis(S.estSub))S.estSub=estSubVis('vv')?'vv':'ce';
+  $('est-sub').querySelectorAll('button').forEach((b)=>{b.hidden=!estSubVis(b.dataset.v);b.setAttribute('aria-pressed',b.dataset.v===S.estSub);});
+  $('est-sub').hidden=!(estSubVis('vv')&&estSubVis('ce'));$('est-vv').hidden=S.estSub!=='vv';$('est-ce').hidden=S.estSub!=='ce';
+  if(S.user.rol==='admin'||S.user.rol==='gerencia'){if(!S.est&&!S.estIntento){S.estIntento=true;await cargarEst();}}
+  const sinDatos=(S.user.rol==='admin'||S.user.rol==='gerencia')?!S.est:!(S.raw&&S.raw.ventas.dd);
+  $('est-falta').hidden=!sinDatos;$('est-falta').textContent=S.user.rol==='admin'?'Para usar Estrategia, vuelve a cargar el Excel de ventas en Maestro (esta sección necesita las columnas Grupo y Peso Total).':'El administrador debe volver a cargar el Excel de ventas para usar esta sección.';
+  if(sinDatos){$('est-vv').hidden=true;$('est-ce').hidden=true;return;}
+  if(S.estSub==='vv')renderVV();else{if(!S.estCli)await cargarEstCli();renderCE();}}
+/* ---- Ventas por vendedor ---- */
+S.vv=null;
+function vvDef(){const E=S.est;const c=E.corte;const y=+c.slice(0,4),m=+c.slice(5,7);return{vs:E.vs.slice(),gs:E.gr.map((_,i)=>i),ys:[y],ms:[m],ds:Array.from({length:31},(_,i)=>i+1)};}
+function renderVV(){
+  const E=S.est;if(!S.vv)S.vv=vvDef();const F=S.vv;const set=(k)=>(v)=>{F[k]=v;renderVV();};
+  const vsOrd=E.vs.map((v,i)=>[v,i]).sort((a,b)=>a[0].localeCompare(b[0],'es'));
+  const ys=[...new Set(E.dd.map((r)=>Math.floor(r[2]/10000)))].sort();
+  chips('vv-ven',vsOrd.map(([v])=>[v,v]),F.vs,set('vs'));
+  chips('vv-gru',E.gr.map((g,i)=>[i,g]).sort((a,b)=>a[1].localeCompare(b[1],'es')),F.gs,set('gs'));
+  chips('vv-ani',ys.map((y)=>[y,String(y)]),F.ys,set('ys'));
+  chips('vv-mes',MES.map((m,i)=>[i+1,m]),F.ms,set('ms'));
+  chips('vv-dia',Array.from({length:31},(_,i)=>[i+1,String(i+1)]),F.ds,set('ds'));
+  const vset=new Set(F.vs.map((v)=>E.vs.indexOf(v))),gset=new Set(F.gs),yset=new Set(F.ys),mset=new Set(F.ms),dset=new Set(F.ds);
+  const porV=new Map(),porG=new Map();let tn=0,tk=0,dias=new Set();
+  for(const [v,,d,g,n,k] of E.dd){if(!vset.has(v)||!gset.has(g))continue;const y=Math.floor(d/10000),m=Math.floor(d/100)%100,dd_=d%100;if(!yset.has(y)||!mset.has(m)||!dset.has(dd_))continue;
+    tn+=n;tk+=k;dias.add(d);const a=porV.get(v)||[0,0];a[0]+=n;a[1]+=k;porV.set(v,a);const b=porG.get(g)||[0,0];b[0]+=n;b[1]+=k;porG.set(g,b);}
+  const kpi=(t,v,s)=>el('div',{class:'kpi'},el('span',{text:t}),el('b',{text:v}),el('small',{text:s}));
+  $('vv-kpis').replaceChildren(kpi('Venta neta','$'+nf.format(Math.round(tn)),mm(tn)),kpi('Kilos',nf.format(Math.round(tk))+' kg',(tk/1000).toLocaleString('es-CL',{maximumFractionDigits:1})+' toneladas'),
+    kpi('Neto por kilo',tk?'$'+nf.format(Math.round(tn/tk)):'—','promedio de la selección'),kpi('Días con venta',nf.format(dias.size),'días con al menos una factura'));
+  const fsel=(xs,all)=>xs.length===all?'todos':xs.length===0?'ninguno':xs.length<=4?xs.join(', '):xs.length+' elegidos';
+  $('vv-note').textContent='Vendedores: '+fsel(F.vs,E.vs.length)+' · Grupos: '+fsel(F.gs.map((i)=>E.gr[i]),E.gr.length)+' · Años: '+fsel(F.ys,ys.length)+' · Meses: '+fsel(F.ms.map((m)=>MES[m-1]),12)+' · Días: '+fsel(F.ds,31)+'. Solo facturas (tipo F, vigentes). Ventas al '+fdate(E.corte)+'.'+(E.kg?'':' El archivo de ventas no trae la columna Peso Total: los kilos aparecen en 0.');
+  const filas=(map,nom)=>[...map.entries()].map(([i,a])=>({nom:nom(i),n:a[0],k:a[1]})).sort((a,b)=>b.n-a.n);
+  const tabla=(id,rows,lab)=>{$(id).replaceChildren(...rows.map((r)=>el('tr',null,el('td',{class:'l '+(lab==='v'?'vend':'cli'),text:r.nom}),el('td',{text:'$'+nf.format(Math.round(r.n))}),el('td',{text:nf.format(Math.round(r.k))}),el('td',{text:r.k?'$'+nf.format(Math.round(r.n/r.k)):'—'}),el('td',{text:tn?pf.format(r.n/tn):'—'}))),
+    ...(rows.length?[el('tr',{class:'tot'},el('td',{class:'l',text:'Total'}),el('td',{text:'$'+nf.format(Math.round(tn))}),el('td',{text:nf.format(Math.round(tk))}),el('td',{text:tk?'$'+nf.format(Math.round(tn/tk)):'—'}),el('td',{text:'100%'}))]:[el('tr',null,el('td',{class:'l',colSpan:5,text:'Sin ventas con esta selección.'}))]));};
+  const rv=filas(porV,(i)=>E.vs[i]).filter((r)=>r.n||r.k),rg=filas(porG,(i)=>E.gr[i]).filter((r)=>r.n||r.k);tabla('vv-tv',rv,'v');tabla('vv-tg',rg,'g');S.lastVV={rv,rg,tn,tk};}
+$('vv-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastVV)return;const L=S.lastVV;const f=(r)=>({'Neto':Math.round(r.n),'Kilos':Math.round(r.k),'Neto por kilo':r.k?Math.round(r.n/r.k):'','% del neto':L.tn?Math.round(r.n/L.tn*1000)/10:''});
+  libroXLSX([['Por vendedor',[...L.rv.map((r)=>({'Vendedor':r.nom,...f(r)})),{'Vendedor':'TOTAL',...f({n:L.tn,k:L.tk})}],[30,16,12,12,10]],['Por grupo',[...L.rg.map((r)=>({'Grupo':r.nom,...f(r)})),{'Grupo':'TOTAL',...f({n:L.tn,k:L.tk})}],[34,16,12,12,10]],['Filtros',[{'Selección':$('vv-note').textContent}],[120]]],'Ventas_por_vendedor_'+hoyISO()+'.xlsx');});
+/* ---- Clientes estratégicos ---- */
+const editaEst=()=>S.user.rol==='admin'||S.user.rol==='gerencia';
+async function cargarEstCli(){S.estCli={};try{if(editaEst()){const q=await db.collection(COL_ESTR).get();for(const d of q.docs)S.estCli[d.id]=d.data();}
+  else{for(const vk of [...new Set(S.user.vk||[])]){const d=await db.collection(COL_ESTR).doc(vk).get();if(d.exists)S.estCli[vk]=d.data();}}}catch(e){toast(errAuth(e));}}
+S.ce=null;S.ceEdit=false;
+function ceVendedores(){const M=S.M;const sc=alcance();return M.vendors.filter((v)=>!sc||sc.has(v));}
+function renderCE(){
+  const M=S.M;const c=M.corte;if(!S.ce){const vs=ceVendedores();const conE=vs.find((v)=>S.estCli[vkey(v)]&&Object.keys(S.estCli[vkey(v)].cl||{}).length);S.ce={ven:conE||vs[0],y:+c.slice(0,4),m:+c.slice(5,7),ds:null,med:'ambos'};}
+  const C=S.ce;const vs=ceVendedores();if(!vs.includes(C.ven))C.ven=vs[0];
+  $('ce-ven').replaceChildren(...vs.map((v)=>{const n=Object.keys((S.estCli[vkey(v)]||{}).cl||{}).length;return new Option(v+(n?' ('+n+')':''),v);}));$('ce-ven').value=C.ven;
+  const ys=[...new Set([...M.years.map(Number),+c.slice(0,4)+1])].sort();$('ce-ani').replaceChildren(...ys.map((y)=>new Option(y,y)));$('ce-ani').value=C.y;
+  $('ce-mes').replaceChildren(...MESES_L.map((n,i)=>new Option(n[0].toUpperCase()+n.slice(1),i+1)));$('ce-mes').value=C.m;
+  $('ce-med').querySelectorAll('button').forEach((b)=>b.setAttribute('aria-pressed',b.dataset.v===C.med));
+  const nd=diasMes(C.y,C.m);if(!C.ds)C.ds=Array.from({length:nd},(_,i)=>i+1);C.ds=C.ds.filter((d)=>d<=nd);
+  chips('ce-dia',Array.from({length:nd},(_,i)=>[i+1,String(i+1)]),C.ds,(v)=>{C.ds=v;renderCE();});
+  $('ce-edit-btn').hidden=!editaEst()||S.ceEdit;$('ce-ed').hidden=!S.ceEdit;$('ce-view').hidden=S.ceEdit;
+  if(S.ceEdit){renderCEEdit();return;}
+  const doc=S.estCli[vkey(C.ven)]||{cl:{}};const cl=Object.entries(doc.cl||{});const ym=C.y+'-'+pad2(C.m);
+  const vd=ventasDiaVend(C.ven);const dset=new Set(C.ds);const ci=corteInt();
+  // semanas de lunes a domingo dentro del mes, solo con días elegidos
+  const sem=[];for(let d=1;d<=nd;d++){const dow=(new Date(Date.UTC(C.y,C.m-1,d)).getUTCDay()+6)%7;if(d===1||dow===0)sem.push({ini:d,fin:d,ds:[]});const s=sem[sem.length-1];s.fin=d;if(dset.has(d))s.ds.push(d);}
+  const sems=sem.filter((s)=>s.ds.length);const mesLab=MES[C.m-1].toLowerCase();
+  const meds=C.med==='ambos'?[0,1]:C.med==='neto'?[0]:[1];const nomM=['Neto $','Kilos'];
+  const fmtM=(j,v)=>j===0?'$'+nf.format(Math.round(v)):nf.format(Math.round(v));
+  const rows=cl.map(([cod,x])=>{const m=vd.get(cod)||new Map();const v=(d)=>m.get(dInt(C.y,C.m,d))||[0,0];
+    const ws=sems.map((s)=>s.ds.reduce((a,d)=>{const e=v(d);return [a[0]+e[0],a[1]+e[1]];},[0,0]));const tot=ws.reduce((a,e)=>[a[0]+e[0],a[1]+e[1]],[0,0]);
+    const meta=(x.m||{})[ym]||[0,0];return{cod,cli:x.cli,ws,tot,meta};}).sort((a,b)=>a.cli.localeCompare(b.cli,'es'));
+  S.lastCE={rows,sems,meds,C,mesLab};
+  const head=[el('th',{class:'l cli',scope:'col',text:'Cliente'}),el('th',{class:'l hide-sm',scope:'col',text:'Código'})];
+  for(const j of meds){if(meds.length>1)head.push(el('th',{class:'l',scope:'col',text:j===0?'NETO →':'KILOS →'}));
+    sems.forEach((s,i)=>head.push(el('th',{scope:'col',text:'Sem '+(i+1)+' ('+s.ini+'–'+s.fin+' '+mesLab+')'})));head.push(el('th',{scope:'col',text:'Total días elegidos'}),el('th',{scope:'col',text:'Meta '+mesLab}),el('th',{scope:'col',text:'Avance'}));}
+  $('ce-head').replaceChildren(...head);
+  const linea=(r,isTot)=>{const tds=[(()=>{const td=el('td',{class:'l cli',text:r.cli});if(!isTot&&M.clients.has(r.cod)){td.dataset.ficha=r.cod;td.title='Ver ficha';}return td;})(),el('td',{class:'l hide-sm',text:r.cod||''})];
+    for(const j of meds){if(meds.length>1)tds.push(el('td'));r.ws.forEach((w)=>{const td=el('td',{text:fmtM(j,w[j])});if(!w[j])td.classList.add('zc');tds.push(td);});
+      tds.push(el('td',{text:fmtM(j,r.tot[j]),style:'font-weight:600'}));tds.push(el('td',{text:r.meta[j]?fmtM(j,r.meta[j]):'—'}));
+      const av=r.meta[j]?r.tot[j]/r.meta[j]:null;const ta=el('td',{text:av==null?'—':pf.format(av),style:'font-weight:600'});if(av!=null)ta.prepend(semaforo(av));tds.push(ta);}
+    return el('tr',isTot?{class:'tot'}:null,...tds);};
+  const T={cli:'Total',cod:'',ws:sems.map((_,i)=>rows.reduce((a,r)=>[a[0]+r.ws[i][0],a[1]+r.ws[i][1]],[0,0])),tot:rows.reduce((a,r)=>[a[0]+r.tot[0],a[1]+r.tot[1]],[0,0]),meta:rows.reduce((a,r)=>[a[0]+r.meta[0],a[1]+r.meta[1]],[0,0])};
+  $('ce-body').replaceChildren(...rows.map((r)=>linea(r)),...(rows.length?[linea(T,true)]:[el('tr',null,el('td',{class:'l',colSpan:head.length,text:editaEst()?'Este vendedor no tiene clientes estratégicos. Usa "Editar clientes y metas" para agregarlos.':'Aún no tienes clientes estratégicos asignados.'}))]));
+  const parcial=dInt(C.y,C.m,Math.max(...C.ds,0))>ci;
+  $('ce-note').textContent='Ventas de '+C.ven+' a cada cliente en los días elegidos de '+MESES_L[C.m-1]+' '+C.y+', agrupadas en semanas de lunes a domingo. El avance compara el total de los días elegidos con la meta del mes. Semáforo: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%.'+(parcial?' Las ventas llegan hasta el '+fdate(M.corte)+'.':'');
+}
+['ce-ven','ce-ani','ce-mes'].forEach((id)=>$(id).addEventListener('change',(e)=>{const C=S.ce;if(id==='ce-ven')C.ven=e.target.value;else{if(id==='ce-ani')C.y=+e.target.value;else C.m=+e.target.value;C.ds=null;}renderCE();}));
+$('ce-med').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;S.ce.med=b.dataset.v;renderCE();});
+$('ce-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCE)return;const L=S.lastCE;
+  const data=L.rows.map((r)=>{const o={'Cliente':r.cli,'Código':r.cod};for(const j of L.meds){const p=j===0?'Neto':'Kilos';L.sems.forEach((s,i)=>{o[p+' sem '+(i+1)+' ('+s.ini+'-'+s.fin+')']=Math.round(r.ws[i][j]);});o[p+' total días elegidos']=Math.round(r.tot[j]);o[p+' meta mes']=r.meta[j]||'';o[p+' avance %']=r.meta[j]?Math.round(r.tot[j]/r.meta[j]*1000)/10:'';}return o;});
+  libroXLSX([['Clientes estratégicos',data,null]],'Clientes_estrategicos_'+vkey(L.C.ven)+'_'+L.C.y+'-'+pad2(L.C.m)+'.xlsx');});
+/* edición de clientes y metas (administrador y gerencia) */
+S.ceEdMed=0;
+$('ce-edit-btn').addEventListener('click',()=>{S.ceEdit=true;S.ceDraft=JSON.parse(JSON.stringify(S.estCli[vkey(S.ce.ven)]||{vend:S.ce.ven,cl:{}}));renderCE();});
+$('ce-cancel').addEventListener('click',()=>{S.ceEdit=false;renderCE();});
+$('ce-emed').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;ceLeer();S.ceEdMed=+b.dataset.v;renderCEEdit();});
+function ceLeer(){$('ce-ebody').querySelectorAll('input[data-m]').forEach((i)=>{const x=S.ceDraft.cl[i.dataset.cod];if(!x)return;const ym=i.dataset.ym;const n=+i.value.replace(/\D/g,'')||0;const e=(x.m||(x.m={}))[ym]||[0,0];e[+i.dataset.j]=n;x.m[ym]=e;if(!e[0]&&!e[1])delete x.m[ym];});}
+function renderCEEdit(){
+  const C=S.ce,D=S.ceDraft;const j=S.ceEdMed;$('ce-emed').querySelectorAll('button').forEach((b)=>b.setAttribute('aria-pressed',+b.dataset.v===j));
+  $('ce-etitle').textContent='Editar clientes estratégicos de '+C.ven+' · metas '+C.y+' en '+(j===0?'neto ($)':'kilos');
+  const cart=S.M.cartera.filter((c)=>c.cv.includes(C.ven)).sort((a,b)=>a.nom.localeCompare(b.nom,'es'));
+  $('ce-dl').replaceChildren(...cart.filter((c)=>!D.cl[c.cod]).map((c)=>el('option',{value:c.nom+' · '+c.cod})));
+  $('ce-ehead').replaceChildren(el('th',{class:'l cli stk stk1',scope:'col',text:'Cliente'}),...MES.map((m)=>el('th',{scope:'col',text:m})),el('th',{scope:'col',text:'Total año'}),el('th',{scope:'col',text:''}));
+  const fmt=(n)=>n>0?nf.format(n):'';const cls=Object.entries(D.cl).sort((a,b)=>a[1].cli.localeCompare(b[1].cli,'es'));
+  $('ce-ebody').replaceChildren(...cls.map(([cod,x],ri)=>{const tot=el('td',{class:'tot'});const tr=el('tr');
+      const upd=()=>{let s=0;tr.querySelectorAll('input').forEach((i)=>{s+=+i.value.replace(/\D/g,'')||0;});tot.textContent=s?nf.format(s):'—';};
+      const ins=MES.map((_,mi)=>{const ym=C.y+'-'+pad2(mi+1);const i=el('input',{class:'input metain',type:'text',inputMode:'numeric',value:fmt(((x.m||{})[ym]||[0,0])[j]),placeholder:j===0?'$':'kg'});i.style.width='7.5rem';
+        Object.assign(i.dataset,{cod,ym,j,m:mi,r:ri,c:mi});i.setAttribute('aria-label','Meta de '+x.cli+' en '+MESES_L[mi]);i.addEventListener('blur',()=>{const n=+i.value.replace(/\D/g,'');i.value=n?nf.format(n):'';});i.addEventListener('input',upd);return el('td',null,i);});
+      const q=el('button',{type:'button',class:'btn danger sm',text:'Quitar'});q.addEventListener('click',()=>{ceLeer();delete D.cl[cod];renderCEEdit();});
+      tr.append(el('td',{class:'l cli stk stk1',text:x.cli,title:cod}),...ins,tot,el('td',null,q));upd();return tr;}),
+    ...(cls.length?[]:[el('tr',null,el('td',{class:'l',colSpan:15,text:'Agrega clientes de la cartera de '+C.ven+' con el buscador de arriba.'}))]));}
+$('ce-add').addEventListener('click',()=>{const v=$('ce-addcli').value;const m=v.match(/·\s*([^·]+)$/);const cod=m?m[1].trim():v.trim();const c=S.M.clients.get(cod);
+  if(!c||!c.cv.includes(S.ce.ven)){toast('Elige un cliente de la lista (cartera de '+S.ce.ven+').');return;}ceLeer();if(S.ceDraft.cl[cod]){toast('Ese cliente ya está en la lista.');return;}
+  S.ceDraft.cl[cod]={cli:c.nom,m:{}};$('ce-addcli').value='';renderCEEdit();});
+$('ce-ebody').addEventListener('paste',(e)=>{const i=e.target.closest('input');if(!i)return;const txt=(e.clipboardData||window.clipboardData).getData('text');if(!/[\t\n]/.test(txt.trim()))return;e.preventDefault();
+  const filas=txt.replace(/\r/g,'').replace(/\n+$/,'').split('\n').map((l)=>l.split('\t'));const r0=+i.dataset.r,c0=+i.dataset.c;let n=0;
+  filas.forEach((f,dr)=>f.forEach((val,dc)=>{const x=$('ce-ebody').querySelector('input[data-r="'+(r0+dr)+'"][data-c="'+(c0+dc)+'"]');if(!x)return;const num=Math.round(+String(val).trim().replace(/\$|\s|kg/gi,'').replace(/\./g,'').replace(',','.'))||0;x.value=num?nf.format(num):'';x.dispatchEvent(new Event('input',{bubbles:true}));n++;}));
+  toast('Pegadas '+n+' celdas. Revisa y presiona "Guardar".');});
+$('ce-save').addEventListener('click',async()=>{ceLeer();const C=S.ce;const vk=vkey(C.ven);const doc={vend:C.ven,cl:S.ceDraft.cl,por:S.user.nombre||S.user.u,ts:Date.now()};const b=$('ce-save');b.disabled=true;
+  try{await db.collection(COL_ESTR).doc(vk).set(doc);S.estCli[vk]=doc;S.ceEdit=false;toast('Clientes estratégicos de '+C.ven+' guardados ('+Object.keys(doc.cl).length+').');renderCE();}catch(e){toast(errAuth(e));}finally{b.disabled=false;}});
+
 /* ---------- maestro: carga de datos ---------- */
 let nvInfoLater=false;
 function renderMaestro(){
@@ -2280,7 +2491,7 @@ async function procesarArchivos(files){
         hechos.push('NV ('+nf.format(r.total)+' NV del '+fdate(r.desde)+' al '+fdate(r.hasta)+(r.anuladas?', '+nf.format(r.anuladas)+' anuladas excluidas':'')+')');continue;}
       cv=true;
       const reg={nombre:file.name,cargado:new Date().toISOString(),rows:r.rows};let extra='';
-      if(r.tipo==='ventas'){reg.corte=r.corte;reg.prods=r.prods;reg.cp=r.cp;reg.rt=r.rt;reg.rp=r.rp;reg.vp=r.vp;reg.ld=r.ld;}
+      if(r.tipo==='ventas'){reg.corte=r.corte;reg.prods=r.prods;reg.cp=r.cp;reg.rt=r.rt;reg.rp=r.rp;reg.vp=r.vp;reg.ld=r.ld;if(r.est){S.est=r.est;S.estNuevo=true;}}
       else{const prev=base.cartera;
         if(!prev){reg.alta={};reg.nuevos=null;extra=', carga base';}
         else{const prevCods=new Set(prev.rows.map((x)=>x[1])),pa=prev.alta||{},hoy=new Date().toISOString().slice(0,10),alta={};let nv=0;
@@ -2293,6 +2504,7 @@ async function procesarArchivos(files){
     busy(true,'Cruzando cartera y ventas…');await sleep(30);
     const M=combinar(base.cartera,base.ventas);
     await guardarNube({cartera:base.cartera,ventas:base.ventas});
+    if(S.estNuevo&&S.est){busy(true,'Guardando ventas diarias…');await publicarEst(S.est);S.estNuevo=false;}
     S.raw={cartera:base.cartera,ventas:base.ventas};S.M=M;S.pend=null;
     st.className='status ok';st.textContent='Listo: se actualizó '+hechos.join(' y ')+'. Todos los usuarios ya ven los datos nuevos.';
   }catch(err){st.className='status bad';st.textContent=errAuth(err)||'No se pudo leer el archivo.';}
