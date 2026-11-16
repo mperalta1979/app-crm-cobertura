@@ -163,6 +163,10 @@ body.rol-vendedor .dl{display:none!important}
 .cont a{color:var(--accent-2)}
 .dias .vgrid{grid-template-columns:repeat(auto-fill,minmax(3.4rem,1fr))}
 .t tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+.t tr.tot2 td{background:var(--accent-soft)}
+.t tr.grp td{font-weight:700;color:var(--accent);padding-top:14px;letter-spacing:.04em}
+.vvt td.stk1,.vvt th.stk1{min-width:16rem;white-space:normal}
+.t td.neg{color:var(--bad)}
 .t th.mes-act,.t td.mes-act{background:var(--accent-soft)}
 .t th.mes-act{color:var(--accent);font-weight:700}
 body.rol-vendedor .t,body.rol-vendedor .modal{-webkit-user-select:none;user-select:none}
@@ -388,23 +392,22 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
       <p class="status" id="est-falta" hidden></p>
       <div id="est-vv" class="wrap" style="padding:0">
         <div class="card">
-          <div class="tbar"><div><h2>Ventas por vendedor</h2><p class="note">Marca vendedores, grupos de producto, años, meses y días. Puedes elegir uno o varios de cada uno.</p></div><button class="btn sec sm dl" type="button" id="vv-export">Descargar Excel</button></div>
+          <div class="tbar"><div><h2>Ventas por vendedor</h2><p class="note">Marca vendedores, años, meses y días. Puedes elegir uno o varios de cada uno.</p></div>
+            <div class="row"><div class="seg" id="vv-med" role="group" aria-label="Medida"><button type="button" data-v="neto">Neto $</button><button type="button" data-v="kilos">Kilos</button></div><button class="btn sec sm dl" type="button" id="vv-export">Descargar Excel</button></div></div>
           <div class="field"><span>Vendedores</span><div id="vv-ven"></div></div>
-          <div class="field"><span>Grupos de producto</span><div id="vv-gru"></div></div>
           <div class="uform">
             <div class="field"><span>Años</span><div id="vv-ani"></div></div>
             <div class="field" style="grid-column:span 2"><span>Meses</span><div id="vv-mes"></div></div>
           </div>
           <div class="field"><span>Días</span><div id="vv-dia" class="dias"></div></div>
         </div>
-        <div class="kpis" id="vv-kpis"></div>
-        <p class="note" id="vv-note" style="padding:0 4px">—</p>
-        <div class="grid2">
-          <div class="card"><h2>Por vendedor</h2><div class="twrap" style="max-height:30rem"><table class="t"><thead><tr><th class="l">Vendedor</th><th>Neto $</th><th>Kilos</th><th>% del neto</th></tr></thead><tbody id="vv-tv"></tbody></table></div></div>
-          <div class="card"><h2>Por grupo</h2><div class="twrap" style="max-height:30rem"><table class="t"><thead><tr><th class="l">Grupo</th><th>Neto $</th><th>Kilos</th><th>% del neto</th></tr></thead><tbody id="vv-tg"></tbody></table></div></div>
+        <div class="card">
+          <h2 id="vv-title">—</h2><p class="note" id="vv-note">—</p>
+          <div class="twrap" style="max-height:46rem"><table class="t vvt" id="vv-table"><thead><tr id="vv-head"></tr></thead><tbody id="vv-body"></tbody></table></div>
+          <div class="row"><button class="btn" type="button" id="vv-save" hidden>Guardar refacturación</button></div>
         </div>
-        <div class="card"><h2>Por vendedor y grupo</h2><p class="note">Cada vendedor con el detalle de sus grupos, de mayor a menor neto. "% del vendedor" es el peso del grupo dentro de la venta de ese vendedor.</p>
-          <div class="twrap" style="max-height:36rem"><table class="t"><thead><tr><th class="l">Vendedor</th><th class="l">Grupo</th><th>Neto $</th><th>Kilos</th><th>% del vendedor</th><th>% del total</th></tr></thead><tbody id="vv-tvg"></tbody></table></div></div>
+        <div class="card" id="vv-ref-w"><h2>Vendedor, refacturación y total</h2><p class="note">La refacturación es un dato que se ingresa a mano en la tabla de arriba; no suma al Total General.</p>
+          <div class="twrap" style="max-height:none"><table class="t"><thead><tr><th class="l">Vendedor</th><th>Ventas (Total General)</th><th>Refacturación</th><th>Total</th></tr></thead><tbody id="vv-ref"></tbody></table></div></div>
       </div>
       <div id="est-ce" class="wrap" style="padding:0" hidden>
         <div class="card">
@@ -720,7 +723,7 @@ function code_(v){if(v==null||v==='')return '';if(typeof v==='number')return Str
 function socio_(v){return v==null?'':String(v).replace(/_x000D_/gi,' ').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();}
 function idx_(h,names){for(const n of names){const i=h.findIndex(x=>String(x==null?'':x).trim().toLowerCase()===n.toLowerCase());if(i>=0)return i;}return -1;}
 // Lector de .xlsx por partes: descomprime y recorre la hoja en trozos, sin armar un único texto gigante.
-const KEEP_=['grupo','peso total','tipo_docto','estado_docto','folio_docto','fecha_docto','año','ano','mes','dia','día','vendedor','cod_cliente','rut_cliente','cliente','neto','cod_producto','producto','un_medida','socio','cantidad',
+const KEEP_=['pcdesc','grupo','peso total','tipo_docto','estado_docto','folio_docto','fecha_docto','año','ano','mes','dia','día','vendedor','cod_cliente','rut_cliente','cliente','neto','cod_producto','producto','un_medida','socio','cantidad',
   'venDes','codaux','nomaux','rutaux','actaux','bloqueado','catdes','cvedes','numero_nventa','fecha_emis','nvestado','estado'].map((x)=>x.toLowerCase());
 function xmlTxt_(s){return s.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi,(m,e)=>{e=e.toLowerCase();if(e==='amp')return'&';if(e==='lt')return'<';if(e==='gt')return'>';if(e==='quot')return'"';if(e==='apos')return"'";
   return String.fromCodePoint(e[1]==='x'?parseInt(e.slice(2),16):parseInt(e.slice(1),10));}).replace(/_x000D_/g,'\r');}
@@ -805,7 +808,7 @@ function cartera_(rows){
   return {tipo:'cartera',rows:out};
 }
 function ventas_(XLSX,rows){
-  const h=rows[0];const I={tipo:idx_(h,['Tipo_Docto']),est:idx_(h,['Estado_Docto']),folio:idx_(h,['Folio_Docto']),fecha:idx_(h,['Fecha_Docto']),anio:idx_(h,['Año','Ano']),mes:idx_(h,['Mes']),dia:idx_(h,['Dia','Día']),v:idx_(h,['Vendedor']),cod:idx_(h,['Cod_Cliente']),rut:idx_(h,['RUT_Cliente']),cli:idx_(h,['Cliente']),neto:idx_(h,['Neto']),pc:idx_(h,['Cod_Producto']),pn:idx_(h,['Producto']),um:idx_(h,['Un_Medida']),so:idx_(h,['Socio']),q:idx_(h,['Cantidad']),gr:idx_(h,['Grupo']),kg:idx_(h,['Peso Total','Peso_Total'])};
+  const h=rows[0];const I={tipo:idx_(h,['Tipo_Docto']),est:idx_(h,['Estado_Docto']),folio:idx_(h,['Folio_Docto']),fecha:idx_(h,['Fecha_Docto']),anio:idx_(h,['Año','Ano']),mes:idx_(h,['Mes']),dia:idx_(h,['Dia','Día']),v:idx_(h,['Vendedor']),cod:idx_(h,['Cod_Cliente']),rut:idx_(h,['RUT_Cliente']),cli:idx_(h,['Cliente']),neto:idx_(h,['Neto']),pc:idx_(h,['Cod_Producto']),pn:idx_(h,['Producto']),um:idx_(h,['Un_Medida']),so:idx_(h,['Socio']),q:idx_(h,['Cantidad']),gr:idx_(h,['Grupo']),kg:idx_(h,['Peso Total','Peso_Total']),pc:idx_(h,['PCDESC'])};
   const req={tipo:'Tipo_Docto',est:'Estado_Docto',folio:'Folio_Docto',v:'Vendedor',cod:'Cod_Cliente',neto:'Neto'};
   const falta=Object.keys(req).filter(k=>I[k]<0).map(k=>req[k]);
   if(I.fecha<0&&(I.anio<0||I.mes<0))falta.push('Fecha_Docto (o Año y Mes)');
@@ -815,8 +818,11 @@ function ventas_(XLSX,rows){
     if(!y||!m)return null;return [y,m,d||1];};
   const acc=new Map();let corte='';const prods=[],pIdx=new Map(),cp=new Set(),rt=new Map(),rp=new Set(),vp=new Map(),ld=new Map();
   // ventas por día (para Estrategia): vendedor, cliente, día, grupo → neto y kilos
-  const eV=[],eVi=new Map(),eC=[],eCi=new Map(),eG=[],eGi=new Map(),dd=new Map();const ix=(arr,map,k,val)=>{let i=map.get(k);if(i==null){i=arr.length;map.set(k,i);arr.push(val);}return i;};
+  const eV=[],eVi=new Map(),eC=[],eCi=new Map(),eG=[],eGi=new Map(),dd=new Map(),eP=[],ePi=new Map(),pcA=new Map();const ix=(arr,map,k,val)=>{let i=map.get(k);if(i==null){i=arr.length;map.set(k,i);arr.push(val);}return i;};
   for(let i=1;i<rows.length;i++){const r=rows[i];
+    // informe por línea (PCDESC): facturas, notas de crédito y notas de débito vigentes
+    {const tp=s_(r[I.tipo]);if((tp==='F'||tp==='N'||tp==='D')&&s_(r[I.est])==='V'&&I.pc>=0){const f2=fecha(r);if(f2){const vd=s_(r[I.v])||'SIN VENDEDOR';const vi=ix(eV,eVi,vd,vd);const pn=s_(r[I.pc])||'SIN CLASIFICAR';const pi=ix(eP,ePi,pn,pn);
+      const kp=vi+'|'+(f2[0]*10000+f2[1]*100+f2[2])+'|'+pi;let e=pcA.get(kp);if(!e){e=[0,0];pcA.set(kp,e);}e[0]+=Number(r[I.neto])||0;e[1]+=I.kg<0?0:(Number(r[I.kg])||0);}}}
     if(s_(r[I.tipo])!=='F'||s_(r[I.est])!=='V')continue;
     const f=fecha(r);if(!f)continue;
     const ym=f[0]+'-'+String(f[1]).padStart(2,'0');const ymd=ym+'-'+String(f[2]).padStart(2,'0');if(ymd>corte)corte=ymd;
@@ -839,7 +845,7 @@ function ventas_(XLSX,rows){
     rp:[...rp].map((k)=>{const x=sp(k);return [x[0],x[1],x[2],x[3],x[4],+x[5]];}),
     vp:[...vp.entries()].map(([k,c])=>{const x=sp(k);return [x[0],x[1],x[2],x[3],x[4],+x[5],Math.round(c[0]*100)/100,Math.round(c[1])];}),
     ld:[...ld.entries()].map(([k,d])=>{const x=sp(k);return [x[0],x[1],d];}),
-    est:{corte,kg:I.kg>=0,gr:eG,vs:eV,cs:eC,dd:[...dd.entries()].map(([k,e])=>{const x=k.split('|');return [+x[0],+x[1],+x[2].replace(/-/g,''),+x[3],Math.round(e[0]),Math.round(e[1]*10)/10];})}};
+    est:{corte,kg:I.kg>=0,gr:eG,vs:eV,cs:eC,pcs:I.pc>=0?eP:null,pc:I.pc>=0?[...pcA.entries()].map(([k,e])=>{const x=k.split('|');return [+x[0],+x[1],+x[2],Math.round(e[0]),Math.round(e[1]*10)/10];}):null,dd:[...dd.entries()].map(([k,e])=>{const x=k.split('|');return [+x[0],+x[1],+x[2].replace(/-/g,''),+x[3],Math.round(e[0]),Math.round(e[1]*10)/10];})}};
 }
 </script>
 
@@ -2017,7 +2023,8 @@ const TUT={
     'Busca un socio escribiendo parte de su nombre.'],
     tip:'Un socio aparece una vez por cada vendedor que le ha vendido, aunque ese vendedor no le haya vendido este año.'},
   est:{sec:'Estrategia',intro:'Herramientas para gerencia: ventas por vendedor con filtros libres y seguimiento de clientes estratégicos con metas mensuales.',pasos:[
-    'Ventas por vendedor: marca uno o varios vendedores, grupos de producto, años, meses y días (por ejemplo, solo los días 3, 4 y 10). Arriba aparecen la venta neta, los kilos y el neto por kilo; abajo, el detalle por vendedor y por grupo.',
+    'Ventas por vendedor: marca vendedores, años, meses y días (por ejemplo, del 1 al 8 para un informe "al 09"). La tabla muestra cada línea (según PCDESC) por vendedor, agrupada en Mangueras, Tuberías, Fitting reventa y Otras ventas, con sus totales, Ventas del giro y Total general. Suma facturas, notas de crédito y notas de débito. Cambia entre Neto y Kilos con el selector.',
+    'Refacturación: con un solo mes elegido, escribe a mano el monto de cada vendedor en la fila "Detalle refacturación" y presiona "Guardar refacturación". Queda guardada por mes y aparece en el cuadro de abajo; no suma al Total General.',
     'Clientes estratégicos: elige el vendedor, el año, el mes y los días que quieres revisar. Cada cliente muestra lo vendido en cada semana (lunes a domingo), el total de los días elegidos, la meta del mes y el avance con semáforo.',
     'Para elegir clientes y metas (administrador y gerencia): presiona "Editar clientes y metas", agrega clientes de la cartera del vendedor y escribe la meta de cada mes en neto, en kilos o en ambos. Luego "Guardar". Puedes cambiarlas cuando quieras.',
     'Cada vendedor ve solo sus propios clientes estratégicos y su avance, sin poder editar.'],
@@ -2368,40 +2375,88 @@ async function renderEst(){
   if(S.estSub==='vv')renderVV();else{if(!S.estCli)await cargarEstCli();renderCE();}}
 /* ---- Ventas por vendedor ---- */
 S.vv=null;
-function vvDef(){const E=S.est;const c=E.corte;const y=+c.slice(0,4),m=+c.slice(5,7);return{vs:E.vs.slice(),gs:E.gr.map((_,i)=>i),ys:[y],ms:[m],ds:Array.from({length:31},(_,i)=>i+1)};}
+const PC_MANG=['Venta Abrazaderas y Conexiones','Venta Drenajes PEAD','Venta Espiraladas Livianas','Venta Espiraladas PVC','Venta Mangueras C/Refuerzo','Venta Mangueras Mallaflex Presion','Venta Mangueras PE B.D. (Piscina/Aspiradora)','Venta Mangueras PVC S/Refuerzos','Venta Planaflex','Venta Tubos PVC (TopSan/TopDren)'];
+const PC_TUB=['Ventas HDPE Liso','Ventas PEMD Gas','Ventas Petropipe','Ventas PVC-U (Tuberia PVC)','Ventas Fitting PVC-U'];
+const PC_FIT=['Venta Fitting Reventa (Ex-Petroflex)','Ventas Fittings y Acces. Reventa'];
+const VV_ORDEN=['BASCUÑAN Z. ROSA','EXPORTACION','MARTINEZ M. XIMENA','NAVARRETE A. FERNANDO','OFICINA KAM RETAIL','OFICINA PETROFLEX','SODIMAC EMPRESAS X.MARTINEZ','MUNIZAGA R. MAURICIO','TORO J. JUAN','VILCHES C. ADRIAN','UBILLA D. SERGIO','DIAZ B. JAIME','FUENTES M. XIMENA','TORO L. VIRGINIA','ROA C. LILIAN','TORRES S. SEBASTIAN'];
+const COL_REF='crm_refac';S.refac={};
+const nPc=(s)=>norm(String(s)).replace(/\s+/g,' ').trim();
+function vvDef(){const E=S.est;const c=E.corte;const y=+c.slice(0,4),m=+c.slice(5,7);return{vs:E.vs.slice(),ys:[y],ms:[m],ds:Array.from({length:31},(_,i)=>i+1),med:'neto'};}
+async function cargarRefac(ym){if(S.refac[ym])return S.refac[ym];try{const d=await db.collection(COL_REF).doc(ym).get();S.refac[ym]=d.exists?(d.data().v||{}):{};}catch(e){S.refac[ym]={};}return S.refac[ym];}
+$('vv-med').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b||!S.vv)return;S.vv.med=b.dataset.v;renderVV();});
 function renderVV(){
   const E=S.est;if(!S.vv)S.vv=vvDef();const F=S.vv;const set=(k)=>(v)=>{F[k]=v;renderVV();};
-  const vsOrd=E.vs.map((v,i)=>[v,i]).sort((a,b)=>a[0].localeCompare(b[0],'es'));
-  const ys=[...new Set(E.dd.map((r)=>Math.floor(r[2]/10000)))].sort();
-  chips('vv-ven',vsOrd.map(([v])=>[v,v]),F.vs,set('vs'));
-  chips('vv-gru',E.gr.map((g,i)=>[i,g]).sort((a,b)=>a[1].localeCompare(b[1],'es')),F.gs,set('gs'));
+  if(!E.pc){$('vv-note').textContent='Para ver esta tabla, el administrador debe volver a cargar el Excel de ventas (se necesita la columna PCDESC).';$('vv-head').replaceChildren();$('vv-body').replaceChildren();$('vv-ref').replaceChildren();return;}
+  const ys=[...new Set(E.pc.map((r)=>Math.floor(r[1]/10000)))].sort();
+  chips('vv-ven',E.vs.slice().sort((a,b)=>a.localeCompare(b,'es')).map((v)=>[v,v]),F.vs,set('vs'));
   chips('vv-ani',ys.map((y)=>[y,String(y)]),F.ys,set('ys'));
   chips('vv-mes',MES.map((m,i)=>[i+1,m]),F.ms,set('ms'));
   chips('vv-dia',Array.from({length:31},(_,i)=>[i+1,String(i+1)]),F.ds,set('ds'));
-  const vset=new Set(F.vs.map((v)=>E.vs.indexOf(v))),gset=new Set(F.gs),yset=new Set(F.ys),mset=new Set(F.ms),dset=new Set(F.ds);
-  const porV=new Map(),porG=new Map(),porVG=new Map();let tn=0,tk=0,dias=new Set();
-  for(const [v,,d,g,n,k] of E.dd){if(!vset.has(v)||!gset.has(g))continue;const y=Math.floor(d/10000),m=Math.floor(d/100)%100,dd_=d%100;if(!yset.has(y)||!mset.has(m)||!dset.has(dd_))continue;
-    tn+=n;tk+=k;dias.add(d);const a=porV.get(v)||[0,0];a[0]+=n;a[1]+=k;porV.set(v,a);const b=porG.get(g)||[0,0];b[0]+=n;b[1]+=k;porG.set(g,b);const kvg=v+'|'+g;const c=porVG.get(kvg)||[0,0];c[0]+=n;c[1]+=k;porVG.set(kvg,c);}
-  const kpi=(t,v,s)=>el('div',{class:'kpi'},el('span',{text:t}),el('b',{text:v}),el('small',{text:s}));
-  $('vv-kpis').replaceChildren(kpi('Venta neta','$'+nf.format(Math.round(tn)),mm(tn)),kpi('Kilos',nf.format(Math.round(tk))+' kg',(tk/1000).toLocaleString('es-CL',{maximumFractionDigits:1})+' toneladas'),
-    kpi('Neto por kilo',tk?'$'+nf.format(Math.round(tn/tk)):'—','promedio de la selección'),kpi('Días con venta',nf.format(dias.size),'días con al menos una factura'));
-  const fsel=(xs,all)=>xs.length===all?'todos':xs.length===0?'ninguno':xs.length<=4?xs.join(', '):xs.length+' elegidos';
-  $('vv-note').textContent='Vendedores: '+fsel(F.vs,E.vs.length)+' · Grupos: '+fsel(F.gs.map((i)=>E.gr[i]),E.gr.length)+' · Años: '+fsel(F.ys,ys.length)+' · Meses: '+fsel(F.ms.map((m)=>MES[m-1]),12)+' · Días: '+fsel(F.ds,31)+'. Solo facturas (tipo F, vigentes). Ventas al '+fdate(E.corte)+'.'+(E.kg?'':' El archivo de ventas no trae la columna Peso Total: los kilos aparecen en 0.');
-  const filas=(map,nom)=>[...map.entries()].map(([i,a])=>({nom:nom(i),n:a[0],k:a[1]})).sort((a,b)=>b.n-a.n);
-  const tabla=(id,rows,lab)=>{$(id).replaceChildren(...rows.map((r)=>el('tr',null,el('td',{class:'l '+(lab==='v'?'vend':'cli'),text:r.nom}),el('td',{text:'$'+nf.format(Math.round(r.n))}),el('td',{text:nf.format(Math.round(r.k))}),el('td',{text:tn?pf.format(r.n/tn):'—'}))),
-    ...(rows.length?[el('tr',{class:'tot'},el('td',{class:'l',text:'Total'}),el('td',{text:'$'+nf.format(Math.round(tn))}),el('td',{text:nf.format(Math.round(tk))}),el('td',{text:'100%'}))]:[el('tr',null,el('td',{class:'l',colSpan:4,text:'Sin ventas con esta selección.'}))]));};
-  const rv=filas(porV,(i)=>E.vs[i]).filter((r)=>r.n||r.k),rg=filas(porG,(i)=>E.gr[i]).filter((r)=>r.n||r.k);tabla('vv-tv',rv,'v');tabla('vv-tg',rg,'g');
-  // vendedor y grupo juntos: subtotal por vendedor y su detalle por grupo
-  const rvg=[];for(const r of rv){const vi=E.vs.indexOf(r.nom);const gs=[...porVG.entries()].filter(([k])=>+k.split('|')[0]===vi).map(([k,a])=>({g:E.gr[+k.split('|')[1]],n:a[0],k:a[1]})).filter((x)=>x.n||x.k).sort((a,b)=>b.n-a.n);rvg.push({v:r.nom,n:r.n,k:r.k,gs});}
+  $('vv-med').querySelectorAll('button').forEach((b)=>b.setAttribute('aria-pressed',b.dataset.v===F.med));
+  const K=F.med==='kilos'?4:3;
+  const vset=new Set(F.vs.map((v)=>E.vs.indexOf(v))),yset=new Set(F.ys),mset=new Set(F.ms),dset=new Set(F.ds);
+  // suma por vendedor y línea PCDESC (facturas, notas de crédito y notas de débito)
+  const val=new Map();let maxD=0;
+  for(const r of E.pc){const v=r[0],d=r[1];if(!vset.has(v))continue;const y=Math.floor(d/10000),m=Math.floor(d/100)%100,dd_=d%100;if(!yset.has(y)||!mset.has(m)||!dset.has(dd_))continue;
+    const k=v+'|'+r[2];val.set(k,(val.get(k)||0)+r[K]);if(d>maxD)maxD=d;}
+  const pcIdx=new Map(E.pcs.map((s,i)=>[nPc(s),i]));const usados=new Set(PC_MANG.concat(PC_TUB,PC_FIT).map(nPc));
+  const otras=E.pcs.map((s,i)=>[s,i]).filter(([s])=>!usados.has(nPc(s))).filter(([,i])=>[...val.keys()].some((k)=>+k.split('|')[1]===i)).sort((a,b)=>a[0].localeCompare(b[0],'es'));
+  // columnas: orden del informe y luego otros vendedores con ventas
+  const conVenta=new Set([...val.entries()].filter(([,n])=>n).map(([k])=>E.vs[+k.split('|')[0]]));
+  const cols=[...VV_ORDEN.filter((v)=>F.vs.includes(v)&&E.vs.includes(v)),...F.vs.filter((v)=>!VV_ORDEN.includes(v)&&conVenta.has(v)).sort((a,b)=>a.localeCompare(b,'es'))];
+  const cv=cols.map((v)=>E.vs.indexOf(v));
+  const linea=(nombre,pci)=>({t:'l',nombre,vals:cv.map((vi)=>pci==null?0:(val.get(vi+'|'+pci)||0))});
+  const sumar=(rs)=>cv.map((_,j)=>rs.reduce((s,r)=>s+r.vals[j],0));
+  const L=(arr)=>arr.map((s)=>linea(s.replace(/\s+$/,''),pcIdx.get(nPc(s))));
+  const lm=L(PC_MANG),lt=L(PC_TUB),lf=L(PC_FIT),lo=otras.map(([s,i])=>linea(s,i));
+  const tm=sumar(lm),tt=sumar(lt),tmt=tm.map((x,j)=>x+tt[j]),tf=sumar(lf),tg=tmt.map((x,j)=>x+tf[j]),to=sumar(lo),tgen=tg.map((x,j)=>x+to[j]);
+  const tot=(a)=>a.reduce((s,x)=>s+x,0);const TMT=tot(tmt),TGEN=tot(tgen);
+  const filas=[{t:'h',nombre:'MANGUERAS'},...lm,{t:'s',nombre:'TOTAL MANGUERAS',vals:tm,pct:TMT?tot(tm)/TMT:null},{t:'h',nombre:'TUBERÍAS'},...lt,{t:'s',nombre:'TOTAL TUBERÍAS',vals:tt,pct:TMT?tot(tt)/TMT:null},
+    {t:'S',nombre:'TOTAL MANGUERAS + TUBERÍAS',vals:tmt},{t:'h',nombre:'FITTING REVENTA'},...lf,{t:'s',nombre:'TOTAL FITTING REVENTA',vals:tf,pct:TGEN?tot(tf)/TGEN:null},
+    {t:'S',nombre:'VENTAS DEL GIRO',vals:tg,pct:TGEN?tot(tg)/TGEN:null},{t:'h',nombre:'OTRAS VENTAS'},...lo,{t:'s',nombre:'TOTAL OTRAS VENTAS',vals:to,pct:TGEN?tot(to)/TGEN:null},{t:'S',nombre:'TOTAL GENERAL',vals:tgen}];
+  const fmt=(x)=>K===3?nf.format(Math.round(x)):nf.format(Math.round(x));
+  // título como el informe
+  const unMes=F.ys.length===1&&F.ms.length===1;
+  $('vv-title').textContent=unMes?MESES_L[F.ms[0]-1].toUpperCase()+" "+String(F.ys[0]).slice(2)+"'":'Ventas por vendedor';
+  // "al" = último día elegido (sin pasar la fecha de corte de las ventas), como en el informe
+  let alD=maxD;if(unMes){const y=F.ys[0],m=F.ms[0];const dm=Math.min(Math.max(...F.ds),diasMes(y,m));alD=Math.min(dInt(y,m,dm),corteInt());}
+  const al=alD?pad2(alD%100)+'.'+pad2(Math.floor(alD/100)%100)+'.'+String(Math.floor(alD/10000)).slice(2):'—';
+  $('vv-note').textContent=(K===3?'Facturación neta':'Kilos facturados')+' al '+al+'. Suma facturas, notas de crédito y notas de débito, clasificadas según la columna PCDESC del archivo de ventas. Ventas cargadas hasta el '+fdate(E.corte)+'.'+(F.ds.length<31?' Días elegidos: '+(F.ds.length<=10?F.ds.join(', '):F.ds.length+' días')+'.':'');
+  const cab=[el('th',{class:'l stk stk1',scope:'col',text:K===3?'Neto $':'Kilos'}),...cols.map((v)=>el('th',{scope:'col',text:v})),el('th',{scope:'col',text:'Totales'}),el('th',{scope:'col',text:'%'})];
+  $('vv-head').replaceChildren(...cab);
   const fr=document.createDocumentFragment();
-  for(const x of rvg){fr.append(el('tr',{class:'tot'},el('td',{class:'l vend',text:x.v}),el('td',{class:'l',text:'Total vendedor'}),el('td',{text:'$'+nf.format(Math.round(x.n))}),el('td',{text:nf.format(Math.round(x.k))}),el('td',{text:'100%'}),el('td',{text:tn?pf.format(x.n/tn):'—'})));
-    for(const g of x.gs)fr.append(el('tr',null,el('td',{class:'l vend',text:x.v}),el('td',{class:'l',text:g.g}),el('td',{text:'$'+nf.format(Math.round(g.n))}),el('td',{text:nf.format(Math.round(g.k))}),el('td',{text:x.n?pf.format(g.n/x.n):'—'}),el('td',{text:tn?pf.format(g.n/tn):'—'})));}
-  if(!rvg.length)fr.append(el('tr',null,el('td',{class:'l',colSpan:6,text:'Sin ventas con esta selección.'})));
-  $('vv-tvg').replaceChildren(fr);
-  S.lastVV={rv,rg,rvg,tn,tk};}
-$('vv-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastVV)return;const L=S.lastVV;const f=(r)=>({'Neto':Math.round(r.n),'Kilos':Math.round(r.k),'% del neto':L.tn?Math.round(r.n/L.tn*1000)/10:''});
-  const vg=L.rvg.flatMap((x)=>x.gs.map((g)=>({'Vendedor':x.v,'Grupo':g.g,'Neto':Math.round(g.n),'Kilos':Math.round(g.k),'% del vendedor':x.n?Math.round(g.n/x.n*1000)/10:'','% del total':L.tn?Math.round(g.n/L.tn*1000)/10:''})));
-  libroXLSX([['Por vendedor',[...L.rv.map((r)=>({'Vendedor':r.nom,...f(r)})),{'Vendedor':'TOTAL',...f({n:L.tn,k:L.tk})}],[30,16,12,10]],['Por grupo',[...L.rg.map((r)=>({'Grupo':r.nom,...f(r)})),{'Grupo':'TOTAL',...f({n:L.tn,k:L.tk})}],[34,16,12,10]],['Vendedor y grupo',vg,[30,34,16,12,12,10]],['Filtros',[{'Selección':$('vv-note').textContent}],[120]]],'Ventas_por_vendedor_'+hoyISO()+'.xlsx');});
+  for(const f of filas){if(f.t==='h'){fr.append(el('tr',{class:'grp'},el('td',{class:'l stk stk1',text:f.nombre}),...cols.map(()=>el('td')),el('td'),el('td')));continue;}
+    const tr=el('tr',f.t==='l'?null:{class:f.t==='S'?'tot tot2':'tot'});tr.append(el('td',{class:'l stk stk1',text:f.nombre}));
+    f.vals.forEach((x)=>{const td=el('td',{text:x?fmt(x):'0'});if(!x)td.classList.add('zc');if(x<0)td.classList.add('neg');tr.append(td);});
+    const T=tot(f.vals);tr.append(el('td',{text:fmt(T),style:'font-weight:700'}),el('td',{text:f.pct!=null?pf.format(f.pct):''}));fr.append(tr);}
+  // refacturación (solo neto, un mes)
+  const ym=unMes?F.ys[0]+'-'+pad2(F.ms[0]):null;const ed=editaEst();
+  if(K===3){const tr=el('tr',{class:'refac'});tr.append(el('td',{class:'l stk stk1',text:'Detalle refacturación'}));
+    if(ym){const R=S.refac[ym]||{};cols.forEach((v)=>{const n=R[v]||0;if(ed){const i=el('input',{class:'input metain',type:'text',inputMode:'numeric',value:n?nf.format(n):'',placeholder:'0'});i.style.width='8rem';i.dataset.v=v;
+          i.addEventListener('blur',()=>{const s=i.value.trim();const neg=/^-/.test(s);const x=+s.replace(/\D/g,'');i.value=x?(neg?'-':'')+nf.format(x):'';});tr.append(el('td',null,i));}else tr.append(el('td',{text:fmt(n)}));});
+      tr.append(el('td',{text:fmt(cols.reduce((s,v)=>s+(R[v]||0),0)),style:'font-weight:700'}),el('td'));
+      if(!S.refac[ym])cargarRefac(ym).then(()=>{if(S.tab==='est'&&S.estSub==='vv')renderVV();});}
+    else{tr.append(el('td',{class:'l',colSpan:cols.length+2,text:'Elige un solo año y un solo mes para ver o llenar la refacturación.'}));}
+    fr.append(tr);}
+  $('vv-body').replaceChildren(fr);
+  $('vv-save').hidden=!(K===3&&ym&&ed);
+  // cuadro Vendedor / Ventas / Refacturación / Total
+  const R=ym?(S.refac[ym]||{}):{};const rows=cols.map((v,j)=>({v,n:tgen[j],r:R[v]||0}));
+  $('vv-ref-w').hidden=K!==3;
+  $('vv-ref').replaceChildren(...rows.map((x)=>el('tr',null,el('td',{class:'l vend',text:x.v}),el('td',{text:fmt(x.n)}),el('td',{text:ym?fmt(x.r):'—'}),el('td',{text:fmt(x.n+x.r),style:'font-weight:600'}))),
+    el('tr',{class:'tot'},el('td',{class:'l',text:'Total'}),el('td',{text:fmt(tot(tgen))}),el('td',{text:ym?fmt(rows.reduce((s,x)=>s+x.r,0)):'—'}),el('td',{text:fmt(tot(tgen)+rows.reduce((s,x)=>s+x.r,0))})));
+  {const T=$('vv-table'),w=$('vv-head').querySelector('.stk1');if(w)T.style.setProperty('--stk2',w.getBoundingClientRect().width+'px');}
+  S.lastVV={cols,filas,K,rows,ym,titulo:$('vv-title').textContent,nota:$('vv-note').textContent};}
+$('vv-save').addEventListener('click',async()=>{const F=S.vv;if(!F||F.ys.length!==1||F.ms.length!==1)return;const ym=F.ys[0]+'-'+pad2(F.ms[0]);const v={};
+  $('vv-body').querySelectorAll('tr.refac input').forEach((i)=>{const s=i.value.trim();const x=+s.replace(/\D/g,'');if(x)v[i.dataset.v]=/^-/.test(s)?-x:x;});
+  const prev=S.refac[ym]||{};for(const k in prev)if(!(k in v)&&![...$('vv-body').querySelectorAll('tr.refac input')].some((i)=>i.dataset.v===k))v[k]=prev[k];
+  const b=$('vv-save');b.disabled=true;try{await db.collection(COL_REF).doc(ym).set({v,por:S.user.nombre||S.user.u,ts:Date.now()});S.refac[ym]=v;toast('Refacturación de '+MESES_L[F.ms[0]-1]+' '+F.ys[0]+' guardada.');renderVV();}catch(e){toast(errAuth(e));}finally{b.disabled=false;}});
+$('vv-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastVV)return;const L=S.lastVV;
+  const data=L.filas.map((f)=>{const o={[L.K===3?'Neto $':'Kilos']:f.nombre};L.cols.forEach((v,j)=>{o[v]=f.t==='h'?'':Math.round(f.vals[j]);});o['Totales']=f.t==='h'?'':Math.round(f.vals.reduce((s,x)=>s+x,0));o['%']=f.pct!=null?Math.round(f.pct*1000)/10:'';return o;});
+  if(L.K===3&&L.ym){const R=S.refac[L.ym]||{};const o={'Neto $':'Detalle refacturación'};L.cols.forEach((v)=>{o[v]=R[v]||0;});o['Totales']=L.cols.reduce((s,v)=>s+(R[v]||0),0);data.push(o);}
+  const hojas=[[L.titulo.slice(0,28)||'Ventas',[{[L.K===3?'Neto $':'Kilos']:L.titulo},{[L.K===3?'Neto $':'Kilos']:L.nota},...data],[46,...L.cols.map(()=>16),16,8]]];
+  if(L.K===3)hojas.push(['Vendedor y refacturación',L.rows.map((x)=>({'Vendedor':x.v,'Ventas':Math.round(x.n),'Refacturación':L.ym?x.r:'','Total':Math.round(x.n+x.r)})),[30,16,16,16]]);
+  libroXLSX(hojas,'Ventas_por_vendedor_'+hoyISO()+'.xlsx');});
 /* ---- Clientes estratégicos ---- */
 const editaEst=()=>S.user.rol==='admin'||S.user.rol==='gerencia';
 async function cargarEstCli(){S.estCli={};try{if(editaEst()){const q=await db.collection(COL_ESTR).get();for(const d of q.docs)S.estCli[d.id]=d.data();}
