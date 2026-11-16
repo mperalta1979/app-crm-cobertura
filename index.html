@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js" defer></script>
 <style>
 /* Layout: barra superior petróleo, filtros pegados bajo ella, contenido en una columna ancha con tarjetas */
@@ -148,8 +148,8 @@ button,input,select{font:inherit;color:inherit}
 .fgrid div span{display:block;color:var(--muted);font-size:12px}
 [data-ficha]{cursor:pointer;color:var(--accent-2);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 [data-ficha]:hover{text-decoration-color:var(--accent-2)}
-.sem{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.sem.v{background:var(--ok)}.sem.a{background:var(--warn)}.sem.r{background:var(--bad)}
+.sem{display:inline-block;width:1.1em;height:1.1em;min-width:14px;min-height:14px;border-radius:50%;margin-right:6px;vertical-align:-0.2em;box-shadow:0 0 0 1px rgba(127,127,127,.35)}
+.kpi b .sem{font-size:21px;margin-right:8px;vertical-align:-0.15em}.sem.o{background:#002060}.sem.c{background:#00B0F0}.sem.a{background:#FFC000}.sem.r{background:#FF0000}
 .nivel{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
 .nivel.alto{color:var(--bad);border:1px solid var(--bad)}.nivel.riesgo{color:var(--warn);border:1px solid var(--warn)}
 .gl{display:flex;flex-direction:column;gap:8px}
@@ -1624,18 +1624,26 @@ function tipoColXL(h){const s=norm(String(h||''));
 // da formato de número a cada celda numérica según el encabezado de su columna (o el formato por defecto de la hoja)
 function fmtHojaXL(ws){if(!ws['!ref'])return;const R=XLSX.utils.decode_range(ws['!ref']);
   if(!ws['!fmtOk']){const def=ws['!def']||'n';
-    for(let c=R.s.c;c<=R.e.c;c++){const hc=ws[XLSX.utils.encode_cell({r:R.s.r,c})];const t=tipoColXL(hc&&hc.v)||def;if(t==='txt')continue;
+    for(let c=R.s.c;c<=R.e.c;c++){const hc=ws[XLSX.utils.encode_cell({r:R.s.r,c})];
+      if(hc&&typeof hc.v==='string'&&hc.v&&!hc.v.replace(/\u200b/g,'')){hc.v='';for(let r=R.s.r+1;r<=R.e.r;r++){const x=ws[XLSX.utils.encode_cell({r,c})],y=ws[XLSX.utils.encode_cell({r,c:c+1})];if(x&&x.v==='●'&&y&&y.t==='n')x.s=semXL(y.v/100).s;}continue;}
+      const t=tipoColXL(hc&&hc.v)||def;if(t==='txt')continue;
       for(let r=R.s.r+1;r<=R.e.r;r++){const x=ws[XLSX.utils.encode_cell({r,c})];if(!x||x.t!=='n'||!isFinite(x.v))continue;
         let tt=t;if(tt==='%')x.v=x.v/100;if(tt==='n'&&Math.round(x.v)!==x.v)tt='n2';x.z=XF[tt];}}}
   if(!ws['!cols']){const w=[];for(let c=R.s.c;c<=R.e.c;c++){let m=6;for(let r=R.s.r;r<=Math.min(R.e.r,R.s.r+400);r++){const x=ws[XLSX.utils.encode_cell({r,c})];if(!x||x.v==null)continue;
       const L=x.t==='n'?String(Math.round(Math.abs(x.v))).length*1.35+4:String(x.v).length+1;if(!(ws['!fmtOk']&&r<ws['!fmtOk']))m=Math.max(m,L);}w.push({wch:Math.min(50,Math.ceil(m))});}ws['!cols']=w;}}
 // Excel no acepta en el nombre de hoja : \ / ? * [ ] ni apóstrofo al inicio o al final, máximo 31 caracteres y sin repetir
 function nomHojaXL(nom,wb){let n=String(nom||'Hoja').replace(/[:\\\/?*\[\]]/g,' ').replace(/'/g,'').replace(/\s+/g,' ').trim().slice(0,31).trim()||'Hoja';let k=2,b=n;while(wb.SheetNames.some((x)=>x.toLowerCase()===n.toLowerCase()))n=b.slice(0,28)+' '+(k++);return n;}
+const semXL=(f)=>f==null||!isFinite(f)?'':{v:'●',s:{font:{color:{rgb:SEM_RGB[SEM_N(f)]},sz:16},alignment:{horizontal:'center',vertical:'center'}}};
+const ZW='\u200b';
+// en hojas armadas desde listas: antes de cada columna "Avance…" agrega una columna angosta con el círculo
+function conSemXL(data,cols){if(!data.length)return [data,cols];const ks=Object.keys(data[0]);const av=ks.filter((k)=>/^avance/.test(norm(k)));if(!av.length)return [data,cols];
+  let n=0;const map=ks.map((k)=>av.includes(k)?[ZW.repeat(++n),k]:[k]);const out=data.map((o)=>{const r={};for(const ms of map){if(ms.length>1)r[ms[0]]=typeof o[ms[1]]==='number'?'●':'';r[ms[ms.length-1]]=o[ms[ms.length-1]];}return r;});
+  let c2=cols;if(cols){c2=[];ks.forEach((k,i)=>{if(av.includes(k))c2.push(4);c2.push(cols[i]??14);});}return [out,c2];}
 function guardarXLSX(wb,archivo){for(const n of wb.SheetNames)fmtHojaXL(wb.Sheets[n]);XLSX.writeFile(wb,archivo);}
 // hoja armada celda a celda: filas = arrays de valores o {v,t} con t en XF; hdr = filas de título que no cuentan para el ancho
 function hojaXL(filas,hdr){const aoa=filas.map((f)=>(f||[]).map((x)=>x&&typeof x==='object'?x.v:x));const ws=XLSX.utils.aoa_to_sheet(aoa);
-  filas.forEach((f,r)=>(f||[]).forEach((x,c)=>{if(x&&typeof x==='object'&&x.t&&typeof x.v==='number'&&isFinite(x.v)){const a=XLSX.utils.encode_cell({r,c});if(ws[a])ws[a].z=XF[x.t];}}));ws['!fmtOk']=hdr||1;return ws;}
-const libroXLSX=(hojas,archivo)=>{const wb=XLSX.utils.book_new();for(const [nom,data,cols,def] of hojas){const ws=data&&data['!ref']?data:XLSX.utils.json_to_sheet(data.length?data:[{}]);if(cols)ws['!cols']=cols.map((w)=>({wch:w}));if(def)ws['!def']=def;XLSX.utils.book_append_sheet(wb,ws,nomHojaXL(nom,wb));}guardarXLSX(wb,archivo);};
+  filas.forEach((f,r)=>(f||[]).forEach((x,c)=>{if(!x||typeof x!=='object')return;const a=XLSX.utils.encode_cell({r,c});if(!ws[a])return;if(x.s)ws[a].s=x.s;if(x.t&&typeof x.v==='number'&&isFinite(x.v))ws[a].z=XF[x.t];}));ws['!fmtOk']=hdr||1;return ws;}
+const libroXLSX=(hojas,archivo)=>{const wb=XLSX.utils.book_new();for(let [nom,data,cols,def] of hojas){if(data&&!data['!ref'])[data,cols]=conSemXL(data,cols);const ws=data&&data['!ref']?data:XLSX.utils.json_to_sheet(data.length?data:[{}]);if(cols)ws['!cols']=cols.map((w)=>({wch:w}));if(def)ws['!def']=def;XLSX.utils.book_append_sheet(wb,ws,nomHojaXL(nom,wb));}guardarXLSX(wb,archivo);};
 
 /* ---------- metas por vendedor ---------- */
 S.metas={};
@@ -1643,7 +1651,9 @@ async function cargarMetas(){S.metas={};try{const q=await db.collection(COL_M).g
 function fracAnio(anio){const c=S.M&&S.M.corte;if(!c)return 1;const cy=+c.slice(0,4);anio=+anio;if(anio<cy)return 1;if(anio>cy)return 0;
   const ini=Date.UTC(cy,0,1),fin=Date.UTC(cy+1,0,1);return (Date.parse(c+'T00:00:00Z')-ini+864e5)/(fin-ini);}
 function cliPorVendedor(){const M=S.M;if(M._cliV)return M._cliV;const m=new Map();for(const p of M.pairs)if(p.inc)m.set(p.v,(m.get(p.v)||0)+1);M._cliV=m;return m;}
-const semaforo=(av)=>{if(av==null)return '';const s=el('span',{class:'sem '+(av>=1?'v':av>=0.8?'a':'r')});s.title=av>=1?'Cumple la meta':av>=0.8?'Entre 80% y 99% de la meta':'Bajo 80% de la meta';return s;};
+// semáforo de cumplimiento: azul oscuro 100% o más, celeste 90-99%, amarillo 80-89%, rojo bajo 80%
+const SEM_N=(av)=>av>=1?'o':av>=0.9?'c':av>=0.8?'a':'r';const SEM_RGB={o:'FF002060',c:'FF00B0F0',a:'FFFFC000',r:'FFFF0000'};const SEM_T={o:'100% o más de cumplimiento',c:'Entre 90% y 99% de cumplimiento',a:'Entre 80% y 89% de cumplimiento',r:'Menos de 80% de cumplimiento'};
+const semaforo=(av)=>{if(av==null)return '';const n=SEM_N(av);const s=el('span',{class:'sem '+n});s.title=SEM_T[n];return s;};
 const editaMetas=()=>!!S.user&&(S.user.rol==='admin'||S.user.rol==='gerencia');
 // metas de neto mes a mes (si solo hay meta anual antigua, se reparte por días)
 function mesesMeta(m,anio){if(!m)return null;if(Array.isArray(m.nm)&&m.nm.some((x)=>x>0))return m.nm.map((x)=>+x||0);if(m.neto>0){const y=+anio,dy=(Date.UTC(y+1,0,1)-Date.UTC(y,0,1))/864e5;return Array.from({length:12},(_,i)=>m.neto*new Date(Date.UTC(y,i+1,0)).getUTCDate()/dy);}return null;}
@@ -1677,7 +1687,7 @@ function renderMetas(){
     $('m-foot').replaceChildren();return;}
   // vista de avance
   const fr=factorMes(a,mes);const nomMes=MESES_L[mes-1];const parcial=fr>0&&fr<1;
-  $('m-note').textContent='Mes: neto facturado en '+nomMes+' contra la meta de ese mes'+(parcial?' (como el mes está en curso, la meta se cuenta hasta el día de corte, '+fdate(M.corte)+')':'')+'. Acumulado: enero a '+nomMes+' contra la suma de las metas de esos meses. Cobertura: % de clientes de la cartera con al menos una factura en '+a+', contra la meta anual. Semáforo: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%.';
+  $('m-note').textContent='Mes: neto facturado en '+nomMes+' contra la meta de ese mes'+(parcial?' (como el mes está en curso, la meta se cuenta hasta el día de corte, '+fdate(M.corte)+')':'')+'. Acumulado: enero a '+nomMes+' contra la suma de las metas de esos meses. Cobertura: % de clientes de la cartera con al menos una factura en '+a+', contra la meta anual. Semáforo: azul oscuro 100% o más, celeste 90% a 99%, amarillo 80% a 89%, rojo bajo 80%.';
   const iM=M.months.indexOf(a+'-'+pad2(mes));const iAc=M.months.map((m,i)=>[m,i]).filter(([m])=>m.startsWith(a+'-')&&+m.slice(5,7)<=mes).map(([,i])=>i);
   const byV=new Map();for(const p of M.pairs){if(sc&&!sc.has(p.v))continue;if(!byV.has(p.v))byV.set(p.v,[]);byV.get(p.v).push(p);}
   const filas=vend.map((v)=>{const ps=byV.get(v)||[];const st=stats(ps,a);const m=T[vkey(v)]||{};const arr=mesesMeta(m,a);const mc=m.cob>0?m.cob/100:null;
@@ -2001,14 +2011,14 @@ const TUT={
   cobertura:{sec:'Cobertura',intro:'Una fila por vendedor con cuántos clientes de su cartera atendió en el año.',pasos:[
     'Elige el año arriba. "Atendidos" son clientes de la cartera con al menos una factura en ese año; "No atendidos" los que no tienen ninguna.',
     '"Nuevos" son clientes que aparecieron en la cartera por primera vez en ese año (se detectan comparando cada carga de cartera con la anterior).',
-    'Si el administrador cargó metas, aparecen las columnas de meta y avance con un semáforo: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%. La meta de neto se compara con lo que debería llevarse vendido a la fecha de corte.',
+    'Si el administrador cargó metas, aparecen las columnas de meta y avance con un semáforo: azul oscuro 100% o más, celeste 90% a 99%, amarillo 80% a 89%, rojo bajo 80%. La meta de neto se compara con lo que debería llevarse vendido a la fecha de corte.',
     'Toca un encabezado para ordenar la tabla. La última fila suma clientes distintos (un cliente con dos vendedores cuenta una vez).'],
     tip:'Usa esta tabla en la reunión semanal: ordena por "No atendidos" para ver dónde está el mayor espacio para crecer.'},
   metas:{sec:'Metas por vendedor',intro:'La meta de cada vendedor y su avance, mes a mes y acumulado en el año, con semáforo.',pasos:[
     'Elige el año y el mes arriba. Por defecto se muestra el mes de la fecha de corte de las ventas.',
     'Columnas del mes: neto facturado en ese mes contra la meta del mes. Si el mes está en curso, la meta se cuenta solo hasta el día de corte (por ejemplo, al 2 de noviembre se usa 2/30 de la meta de noviembre).',
     'Acumulado: neto de enero hasta el mes elegido contra la suma de las metas de esos meses. Cobertura: % de clientes de la cartera con al menos una factura en el año, contra la meta anual.',
-    'Semáforo del avance: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%.',
+    'Semáforo del avance: azul oscuro 100% o más, celeste 90% a 99%, amarillo 80% a 89%, rojo bajo 80%.',
     'Administrador y gerencia: presionan "Editar metas", escriben la cobertura (%) y la meta de neto de cada mes por vendedor, y luego "Guardar metas". Se puede pegar un bloque copiado desde Excel en la primera casilla de enero.'],
     tip:'La fila Total suma solo a los vendedores que tienen meta, para que el avance general sea comparable.'},
   clientes:{sec:'Clientes × mes',intro:'El detalle cliente por cliente, con sus facturas o su neto de cada mes del año elegido.',pasos:[
@@ -2546,33 +2556,33 @@ function renderCE(){
   if(rows.length)out.push(linea(suma(rows,'TOTAL',''),'tot tot2'));
   $('ce-body').replaceChildren(...out,...(rows.length?[]:[el('tr',null,el('td',{class:'l',colSpan:head.length,text:'No hay clientes estratégicos con meta para '+mesLab+' '+C.y+(editaEst()?'. Cárgalos desde Estrategia → Maestro.':'.')}))]));
   const parcial=dInt(C.y,C.m,Math.max(...C.ds,0))>corteInt();
-  $('ce-note').textContent='Ventas de cada ejecutivo a sus clientes estratégicos en los días elegidos de '+MESES_L[C.m-1]+' '+C.y+', por semana (lunes a domingo). El avance compara el neto de los días elegidos con la meta del mes (solo facturas). Semáforo: verde 100% o más, amarillo 80% a 99%, rojo bajo 80%.'+(parcial?' Las ventas llegan hasta el '+fdate(M.corte)+'.':'');
+  $('ce-note').textContent='Ventas de cada ejecutivo a sus clientes estratégicos en los días elegidos de '+MESES_L[C.m-1]+' '+C.y+', por semana (lunes a domingo). El avance compara el neto de los días elegidos con la meta del mes (solo facturas). Semáforo: azul oscuro 100% o más, celeste 90% a 99%, amarillo 80% a 89%, rojo bajo 80%.'+(parcial?' Las ventas llegan hasta el '+fdate(M.corte)+'.':'');
 }
 ['ce-ven','ce-ani','ce-mes'].forEach((id)=>$(id).addEventListener('change',(e)=>{const C=S.ce;if(id==='ce-ven')C.ven=e.target.value;else{if(id==='ce-ani')C.y=+e.target.value;else C.m=+e.target.value;C.ds=null;}renderCE();}));
 $('ce-med').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;S.ce.med=b.dataset.v;renderCE();});
 $('ce-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCE)return;const L=S.lastCE;const C=L.C;
-  const N=(v)=>({v:v||0,t:'$'}),K=(v)=>({v:v||0,t:'kg'}),P=(a,b)=>b?{v:a/b,t:'%'}:'',Q=(v)=>({v,t:'n'});
+  const N=(v)=>({v:v||0,t:'$'}),K=(v)=>({v:v||0,t:'kg'}),Q=(v)=>({v,t:'n'});const SP=(a,b)=>b?[semXL(a/b),{v:a/b,t:'%'}]:['',''];
   const mesT=MESES_L[C.m-1][0].toUpperCase()+MESES_L[C.m-1].slice(1)+' '+C.y;const quien=L.todos?'Todos los ejecutivos':C.ven;
   const nd=diasMes(C.y,C.m);const dTxt=C.ds.length===nd?'todos los días del mes':'días '+C.ds.join(', ');
   const titulo=[['Clientes estratégicos · '+mesT+' · '+quien],['Días elegidos: '+dTxt+'. Ventas hasta el '+fdate(S.M.corte)+'.'],[]];
-  const metas=[['Indicador','Meta','Vendido','Avance'],['Meta clientes estratégicos',N(L.tMeta),N(L.tVen),P(L.tVen,L.tMeta)]];
-  if(L.kMes)metas.push(['Meta mensual de venta (vs ventas del giro)',L.kMes.mt?N(L.kMes.mt):'Sin meta cargada',L.kMes.vg==null?'':N(L.kMes.vg),L.kMes.vg==null?'':P(L.kMes.vg,L.kMes.mt)]);
+  const metas=[['Indicador','Meta','Vendido','','Avance'],['Meta clientes estratégicos',N(L.tMeta),N(L.tVen),...SP(L.tVen,L.tMeta)]];
+  if(L.kMes)metas.push(['Meta mensual de venta (vs ventas del giro)',L.kMes.mt?N(L.kMes.mt):'Sin meta cargada',L.kMes.vg==null?'':N(L.kMes.vg),...(L.kMes.vg==null?['','']:SP(L.kMes.vg,L.kMes.mt))]);
   // tabla detalle
   const hd=[...(L.todos?['Ejecutivo']:[]),'Cliente','Código'];
-  for(const j of L.meds){const p=j===0?'Neto':'Kilos';L.sems.forEach((s,i)=>hd.push(p+' sem '+(i+1)+' ('+s.ini+'-'+s.fin+' '+L.mesLab+')'));hd.push(p+' total días elegidos');if(j===0)hd.push('Meta '+L.mesLab,'Avance %');}
-  const fila=(r,v,cli,cod)=>{const o=[...(L.todos?[v]:[]),cli,cod];for(const j of L.meds){const F=j===0?N:K;r.ws.forEach((w)=>o.push(F(w[j])));o.push(F(r.tot[j]));if(j===0)o.push(r.meta?N(r.meta):'',P(r.tot[0],r.meta));}return o;};
+  for(const j of L.meds){const p=j===0?'Neto':'Kilos';L.sems.forEach((s,i)=>hd.push(p+' sem '+(i+1)+' ('+s.ini+'-'+s.fin+' '+L.mesLab+')'));hd.push(p+' total días elegidos');if(j===0)hd.push('Meta '+L.mesLab,'','Avance %');}
+  const fila=(r,v,cli,cod)=>{const o=[...(L.todos?[v]:[]),cli,cod];for(const j of L.meds){const F=j===0?N:K;r.ws.forEach((w)=>o.push(F(w[j])));o.push(F(r.tot[j]));if(j===0)o.push(r.meta?N(r.meta):'',...SP(r.tot[0],r.meta));}return o;};
   const suma=(rs)=>({ws:L.sems.map((_,i)=>rs.reduce((a,r)=>[a[0]+r.ws[i][0],a[1]+r.ws[i][1]],[0,0])),tot:rs.reduce((a,r)=>[a[0]+r.tot[0],a[1]+r.tot[1]],[0,0]),meta:rs.reduce((a,r)=>a+r.meta,0)});
   const cod=(c)=>/^\d+$/.test(c)?+c:c;const det=[hd];
   if(L.todos){for(const v of L.vlist){const rs=L.rows.filter((r)=>r.v===v);if(!rs.length)continue;rs.forEach((r)=>det.push(fila(r,v,r.cli,cod(r.cod))));det.push(fila(suma(rs),v,'Total '+v,''));}}
   else L.rows.forEach((r)=>det.push(fila(r,'',r.cli,cod(r.cod))));
   if(L.rows.length)det.push(fila(suma(L.rows),'','TOTAL',''));
-  const w1=[...(L.todos?[26]:[]),44,11,...L.meds.flatMap((j)=>[...L.sems.map(()=>15),17,...(j===0?[15,10]:[])])];
+  const w1=[...(L.todos?[26]:[]),44,11,...L.meds.flatMap((j)=>[...L.sems.map(()=>15),17,...(j===0?[15,4,10]:[])])];
   const h1=hojaXL([...titulo,...metas,[],...det],3);h1['!cols']=w1.map((w,i)=>({wch:i===0?Math.max(w,40):w}));
   // resumen por ejecutivo
-  const conK=L.meds.includes(1);const rh=['Ejecutivo','Clientes','Meta','Vendido','Avance %',...(conK?['Kilos vendidos']:[])];const rr=[rh];
-  for(const v of L.vlist){const rs=L.rows.filter((r)=>r.v===v);if(!rs.length)continue;const t=suma(rs);rr.push([v,Q(rs.length),N(t.meta),N(t.tot[0]),P(t.tot[0],t.meta),...(conK?[K(t.tot[1])]:[])]);}
-  if(L.rows.length){const t=suma(L.rows);rr.push(['TOTAL',Q(L.rows.length),N(t.meta),N(t.tot[0]),P(t.tot[0],t.meta),...(conK?[K(t.tot[1])]:[])]);}
-  const h2=hojaXL([...titulo,...metas,[],...rr],3);h2['!cols']=[{wch:44},{wch:16},{wch:18},{wch:18},{wch:12},{wch:16}];
+  const conK=L.meds.includes(1);const rh=['Ejecutivo','Clientes','Meta','Vendido','','Avance %',...(conK?['Kilos vendidos']:[])];const rr=[rh];
+  for(const v of L.vlist){const rs=L.rows.filter((r)=>r.v===v);if(!rs.length)continue;const t=suma(rs);rr.push([v,Q(rs.length),N(t.meta),N(t.tot[0]),...SP(t.tot[0],t.meta),...(conK?[K(t.tot[1])]:[])]);}
+  if(L.rows.length){const t=suma(L.rows);rr.push(['TOTAL',Q(L.rows.length),N(t.meta),N(t.tot[0]),...SP(t.tot[0],t.meta),...(conK?[K(t.tot[1])]:[])]);}
+  const h2=hojaXL([...titulo,...metas,[],...rr],3);h2['!cols']=[{wch:44},{wch:16},{wch:18},{wch:18},{wch:4},{wch:12},{wch:16}];
   libroXLSX([['Resumen',h2,null],['Clientes estratégicos',h1,null]],'Clientes_estrategicos_'+C.y+'-'+pad2(C.m)+(L.todos?'':'_'+nomArch(C.ven))+'.xlsx');});
 /* ---- Maestro de Estrategia: importador de metas ---- */
 const toks=(s)=>norm(String(s)).replace(/[^a-z0-9ñ ]/g,' ').split(/\s+/).filter((w)=>w.length>=3);
