@@ -1629,11 +1629,13 @@ function fmtHojaXL(ws){if(!ws['!ref'])return;const R=XLSX.utils.decode_range(ws[
         let tt=t;if(tt==='%')x.v=x.v/100;if(tt==='n'&&Math.round(x.v)!==x.v)tt='n2';x.z=XF[tt];}}}
   if(!ws['!cols']){const w=[];for(let c=R.s.c;c<=R.e.c;c++){let m=6;for(let r=R.s.r;r<=Math.min(R.e.r,R.s.r+400);r++){const x=ws[XLSX.utils.encode_cell({r,c})];if(!x||x.v==null)continue;
       const L=x.t==='n'?String(Math.round(Math.abs(x.v))).length*1.35+4:String(x.v).length+1;if(!(ws['!fmtOk']&&r<ws['!fmtOk']))m=Math.max(m,L);}w.push({wch:Math.min(50,Math.ceil(m))});}ws['!cols']=w;}}
+// Excel no acepta en el nombre de hoja : \ / ? * [ ] ni apóstrofo al inicio o al final, máximo 31 caracteres y sin repetir
+function nomHojaXL(nom,wb){let n=String(nom||'Hoja').replace(/[:\\\/?*\[\]]/g,' ').replace(/'/g,'').replace(/\s+/g,' ').trim().slice(0,31).trim()||'Hoja';let k=2,b=n;while(wb.SheetNames.some((x)=>x.toLowerCase()===n.toLowerCase()))n=b.slice(0,28)+' '+(k++);return n;}
 function guardarXLSX(wb,archivo){for(const n of wb.SheetNames)fmtHojaXL(wb.Sheets[n]);XLSX.writeFile(wb,archivo);}
 // hoja armada celda a celda: filas = arrays de valores o {v,t} con t en XF; hdr = filas de título que no cuentan para el ancho
 function hojaXL(filas,hdr){const aoa=filas.map((f)=>(f||[]).map((x)=>x&&typeof x==='object'?x.v:x));const ws=XLSX.utils.aoa_to_sheet(aoa);
   filas.forEach((f,r)=>(f||[]).forEach((x,c)=>{if(x&&typeof x==='object'&&x.t&&typeof x.v==='number'&&isFinite(x.v)){const a=XLSX.utils.encode_cell({r,c});if(ws[a])ws[a].z=XF[x.t];}}));ws['!fmtOk']=hdr||1;return ws;}
-const libroXLSX=(hojas,archivo)=>{const wb=XLSX.utils.book_new();for(const [nom,data,cols,def] of hojas){const ws=data&&data['!ref']?data:XLSX.utils.json_to_sheet(data.length?data:[{}]);if(cols)ws['!cols']=cols.map((w)=>({wch:w}));if(def)ws['!def']=def;XLSX.utils.book_append_sheet(wb,ws,nom.slice(0,31));}guardarXLSX(wb,archivo);};
+const libroXLSX=(hojas,archivo)=>{const wb=XLSX.utils.book_new();for(const [nom,data,cols,def] of hojas){const ws=data&&data['!ref']?data:XLSX.utils.json_to_sheet(data.length?data:[{}]);if(cols)ws['!cols']=cols.map((w)=>({wch:w}));if(def)ws['!def']=def;XLSX.utils.book_append_sheet(wb,ws,nomHojaXL(nom,wb));}guardarXLSX(wb,archivo);};
 
 /* ---------- metas por vendedor ---------- */
 S.metas={};
