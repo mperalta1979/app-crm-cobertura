@@ -613,7 +613,13 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
         <h2>Usuarios</h2>
         <p class="note">Administrador: todo, incluido este Maestro. Gerencia: ve todas las carteras. Vendedor: solo las carteras vinculadas. Cada usuario entra con su nombre de usuario y la clave que le asignes; solo el Administrador puede cambiar claves.</p>
         <div class="twrap" style="max-height:none"><table class="t ulist"><thead><tr><th class="l">Usuario</th><th class="l">Nombre</th><th class="l">Rol</th><th class="l">Carteras</th><th></th></tr></thead><tbody id="u-body"></tbody></table></div>
-        <div class="row"><button class="btn sec sm" type="button" id="u-new">Nuevo usuario</button><button class="btn sec sm" type="button" id="u-gen">Crear usuarios para vendedores sin usuario</button></div>
+        <div class="row"><button class="btn sec sm" type="button" id="u-new">Nuevo usuario</button><button class="btn sec sm" type="button" id="u-gen">Crear usuarios para vendedores sin usuario</button><button class="btn sm" type="button" id="um-btn">Cargar usuarios desde Excel</button><button class="btn sec sm" type="button" id="um-plantilla">Descargar planilla de ejemplo</button><input type="file" id="um-file" accept=".xlsx,.xls" hidden></div>
+        <div id="um-card" class="gl" hidden>
+          <h2 style="font-size:17px;margin:0">Carga masiva de usuarios</h2>
+          <p class="note" id="um-note">—</p>
+          <div class="twrap" style="max-height:26rem"><table class="t"><thead><tr><th class="l">Fila</th><th class="l">Nombre</th><th class="l">Usuario</th><th class="l">Clave inicial</th><th class="l">Rol</th><th class="l">Carteras</th><th class="l">Oficina</th><th class="l">Celular</th><th class="l">Correo</th><th class="l">Estado</th></tr></thead><tbody id="um-body"></tbody></table></div>
+          <div class="row"><button class="btn" type="button" id="um-crear">Crear usuarios</button><button class="btn sec" type="button" id="um-cerrar">Cerrar</button><button class="btn sec dl" type="button" id="um-lista" hidden>Descargar lista de usuarios y claves</button></div>
+        </div>
         <p class="status" id="u-status" role="status"></p>
       </div>
 
@@ -657,15 +663,16 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
   </main>
 </div>
 
-<div class="busy" id="dlg-pass" hidden><div style="text-align:left;gap:12px">
-  <b>Cambiar mi clave</b>
-  <div class="field"><span>Clave actual</span><div class="pw"><input class="input" id="p-cur" type="password" autocomplete="current-password"><button type="button" class="eye" data-eye="p-cur" aria-label="Mostrar clave" title="Mostrar clave"></button></div></div>
+<div class="modal" id="dlg-pass" hidden style="z-index:60;align-items:center"><div class="box sm" style="width:min(100%,26rem)">
+  <b id="p-title">Cambiar mi clave</b><p class="note" id="p-msg" hidden style="margin:0;max-width:22rem">Es tu primer ingreso: por seguridad debes cambiar la clave inicial por una propia antes de continuar.</p>
+  <div class="field" id="p-cur-w"><span>Clave actual</span><div class="pw"><input class="input" id="p-cur" type="password" autocomplete="current-password"><button type="button" class="eye" data-eye="p-cur" aria-label="Mostrar clave" title="Mostrar clave"></button></div></div>
   <div class="field"><span>Clave nueva (mín. 6)</span><div class="pw"><input class="input" id="p-new" type="password" autocomplete="new-password"><button type="button" class="eye" data-eye="p-new" aria-label="Mostrar clave" title="Mostrar clave"></button></div></div>
   <p class="err" id="p-err"></p>
-  <div class="row"><button class="btn" type="button" id="p-save">Guardar</button><button class="btn sec" type="button" id="p-cancel">Cancelar</button></div>
+  <div class="field"><span>Repite la clave nueva</span><div class="pw"><input class="input" id="p-new2" type="password" autocomplete="new-password"><button type="button" class="eye" data-eye="p-new2" aria-label="Mostrar clave" title="Mostrar clave"></button></div></div>
+  <div class="row"><button class="btn" type="button" id="p-save">Guardar</button><button class="btn sec" type="button" id="p-cancel">Cancelar</button><button class="btn sec" type="button" id="p-salir" hidden>Salir</button></div>
 </div></div>
 <div class="modal" id="ficha" hidden><div class="box">
-  <div class="mhead"><div><h2 id="fi-nom">—</h2><p class="note" id="fi-sub">—</p></div><div class="row"><button class="btn tut" type="button" data-tut="ficha">Tutorial</button><button class="btn sec" type="button" id="fi-close">Cerrar</button></div></div>
+  <div class="mhead"><div><div class="row" style="align-items:center;gap:10px;flex-wrap:wrap"><h2 id="fi-nom">—</h2><button class="btn sm" type="button" id="fi-gnew">Registrar gestión</button></div><p class="note" id="fi-sub">—</p></div><div class="row"><button class="btn tut" type="button" data-tut="ficha">Tutorial</button><button class="btn sec" type="button" id="fi-close">Cerrar</button></div></div>
   <div class="fgrid" id="fi-datos"></div>
   <div class="kpis" id="fi-kpis"></div>
   <div class="card"><h2>Compras mes a mes</h2><p class="note" id="fi-mes-note">Neto en millones de pesos.</p><div class="chart" id="fi-chart"></div></div>
@@ -674,7 +681,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
     <div class="card"><h2>NV emitidas</h2><p class="note" id="fi-nv-note">—</p><div class="twrap" style="max-height:none"><table class="t"><thead><tr><th class="l">Mes</th><th>NV</th></tr></thead><tbody id="fi-nv"></tbody></table></div></div>
   </div>
   <div class="card"><h2>Productos que compra</h2><p class="note" id="fi-prod-note">Ordenados por neto total desde 2024. "Última compra" muestra el último mes en que se le vendió cada producto.</p><div class="twrap" style="max-height:24rem"><table class="t"><thead><tr><th class="l">Código</th><th class="l">Producto</th><th class="l">UM</th><th>Cantidad</th><th class="fi-neto">Neto $</th><th class="l">Última compra</th></tr></thead><tbody id="fi-prod"></tbody></table></div></div>
-  <div class="card"><div class="tbar"><h2>Gestiones</h2><button class="btn sm" type="button" id="fi-gnew">Registrar gestión</button></div>
+  <div class="card" id="fi-gcard"><div class="tbar"><h2>Gestiones</h2></div>
     <div id="fi-gform" hidden class="gl">
       <div class="uform">
         <label class="field"><span>Fecha</span><input class="input" type="date" id="gf-fecha"></label>
@@ -1065,7 +1072,7 @@ function escucharDatos(){
 /* ---------- login ---------- */
 $('login-form').addEventListener('submit',async(e)=>{e.preventDefault();$('l-err').textContent='';
   const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
-  try{await auth.signInWithEmailAndPassword(await emailLogin($('l-user').value),$('l-pass').value);$('l-pass').value='';}
+  try{S.pwLogin=$('l-pass').value;await auth.signInWithEmailAndPassword(await emailLogin($('l-user').value),$('l-pass').value);$('l-pass').value='';}
   catch(err){$('l-err').textContent=errAuth(err);}finally{btn.disabled=false;}});
 $('logout').addEventListener('click',()=>{auth.signOut();});
 async function perfilDe(user){
@@ -1082,7 +1089,7 @@ auth.onAuthStateChanged(async(user)=>{
     if(!p){busy(false);await auth.signOut();$('l-err').textContent='Tu usuario no está habilitado. Pide acceso al administrador.';return;}
     S.user=p;S.f={...DEF};S.sort=null;
     $('who-name').textContent=p.nombre||p.u;$('who-rol').textContent='· '+ROL[p.rol];
-    $('tab-maestro').hidden=p.rol!=='admin';$('my-pass').hidden=p.rol!=='admin';if(p.rol!=='admin'&&S.tab==='maestro')S.tab='resumen';
+    $('tab-maestro').hidden=p.rol!=='admin';$('my-pass').hidden=false;if(p.rol!=='admin'&&S.tab==='maestro')S.tab='resumen';
     $('empty-t').textContent=p.rol==='admin'?'Ve a Maestro y sube los archivos de cartera y ventas.':esV(p.rol)?'El administrador todavía no publica los datos de tu cartera.':'El administrador todavía no carga los archivos de cartera y ventas.';
     document.body.classList.toggle('rol-vendedor',esV(p.rol));
     if(p.rol==='admin')await cargarUsuarios().catch(()=>{});
@@ -1090,16 +1097,27 @@ auth.onAuthStateChanged(async(user)=>{
     await cargarMetas();registrarUso(p);G.reset();NV.reset();S.dir=null;S.est=null;S.estIntento=false;S.estCli=null;S.ce=null;S.vv=null;S.ceEdit=false;await escucharSecciones();
     $('v-login').hidden=true;$('v-app').hidden=false;mostrarTab(S.tab);
     gCargar().then(()=>gSync(true));
+    if(p.cambiarClave)abrirClave(true);
   }catch(e){busy(false);$('l-err').textContent=errAuth(e);await auth.signOut().catch(()=>{});}
   finally{busy(false);}
 });
 /* ---------- mi clave ---------- */
-$('my-pass').addEventListener('click',()=>{$('p-cur').value='';$('p-new').value='';$('p-err').textContent='';$('dlg-pass').hidden=false;$('p-cur').focus();});
-$('p-cancel').addEventListener('click',()=>{$('dlg-pass').hidden=true;});
-$('p-save').addEventListener('click',async()=>{const u=auth.currentUser,cur=$('p-cur').value,nw=$('p-new').value;
+// obligatoria: primer ingreso de un usuario creado con clave inicial; no se puede cerrar sin cambiarla
+function abrirClave(oblig){S.claveOblig=!!oblig;const conPw=oblig&&S.pwLogin;$('p-title').textContent=oblig?'Crea tu clave personal':'Cambiar mi clave';$('p-msg').hidden=!oblig;
+  $('p-cur-w').hidden=!!conPw;$('p-cur').value=conPw?S.pwLogin:'';$('p-new').value='';$('p-new2').value='';$('p-err').textContent='';$('p-cancel').hidden=!!oblig;$('p-salir').hidden=!oblig;$('dlg-pass').hidden=false;(conPw?$('p-new'):$('p-cur')).focus();}
+$('my-pass').addEventListener('click',()=>abrirClave(false));
+$('p-cancel').addEventListener('click',()=>{if(!S.claveOblig)$('dlg-pass').hidden=true;});
+$('p-salir').addEventListener('click',()=>{$('dlg-pass').hidden=true;S.claveOblig=false;auth.signOut();});
+$('p-save').addEventListener('click',async()=>{const u=auth.currentUser,cur=$('p-cur').value,nw=$('p-new').value,nw2=$('p-new2').value;
   if(nw.length<6){$('p-err').textContent='La clave nueva debe tener al menos 6 caracteres.';return;}
-  try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,cur));await u.updatePassword(nw);$('dlg-pass').hidden=true;toast('Clave cambiada.');}
-  catch(e){$('p-err').textContent=e&&e.code&&e.code.includes('credential')?'La clave actual no es correcta.':errAuth(e);}});
+  if(nw!==nw2){$('p-err').textContent='Las dos claves nuevas no coinciden.';return;}
+  if(nw===cur){$('p-err').textContent='La clave nueva debe ser distinta de la actual.';return;}
+  if(S.user&&nw.toLowerCase().startsWith(S.user.u.toLowerCase())){$('p-err').textContent='La clave no puede empezar con tu nombre de usuario. Elige una distinta.';return;}
+  const b=$('p-save');b.disabled=true;
+  try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,cur));await u.updatePassword(nw);
+    if(S.user&&S.user.cambiarClave){await db.collection(COL_U).doc(S.user.uid).update({cambiarClave:false,clave:new Date().toISOString()});S.user.cambiarClave=false;}
+    S.pwLogin=null;S.claveOblig=false;$('dlg-pass').hidden=true;toast('Clave cambiada. Desde ahora entra con tu clave nueva.');}
+  catch(e){$('p-err').textContent=e&&e.code&&e.code.includes('credential')?'La clave actual no es correcta.':errAuth(e);}finally{b.disabled=false;}});
 
 /* ---------- pestañas ---------- */
 document.querySelectorAll('.tab').forEach((b)=>b.addEventListener('click',()=>mostrarTab(b.dataset.tab)));
@@ -1916,7 +1934,7 @@ $('fi-gnew').addEventListener('click',()=>{const c=S.M.clients.get(S.fichaCod);i
   $('gf-tipo').replaceChildren(...TIPOS_G.map((t)=>new Option(t,t)));$('gf-res').replaceChildren(new Option('Elige un resultado',''),...RES_G.map((t)=>new Option(t,t)));
   const vs=vendGestion(c);$('gf-ven').replaceChildren(...vs.map((v)=>new Option(v,v)));$('gf-ven-w').hidden=vs.length<2;
   $('gf-cnom').value='';$('gf-ctel').value='';gfContactos();
-  $('fi-gform').hidden=false;$('fi-gnew').hidden=true;$('gf-tipo').focus();});
+  $('fi-gform').hidden=false;$('fi-gnew').hidden=true;$('fi-gcard').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('gf-tipo').focus({preventScroll:true}),350);});
 $('gf-cancel').addEventListener('click',()=>{$('fi-gform').hidden=true;$('fi-gnew').hidden=false;});
 $('gf-save').addEventListener('click',async()=>{const c=S.M.clients.get(S.fichaCod);if(!c)return;const err=$('gf-err');err.textContent='';
   const fecha=$('gf-fecha').value,tipo=$('gf-tipo').value,resultado=$('gf-res').value,nota=$('gf-nota').value.trim().slice(0,600),prox=$('gf-prox').value,vend=$('gf-ven').value;
@@ -2021,7 +2039,7 @@ const TUT={
     'En "Secciones por tipo de usuario" marca qué secciones ve Gerencia y cuáles ve Vendedor, y presiona "Guardar secciones". Se aplica al instante.',
     'En "Avisos de gestiones (NTFY)" activas las notificaciones al celular cada vez que alguien registra una gestión. Usa "Enviar aviso de prueba" para comprobar que llegan.',
     '"Uso de la app" muestra cuándo entró cada usuario por última vez y cuántos días ingresó en la última semana y el último mes.',
-    'En "Usuarios" creas, editas o eliminas usuarios y les asignas sus carteras. Solo tú puedes cambiar claves.'],
+    'En "Usuarios" creas, editas o eliminas usuarios y les asignas sus carteras. Con "Cargar usuarios desde Excel" creas muchos de una vez (usuario = inicial del nombre + apellido, clave inicial = usuario + 1); cada uno debe crear su clave personal en su primer ingreso. Cada usuario puede cambiar su clave con "Mi clave".'],
     tip:'Cada vendedor descarga solo los datos de su cartera. Si cambias la cartera asignada a un vendedor, sus datos se ajustan solos.'},
   ficha:{sec:'Ficha de cliente',intro:'Todo lo de un cliente en un solo lugar.',pasos:[
     'Arriba están sus datos: vendedor, condición de pago, última compra, cada cuánto compra normalmente y si tiene alerta de riesgo.',
@@ -2536,7 +2554,7 @@ function renderUsuarios(){
       if(u.uid===S.user.uid){toast('No puedes eliminar tu propio usuario.');return;}
       if(u.rol==='admin'&&USERS.filter((x)=>x.rol==='admin').length<2){toast('Debe quedar al menos un Administrador.');return;}
       try{await db.collection(COL_U).doc(u.uid).delete();await db.collection(COL_L).doc(u.u).delete().catch(()=>{});USERS=USERS.filter((x)=>x!==u);renderUsuarios();toast('Usuario '+u.u+' eliminado: ya no puede entrar.');}catch(e){toast(errAuth(e));}});
-    return el('tr',null,el('td',{class:'l',text:u.u}),el('td',{class:'l',text:u.nombre||''}),el('td',{class:'l',text:(ROL[u.rol]||u.rol)+(u.ofi?' · oficina':'')}),
+    return el('tr',null,el('td',{class:'l',text:u.u}),el('td',{class:'l',text:u.nombre||''}),el('td',{class:'l',text:(ROL[u.rol]||u.rol)+(u.ofi?' · oficina':'')+(u.cambiarClave?' · debe cambiar clave':'')}),
       el('td',{class:'l',text:esV(u.rol)?((u.vend||[]).join(', ')||'— ninguna —'):'Todas'}),el('td',null,el('span',{class:'row',style:'justify-content:flex-end'},ed,del)));}));
 }
 function abrirForm(u){editando=u||null;$('u-form-card').hidden=false;$('u-form-title').textContent=u?'Editar usuario '+u.u:'Nuevo usuario';
@@ -2593,6 +2611,55 @@ $('u-gen').addEventListener('click',async()=>{
   $('u-status').className='status'+(nuevos.length?' ok':'');
   $('u-status').textContent=(nuevos.length?'Se crearon '+nuevos.length+' usuarios ('+nuevos.join(', ')+') con clave inicial "petroflex". Puedes cambiarles la clave con Editar.':'Todos los vendedores ya tienen usuario.')+(fallos.length?' No se pudieron crear: '+fallos.join('; ')+'.':'');});
 
+
+/* ---------- carga masiva de usuarios desde Excel ---------- */
+const cap=(s)=>s.toLowerCase().replace(/(^|\s|-)(\p{L})/gu,(m,a,b)=>a+b.toUpperCase());
+const slug=(s)=>norm(s).replace(/[^a-z0-9]/g,'');
+function partesNombre(n){const p=n.trim().replace(/\s+/g,' ').split(' ').filter(Boolean);if(p.length<2)return null;
+  if(p.length===2)return{nom:p[0],a1:p[1],a2:''};if(p.length===3)return{nom:p[0],a1:p[1],a2:p[2]};return{nom:p[0],a1:p[p.length-2],a2:p[p.length-1]};}
+$('um-plantilla').addEventListener('click',()=>{if(!window.XLSX){toast('Espera un momento y vuelve a intentar.');return;}
+  const vs=S.M?S.M.vendors:[];libroXLSX([['Usuarios',[{'Nombre completo':'Marcelo Peralta Vergara','Rol':'Gerencia','Carteras':'','Atiende oficina':'No'},{'Nombre completo':'Adrian Vilches Castro','Rol':'Vendedor','Carteras':vs.find((v)=>/VILCHES/.test(v))||'VILCHES C. ADRIAN','Atiende oficina':'No'},{'Nombre completo':'Crisel Palma Rojas','Rol':'Vendedor','Carteras':'OFICINA PETROFLEX','Atiende oficina':'Sí'},{'Nombre completo':'María Soto González','Rol':'Kam Retail','Carteras':'OFICINA KAM RETAIL; SODIMAC EMPRESAS X.MARTINEZ','Atiende oficina':'No'}],[30,14,50,16]],['Carteras válidas',vs.map((v)=>({'Cartera (escribir tal cual)':v})),[40]]],'Planilla_usuarios_APP_CRM.xlsx');});
+$('um-btn').addEventListener('click',()=>{if(!S.M){toast('Carga primero los datos de cartera y ventas.');return;}$('um-file').value='';$('um-file').click();});
+$('um-cerrar').addEventListener('click',()=>{$('um-card').hidden=true;S.um=null;});
+$('um-file').addEventListener('change',async(e)=>{const f=e.target.files[0];if(!f)return;
+  try{if(!window.XLSX){toast('Espera un momento y vuelve a intentar.');return;}const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    const h=(rows[0]||[]).map((x)=>norm(String(x)).trim());const col=(...ks)=>h.findIndex((x)=>ks.some((k)=>x.startsWith(k)));
+    const I={n:col('nombre'),r:col('rol'),c:col('cartera'),o:col('atiende','oficina'),t:col('celular','telefono','fono','movil'),m:col('email','correo','mail')};
+    if(I.n<0||I.r<0){toast('La planilla debe tener las columnas "Nombre completo" y "Rol".');return;}
+    const vsN=new Map(S.M.vendors.map((v)=>[norm(v).replace(/\s+/g,' ').trim(),v]));
+    // usuarios base repetidos dentro del archivo: todos llevan la inicial del segundo apellido (no depende del orden)
+    const baseCnt=new Map();rows.slice(1).forEach((r)=>{const pn=partesNombre(String(r[I.n]||''));if(pn){const b0=slug(pn.nom[0]+pn.a1);baseCnt.set(b0,(baseCnt.get(b0)||0)+1);}});
+    const usados=new Set(USERS.map((u)=>u.u)),nomExist=new Set(USERS.map((u)=>norm(u.nombre||'').trim()).filter(Boolean));const out=[];
+    rows.slice(1).forEach((r,i)=>{const fila=i+2;const nombre=String(r[I.n]||'').trim().replace(/\s+/g,' ');if(!nombre&&!String(r[I.r]||'').trim())return;
+      const x={fila,nombre:cap(nombre),u:'',pw:'',rol:'',vend:[],ofi:false,estado:'ok',msg:'',cel:I.t<0?'':String(r[I.t]||'').trim(),mail:I.m<0?'':String(r[I.m]||'').trim().toLowerCase()};out.push(x);
+      const pn=partesNombre(nombre);if(!pn){x.estado='error';x.msg='Escribe nombre y apellido';return;}
+      const rr=norm(String(r[I.r]||'')).trim();x.rol=/kam/.test(rr)?'kam':/gerenc/.test(rr)?'gerencia':/vend/.test(rr)?'vendedor':'';
+      if(!x.rol){x.estado='error';x.msg='Rol no reconocido (Vendedor, Kam Retail o Gerencia)';}
+      const cs=I.c<0?[]:String(r[I.c]||'').split(/[;\n]+/).map((s)=>s.trim()).filter(Boolean);const malas=[];
+      for(const c of cs){const v=vsN.get(norm(c).replace(/\s+/g,' ').trim());v?x.vend.push(v):malas.push(c);}
+      if(malas.length&&x.estado==='ok'){x.estado='error';x.msg='Cartera no encontrada: '+malas.join(', ');}
+      if(esV(x.rol)&&!x.vend.length&&x.estado==='ok'){x.estado='error';x.msg='Falta la cartera';}
+      x.ofi=esV(x.rol)&&I.o>=0&&/^s/i.test(norm(String(r[I.o]||'')).trim());
+      if(nomExist.has(norm(x.nombre).trim())){x.estado='existe';x.msg='Ya tiene usuario: se salta';const u0=USERS.find((u)=>norm(u.nombre||'').trim()===norm(x.nombre).trim());x.u=u0?u0.u:'';return;}
+      let u=slug(pn.nom[0]+pn.a1);if((usados.has(u)||baseCnt.get(u)>1)&&pn.a2)u=slug(pn.nom[0]+pn.a1+pn.a2[0]);const base=u;let k=2;while(usados.has(u))u=base+(k++);
+      if(x.estado==='ok'){usados.add(u);}x.u=u;
+      // clave inicial = usuario + 1; si queda bajo 6 caracteres (mínimo de Firebase) se completa con 2, 3…  (lroa → lroa12)
+      let pw=u+'1',d=2;while(pw.length<6)pw+=String(d++);x.pw=pw;if(pw!==u+'1')x.nota='clave alargada al mínimo de 6';});
+    S.um=out;renderUM();$('um-card').hidden=false;$('um-card').scrollIntoView({behavior:'smooth',block:'start'});}
+  catch(err){toast('No se pudo leer la planilla: '+(err.message||err));}});
+function renderUM(){const L=S.um||[];const n=(e)=>L.filter((x)=>x.estado===e).length;
+  $('um-note').textContent=nf.format(L.length)+' filas: '+nf.format(n('ok'))+' por crear, '+nf.format(n('existe'))+' ya existen (se saltan), '+nf.format(n('error'))+' con error'+(n('error')?' (corrige el Excel y vuelve a cargarlo, o crea solo las correctas)':'')+'. Usuario = inicial del nombre + primer apellido; si se repite, se agrega la inicial del segundo apellido. Clave inicial = usuario + 1. En su primer ingreso, cada uno deberá crear su clave personal.';
+  const est=(x)=>x.estado==='ok'?'Por crear'+(x.nota?' ('+x.nota+')':''):x.estado==='creado'?'Creado':x.estado==='existe'?x.msg:x.estado==='fallo'?'No se pudo crear: '+x.msg:'Error: '+x.msg;
+  $('um-body').replaceChildren(...L.map((x)=>{const te=el('td',{class:'l',text:est(x)});if(x.estado==='error'||x.estado==='fallo')te.classList.add('z');if(x.estado==='creado')te.classList.add('pos');
+    return el('tr',null,el('td',{class:'l',text:String(x.fila)}),el('td',{class:'l',text:x.nombre}),el('td',{class:'l',text:x.u||'—'}),el('td',{class:'l',text:x.pw||'—'}),el('td',{class:'l',text:ROL[x.rol]||'—'}),el('td',{class:'l',text:x.vend.join('; ')||'—'}),el('td',{class:'l',text:x.ofi?'Sí':'No'}),el('td',{class:'l',text:x.cel||'—'}),el('td',{class:'l',text:x.mail||'—'}),te);}));
+  $('um-crear').hidden=!n('ok');$('um-crear').textContent='Crear '+nf.format(n('ok'))+' usuarios';$('um-lista').hidden=!n('creado');}
+$('um-crear').addEventListener('click',async()=>{const L=(S.um||[]).filter((x)=>x.estado==='ok');const b=$('um-crear');b.disabled=true;
+  try{for(const [k,x] of L.entries()){busy(true,'Creando usuarios…',(k+1)+' de '+L.length+': '+x.u);
+      try{const {uid,email}=await crearCuenta(x.u,x.pw);const doc={u:x.u,email,nombre:x.nombre,rol:x.rol,vend:x.vend,vk:x.vend.map(vkey),ofi:x.ofi,cel:x.cel,mail:x.mail,cambiarClave:true,creado:new Date().toISOString(),carga:'masiva'};
+        await db.collection(COL_U).doc(uid).set(doc);await publicarLogin(x.u,email);USERS.push({uid,...doc});x.estado='creado';}
+      catch(e){x.estado='fallo';x.msg=errAuth(e);}}}
+  finally{busy(false);b.disabled=false;renderUM();renderUsuarios();const c=S.um.filter((x)=>x.estado==='creado').length;toast('Se crearon '+c+' usuarios.');}});
+$('um-lista').addEventListener('click',()=>{if(sinXLSX())return;libroXLSX([['Usuarios creados',(S.um||[]).filter((x)=>x.estado==='creado').map((x)=>({'Nombre':x.nombre,'Usuario':x.u,'Clave inicial':x.pw,'Rol':ROL[x.rol],'Carteras':x.vend.join('; '),'Celular':x.cel,'Correo':x.mail})),[30,14,14,12,50,14,30]]],'Usuarios_creados_'+hoyISO()+'.xlsx');});
 /* ---------- inicio: lo maneja onAuthStateChanged ---------- */
 busy(true,'Conectando…');
 if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
