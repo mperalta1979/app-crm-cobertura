@@ -422,7 +422,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
           <div class="field" id="ce-dia-w"><span>Días del mes a revisar</span><div id="ce-dia" class="dias"></div></div>
         </div>
         <div class="kpis" id="ce-kpis"></div>
-        <div class="card" id="ce-view"><div class="twrap" style="max-height:34rem"><table class="t"><thead><tr id="ce-head"></tr></thead><tbody id="ce-body"></tbody></table></div></div>
+        <div class="card" id="ce-view"><div class="twrap" style="max-height:34rem"><table class="t" id="ce-table"><thead><tr id="ce-head"></tr></thead><tbody id="ce-body"></tbody></table></div></div>
       </div>
       <div id="est-me" class="wrap" style="padding:0" hidden>
         <div class="card">
@@ -2067,7 +2067,7 @@ const TUT={
   est:{sec:'Estrategia',intro:'Herramientas para gerencia: ventas por vendedor con filtros libres y seguimiento de clientes estratégicos con metas mensuales.',pasos:[
     'Ventas por vendedor: marca vendedores, años, meses y días (por ejemplo, del 1 al 8 para un informe "al 09"). La tabla muestra cada línea (según PCDESC) por vendedor, agrupada en Mangueras, Tuberías, Fitting reventa y Otras ventas, con sus totales, Ventas del giro y Total general. Suma facturas, notas de crédito y notas de débito. Cambia entre Neto y Kilos con el selector.',
     'Refacturación: con un solo mes elegido, escribe a mano el monto de cada vendedor en la fila "Detalle refacturación" y presiona "Guardar refacturación". Queda guardada por mes y aparece en el cuadro de abajo; no suma al Total General.',
-    'Clientes estratégicos: elige el vendedor, el año, el mes y los días que quieres revisar. Cada cliente muestra lo vendido en cada semana (lunes a domingo), el total de los días elegidos, la meta del mes, el "% de la meta" y el "% de lo esperado". El semáforo usa el % de lo esperado: compara tu avance con lo que deberías llevar según los días hábiles transcurridos del mes (lunes a viernes sin feriados, hasta la fecha de corte de las ventas). Así, a mitad de mes no todo sale en rojo.',
+    'Clientes estratégicos: elige el vendedor, el año, el mes y los días que quieres revisar. Cada cliente muestra lo vendido en los días elegidos, la meta del mes, el "% de la meta" y el "% de lo esperado". El semáforo usa el % de lo esperado: compara tu avance con lo que deberías llevar según los días hábiles transcurridos del mes (lunes a viernes sin feriados, hasta la fecha de corte de las ventas). Así, a mitad de mes no todo sale en rojo.',
     'Maestro (administrador y gerencia): con "Importar metas" subes el Excel mensual de metas por ejecutivo. La app reconoce ejecutivos y clientes, te muestra lo que no pudo reconocer para que lo elijas, y al guardar reemplaza las metas de esos meses. La fila "PRESUPUESTO" del archivo queda como meta mensual de venta.',
     'Arriba de Clientes estratégicos verás dos metas: la de clientes estratégicos (suma de sus metas contra lo vendido) y la meta mensual de venta (contra las Ventas del giro: facturas, notas de crédito y notas de débito).',
     'Cada vendedor ve solo sus propios clientes estratégicos y su avance, sin poder editar.'],
@@ -2554,13 +2554,14 @@ function renderCE(){
   const meds=C.med==='ambos'?[0,1]:C.med==='neto'?[0]:[1];
   const fmtM=(j,v)=>j===0?'$'+nf.format(Math.round(v)):nf.format(Math.round(v));
   S.lastCE={rows,sems,meds,C,mesLab,todos,vlist,tMeta,tVen,kMes,ESP};
-  const head=[...(todos?[el('th',{class:'l vend',scope:'col',text:'Ejecutivo'})]:[]),el('th',{class:'l cli',scope:'col',text:'Cliente'}),el('th',{class:'l hide-sm',scope:'col',text:'Código'})];
+  const k1=todos?'stk2':'stk1',k2=todos?'stk3':'stk2';
+  const head=[...(todos?[el('th',{class:'l vend stk stk1',scope:'col',text:'Ejecutivo'})]:[]),el('th',{class:'l cli stk '+k1,scope:'col',text:'Cliente'}),el('th',{class:'l hide-sm stk stkl '+k2,scope:'col',text:'Código'})];
   for(const j of meds){if(meds.length>1)head.push(el('th',{class:'l',scope:'col',text:j===0?'NETO →':'KILOS →'}));
-    sems.forEach((s,i)=>head.push(el('th',{scope:'col',text:'Sem '+(i+1)+' ('+s.ini+'–'+s.fin+' '+mesLab+')'})));head.push(el('th',{scope:'col',text:'Total días elegidos'}));
+    head.push(el('th',{scope:'col',text:(j===0?'Neto':'Kilos')+' días elegidos'}));
     if(j===0)head.push(el('th',{scope:'col',text:'Meta '+mesLab}),el('th',{scope:'col',text:'% de la meta'}),el('th',{scope:'col',text:'% de lo esperado',title:espTxt}));}
   $('ce-head').replaceChildren(...head);
-  const linea=(r,cls)=>{const tds=[...(todos?[el('td',{class:'l vend',text:r.v||''})]:[]),(()=>{const td=el('td',{class:'l cli',text:r.cli});if(!cls&&M.clients.has(r.cod)){td.dataset.ficha=r.cod;td.title='Ver ficha';}return td;})(),el('td',{class:'l hide-sm',text:r.cod||''})];
-    for(const j of meds){if(meds.length>1)tds.push(el('td'));r.ws.forEach((w)=>{const td=el('td',{text:fmtM(j,w[j])});if(!w[j])td.classList.add('zc');tds.push(td);});
+  const linea=(r,cls)=>{const tds=[...(todos?[el('td',{class:'l vend stk stk1',text:r.v||''})]:[]),(()=>{const td=el('td',{class:'l cli stk '+k1,text:r.cli});if(!cls&&M.clients.has(r.cod)){td.dataset.ficha=r.cod;td.title='Ver ficha';}return td;})(),el('td',{class:'l hide-sm stk stkl '+k2,text:r.cod||''})];
+    for(const j of meds){if(meds.length>1)tds.push(el('td'));
       tds.push(el('td',{text:fmtM(j,r.tot[j]),style:'font-weight:600'}));
       if(j===0){tds.push(el('td',{text:r.meta?fmtM(0,r.meta):'—'}));const av=r.meta?r.tot[0]/r.meta:null;tds.push(el('td',{text:av==null?'—':pf.format(av)}));const l=lin(r.tot[0],r.meta);const ta=el('td',{text:l==null?'—':pf.format(l),style:'font-weight:600'});if(l!=null)ta.prepend(semaforo(l));tds.push(ta);}}
     return el('tr',cls?{class:cls}:null,...tds);};
@@ -2568,8 +2569,9 @@ function renderCE(){
   const out=[];if(todos){for(const v of vlist){const rs=rows.filter((r)=>r.v===v);if(!rs.length)continue;rs.forEach((r)=>out.push(linea(r)));out.push(linea(suma(rs,'Total '+v,v),'tot'));}}else rows.forEach((r)=>out.push(linea(r)));
   if(rows.length)out.push(linea(suma(rows,'TOTAL',''),'tot tot2'));
   $('ce-body').replaceChildren(...out,...(rows.length?[]:[el('tr',null,el('td',{class:'l',colSpan:head.length,text:'No hay clientes estratégicos con meta para '+mesLab+' '+C.y+(editaEst()?'. Cárgalos desde Estrategia → Maestro.':'.')}))]));
+  {const h=$('ce-head'),w=(q)=>{const e=h.querySelector(q);return e?e.getBoundingClientRect().width:0;};const T=$('ce-table');T.style.setProperty('--stk2',w('.stk1')+'px');T.style.setProperty('--stk3',(w('.stk1')+w('.stk2'))+'px');}
   const parcial=dInt(C.y,C.m,Math.max(...C.ds,0))>corteInt();
-  $('ce-note').textContent='Ventas de cada ejecutivo a sus clientes estratégicos en los días elegidos de '+MESES_L[C.m-1]+' '+C.y+', por semana (lunes a domingo). "% de la meta" compara el neto de los días elegidos con la meta del mes (solo facturas). "% de lo esperado" compara ese avance con el avance lineal según días hábiles (lunes a viernes sin feriados): '+espTxt+'. El semáforo usa "% de lo esperado": azul oscuro 100% o más, celeste 90% a 99%, amarillo 80% a 89%, rojo bajo 80%.'+(parcial?' Las ventas llegan hasta el '+fdate(M.corte)+'.':'');
+  $('ce-note').textContent='Ventas de cada ejecutivo a sus clientes estratégicos en los días elegidos de '+MESES_L[C.m-1]+' '+C.y+'. "% de la meta" compara el neto de los días elegidos con la meta del mes (solo facturas). "% de lo esperado" compara ese avance con el avance lineal según días hábiles (lunes a viernes sin feriados): '+espTxt+'. El semáforo usa "% de lo esperado": azul oscuro 100% o más, celeste 90% a 99%, amarillo 80% a 89%, rojo bajo 80%.'+(parcial?' Las ventas llegan hasta el '+fdate(M.corte)+'.':'');
 }
 ['ce-ven','ce-ani','ce-mes'].forEach((id)=>$(id).addEventListener('change',(e)=>{const C=S.ce;if(id==='ce-ven')C.ven=e.target.value;else{if(id==='ce-ani')C.y=+e.target.value;else C.m=+e.target.value;C.ds=null;}renderCE();}));
 $('ce-med').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;S.ce.med=b.dataset.v;renderCE();});
@@ -2582,14 +2584,14 @@ $('ce-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCE)return;cons
   if(L.kMes)metas.push(['Meta mensual de venta (vs ventas del giro)',L.kMes.mt?N(L.kMes.mt):'Sin meta cargada',L.kMes.vg==null?'':N(L.kMes.vg),...(L.kMes.vg==null?['','','']:SP(L.kMes.vg,L.kMes.mt))]);
   // tabla detalle
   const hd=[...(L.todos?['Ejecutivo']:[]),'Cliente','Código'];
-  for(const j of L.meds){const p=j===0?'Neto':'Kilos';L.sems.forEach((s,i)=>hd.push(p+' sem '+(i+1)+' ('+s.ini+'-'+s.fin+' '+L.mesLab+')'));hd.push(p+' total días elegidos');if(j===0)hd.push('Meta '+L.mesLab,'% de la meta','','% de lo esperado');}
-  const fila=(r,v,cli,cod)=>{const o=[...(L.todos?[v]:[]),cli,cod];for(const j of L.meds){const F=j===0?N:K;r.ws.forEach((w)=>o.push(F(w[j])));o.push(F(r.tot[j]));if(j===0)o.push(r.meta?N(r.meta):'',...SP(r.tot[0],r.meta));}return o;};
+  for(const j of L.meds){const p=j===0?'Neto':'Kilos';hd.push(p+' días elegidos');if(j===0)hd.push('Meta '+L.mesLab,'% de la meta','','% de lo esperado');}
+  const fila=(r,v,cli,cod)=>{const o=[...(L.todos?[v]:[]),cli,cod];for(const j of L.meds){const F=j===0?N:K;o.push(F(r.tot[j]));if(j===0)o.push(r.meta?N(r.meta):'',...SP(r.tot[0],r.meta));}return o;};
   const suma=(rs)=>({ws:L.sems.map((_,i)=>rs.reduce((a,r)=>[a[0]+r.ws[i][0],a[1]+r.ws[i][1]],[0,0])),tot:rs.reduce((a,r)=>[a[0]+r.tot[0],a[1]+r.tot[1]],[0,0]),meta:rs.reduce((a,r)=>a+r.meta,0)});
   const cod=(c)=>/^\d+$/.test(c)?+c:c;const det=[hd];
   if(L.todos){for(const v of L.vlist){const rs=L.rows.filter((r)=>r.v===v);if(!rs.length)continue;rs.forEach((r)=>det.push(fila(r,v,r.cli,cod(r.cod))));det.push(fila(suma(rs),v,'Total '+v,''));}}
   else L.rows.forEach((r)=>det.push(fila(r,'',r.cli,cod(r.cod))));
   if(L.rows.length)det.push(fila(suma(L.rows),'','TOTAL',''));
-  const w1=[...(L.todos?[26]:[]),44,11,...L.meds.flatMap((j)=>[...L.sems.map(()=>15),17,...(j===0?[15,12,4,14]:[])])];
+  const w1=[...(L.todos?[26]:[]),44,11,...L.meds.flatMap((j)=>[17,...(j===0?[15,12,4,14]:[])])];
   const h1=hojaXL([...titulo,...metas,[],...det],3);h1['!cols']=w1.map((w,i)=>({wch:i===0?Math.max(w,40):w}));
   // resumen por ejecutivo
   const conK=L.meds.includes(1);const rh=['Ejecutivo','Clientes','Meta','Vendido','% de la meta','','% de lo esperado',...(conK?['Kilos vendidos']:[])];const rr=[rh];
