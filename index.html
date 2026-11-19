@@ -2067,8 +2067,8 @@ const TUT={
   est:{sec:'Estrategia',intro:'Herramientas para gerencia: ventas por vendedor con filtros libres y seguimiento de clientes estratégicos con metas mensuales.',pasos:[
     'Ventas por vendedor: marca vendedores, años, meses y días (por ejemplo, del 1 al 8 para un informe "al 09"). La tabla muestra cada línea (según PCDESC) por vendedor, agrupada en Mangueras, Tuberías, Fitting reventa y Otras ventas, con sus totales, Ventas del giro y Total general. Suma facturas, notas de crédito y notas de débito. Cambia entre Neto y Kilos con el selector.',
     'Refacturación: con un solo mes elegido, escribe a mano el monto de cada vendedor en la fila "Detalle refacturación" y presiona "Guardar refacturación". Queda guardada por mes y aparece en el cuadro de abajo; no suma al Total General.',
-    'Clientes estratégicos: elige el vendedor, el año, el mes y los días que quieres revisar. Cada cliente muestra lo vendido en cada semana (lunes a domingo), el total de los días elegidos, la meta del mes y el avance con semáforo.',
-    'Maestro (administrador y gerencia): con "Importar metas" subes el Excel mensual de metas por ejecutivo. La app reconoce ejecutivos y clientes, te muestra lo que no pudo reconocer para que lo elijas, y al guardar reemplaza las metas de esos meses. La "META TOTAL" del archivo queda como meta mensual de venta.',
+    'Clientes estratégicos: elige el vendedor, el año, el mes y los días que quieres revisar. Cada cliente muestra lo vendido en cada semana (lunes a domingo), el total de los días elegidos, la meta del mes, el "% de la meta" y el "% de lo esperado". El semáforo usa el % de lo esperado: compara tu avance con lo que deberías llevar según los días hábiles transcurridos del mes (lunes a viernes sin feriados, hasta la fecha de corte de las ventas). Así, a mitad de mes no todo sale en rojo.',
+    'Maestro (administrador y gerencia): con "Importar metas" subes el Excel mensual de metas por ejecutivo. La app reconoce ejecutivos y clientes, te muestra lo que no pudo reconocer para que lo elijas, y al guardar reemplaza las metas de esos meses. La fila "PRESUPUESTO" del archivo queda como meta mensual de venta.',
     'Arriba de Clientes estratégicos verás dos metas: la de clientes estratégicos (suma de sus metas contra lo vendido) y la meta mensual de venta (contra las Ventas del giro: facturas, notas de crédito y notas de débito).',
     'Cada vendedor ve solo sus propios clientes estratégicos y su avance, sin poder editar.'],
     tip:'Los kilos salen de la columna "Peso Total" del archivo de ventas. Solo se cuentan facturas vigentes.'},
@@ -2511,6 +2511,16 @@ function ceVendedores(){const M=S.M;const sc=alcance();const conMeta=new Set(est
 // ventas del giro de toda la empresa en los días elegidos (facturas + NC + ND, según PCDESC)
 function ventasGiro(y,m,dset){const E=S.est;if(!E||!E.pc)return null;const giro=new Set(PC_MANG.concat(PC_TUB,PC_FIT).map(nPc));const ok=new Set(E.pcs.map((s,i)=>giro.has(nPc(s))?i:-1).filter((i)=>i>=0));
   let n=0;for(const r of E.pc){const d=r[1];if(Math.floor(d/100)!==y*100+m||!dset.has(d%100)||!ok.has(r[2]))continue;n+=r[3];}return n;}
+// feriados nacionales de Chile (solo importan los de lunes a viernes)
+const FERIADOS_CL={2025:['01-01','04-18','04-19','05-01','05-21','06-20','06-29','07-16','08-15','09-18','09-19','10-12','10-31','11-01','11-16','12-08','12-14','12-25'],
+  2026:['01-01','04-03','04-04','05-01','05-21','06-21','06-29','07-16','08-15','09-18','09-19','10-12','10-31','11-01','12-08','12-25'],
+  2027:['01-01','03-26','03-27','05-01','05-21','06-21','06-28','07-16','08-15','09-17','09-18','09-19','10-11','10-31','11-01','12-08','12-25']};
+const FER_FIJOS=['01-01','05-01','05-21','06-29','07-16','08-15','09-18','09-19','10-12','10-31','11-01','12-08','12-25'];
+const esHabil=(y,m,d)=>{const dow=new Date(Date.UTC(y,m-1,d)).getUTCDay();if(dow===0||dow===6)return false;return !(FERIADOS_CL[y]||FER_FIJOS).includes(pad2(m)+'-'+pad2(d));};
+// avance esperado lineal: días hábiles transcurridos (hasta el último día elegido, sin pasar la fecha de corte) / días hábiles del mes
+function esperadoMes(y,m,ds){const nd=diasMes(y,m);const ci=corteInt();let fin=Math.max(...ds,0);
+  while(fin>0&&dInt(y,m,fin)>ci)fin--;let tot=0,tr=0;for(let d=1;d<=nd;d++){if(!esHabil(y,m,d))continue;tot++;if(d<=fin)tr++;}
+  return {tot,tr,f:tot?tr/tot:0,fin};}
 function renderCE(){
   const M=S.M;const c=M.corte;const vs=ceVendedores();
   if(!S.ce)S.ce={ven:editaEst()?'__todos':(vs[0]||''),y:+c.slice(0,4),m:+c.slice(5,7),ds:null,med:'neto'};
@@ -2524,6 +2534,8 @@ function renderCE(){
   const nd=diasMes(C.y,C.m);if(!C.ds)C.ds=Array.from({length:nd},(_,i)=>i+1);C.ds=C.ds.filter((d)=>d<=nd);
   chips('ce-dia',Array.from({length:nd},(_,i)=>[i+1,String(i+1)]),C.ds,(v)=>{C.ds=v;renderCE();});
   const dset=new Set(C.ds);const mesLab=MES[C.m-1].toLowerCase();
+  const ESP=esperadoMes(C.y,C.m,C.ds);const lin=(a,b)=>b&&ESP.f>0?(a/b)/ESP.f:null;
+  const espTxt='esperado a la fecha '+pf.format(ESP.f)+' ('+ESP.tr+' de '+ESP.tot+' días hábiles)';
   const sem=[];for(let d=1;d<=nd;d++){const dow=(new Date(Date.UTC(C.y,C.m-1,d)).getUTCDay()+6)%7;if(d===1||dow===0)sem.push({ini:d,fin:d,ds:[]});const s=sem[sem.length-1];s.fin=d;if(dset.has(d))s.ds.push(d);}
   const sems=sem.filter((s)=>s.ds.length);
   const todos=C.ven==='__todos';const vlist=todos?vs:[C.ven];
@@ -2533,56 +2545,57 @@ function renderCE(){
   rows.sort((a,b)=>(todos?a.v.localeCompare(b.v,'es'):0)||b.meta-a.meta);
   // tarjetas: meta clientes estratégicos y meta mensual de venta
   const tMeta=rows.reduce((s,r)=>s+r.meta,0),tVen=rows.reduce((s,r)=>s+r.tot[0],0);
-  const kp=(t,v,s,av)=>{const b=el('b',{text:v});const k=el('div',{class:'kpi'},el('span',{text:t}),b,el('small',{text:s}));if(av!=null)b.prepend(semaforo(av));return k;};
-  const cards=[kp('Meta clientes estratégicos'+(todos?'':' · '+C.ven),tMeta?pf.format(tVen/tMeta):'—','vendido $'+nf.format(Math.round(tVen))+' de $'+nf.format(Math.round(tMeta))+' · '+rows.length+' clientes',tMeta?tVen/tMeta:null)];
+  const kp=(t,v,s,av,s2)=>{const b=el('b',{text:v});const k=el('div',{class:'kpi'},el('span',{text:t}),b,el('small',{text:s}),...(s2?[el('small',{text:s2})]:[]));if(av!=null)b.prepend(semaforo(av));return k;};
+  const vLin=(a,b)=>{const l=lin(a,b);return l==null?(b?pf.format(a/b)+' de la meta':'—'):pf.format(l)+' de lo esperado';};
+  const cards=[kp('Meta clientes estratégicos'+(todos?'':' · '+C.ven),vLin(tVen,tMeta),(tMeta?pf.format(tVen/tMeta)+' de la meta · ':'')+'vendido $'+nf.format(Math.round(tVen))+' de $'+nf.format(Math.round(tMeta))+' · '+rows.length+' clientes',lin(tVen,tMeta),espTxt)];
   let kMes=null;if(editaEst()){const T=(S.estCli[VK_TOT]||{}).meses||{};const mt=(T[ym]||{}).meta||0;const vg=ventasGiro(C.y,C.m,dset);kMes={mt,vg};
-    cards.push(kp('Meta mensual de venta',mt&&vg!=null?pf.format(vg/mt):'—',mt?'ventas del giro $'+(vg==null?'—':nf.format(Math.round(vg)))+' de $'+nf.format(Math.round(mt)):'sin meta mensual cargada para '+mesLab+' '+C.y,mt&&vg!=null?vg/mt:null));}
+    cards.push(kp('Meta mensual de venta',mt&&vg!=null?vLin(vg,mt):'—',mt?(vg!=null?pf.format(vg/mt)+' de la meta · ':'')+'ventas del giro $'+(vg==null?'—':nf.format(Math.round(vg)))+' de $'+nf.format(Math.round(mt)):'sin meta mensual cargada para '+mesLab+' '+C.y,mt&&vg!=null?lin(vg,mt):null,mt?espTxt:''));}
   $('ce-kpis').replaceChildren(...cards);
   const meds=C.med==='ambos'?[0,1]:C.med==='neto'?[0]:[1];
   const fmtM=(j,v)=>j===0?'$'+nf.format(Math.round(v)):nf.format(Math.round(v));
-  S.lastCE={rows,sems,meds,C,mesLab,todos,vlist,tMeta,tVen,kMes};
+  S.lastCE={rows,sems,meds,C,mesLab,todos,vlist,tMeta,tVen,kMes,ESP};
   const head=[...(todos?[el('th',{class:'l vend',scope:'col',text:'Ejecutivo'})]:[]),el('th',{class:'l cli',scope:'col',text:'Cliente'}),el('th',{class:'l hide-sm',scope:'col',text:'Código'})];
   for(const j of meds){if(meds.length>1)head.push(el('th',{class:'l',scope:'col',text:j===0?'NETO →':'KILOS →'}));
     sems.forEach((s,i)=>head.push(el('th',{scope:'col',text:'Sem '+(i+1)+' ('+s.ini+'–'+s.fin+' '+mesLab+')'})));head.push(el('th',{scope:'col',text:'Total días elegidos'}));
-    if(j===0)head.push(el('th',{scope:'col',text:'Meta '+mesLab}),el('th',{scope:'col',text:'Avance'}));}
+    if(j===0)head.push(el('th',{scope:'col',text:'Meta '+mesLab}),el('th',{scope:'col',text:'% de la meta'}),el('th',{scope:'col',text:'% de lo esperado',title:espTxt}));}
   $('ce-head').replaceChildren(...head);
   const linea=(r,cls)=>{const tds=[...(todos?[el('td',{class:'l vend',text:r.v||''})]:[]),(()=>{const td=el('td',{class:'l cli',text:r.cli});if(!cls&&M.clients.has(r.cod)){td.dataset.ficha=r.cod;td.title='Ver ficha';}return td;})(),el('td',{class:'l hide-sm',text:r.cod||''})];
     for(const j of meds){if(meds.length>1)tds.push(el('td'));r.ws.forEach((w)=>{const td=el('td',{text:fmtM(j,w[j])});if(!w[j])td.classList.add('zc');tds.push(td);});
       tds.push(el('td',{text:fmtM(j,r.tot[j]),style:'font-weight:600'}));
-      if(j===0){tds.push(el('td',{text:r.meta?fmtM(0,r.meta):'—'}));const av=r.meta?r.tot[0]/r.meta:null;const ta=el('td',{text:av==null?'—':pf.format(av),style:'font-weight:600'});if(av!=null)ta.prepend(semaforo(av));tds.push(ta);}}
+      if(j===0){tds.push(el('td',{text:r.meta?fmtM(0,r.meta):'—'}));const av=r.meta?r.tot[0]/r.meta:null;tds.push(el('td',{text:av==null?'—':pf.format(av)}));const l=lin(r.tot[0],r.meta);const ta=el('td',{text:l==null?'—':pf.format(l),style:'font-weight:600'});if(l!=null)ta.prepend(semaforo(l));tds.push(ta);}}
     return el('tr',cls?{class:cls}:null,...tds);};
   const suma=(rs,nom,v)=>({v,cli:nom,cod:'',ws:sems.map((_,i)=>rs.reduce((a,r)=>[a[0]+r.ws[i][0],a[1]+r.ws[i][1]],[0,0])),tot:rs.reduce((a,r)=>[a[0]+r.tot[0],a[1]+r.tot[1]],[0,0]),meta:rs.reduce((a,r)=>a+r.meta,0)});
   const out=[];if(todos){for(const v of vlist){const rs=rows.filter((r)=>r.v===v);if(!rs.length)continue;rs.forEach((r)=>out.push(linea(r)));out.push(linea(suma(rs,'Total '+v,v),'tot'));}}else rows.forEach((r)=>out.push(linea(r)));
   if(rows.length)out.push(linea(suma(rows,'TOTAL',''),'tot tot2'));
   $('ce-body').replaceChildren(...out,...(rows.length?[]:[el('tr',null,el('td',{class:'l',colSpan:head.length,text:'No hay clientes estratégicos con meta para '+mesLab+' '+C.y+(editaEst()?'. Cárgalos desde Estrategia → Maestro.':'.')}))]));
   const parcial=dInt(C.y,C.m,Math.max(...C.ds,0))>corteInt();
-  $('ce-note').textContent='Ventas de cada ejecutivo a sus clientes estratégicos en los días elegidos de '+MESES_L[C.m-1]+' '+C.y+', por semana (lunes a domingo). El avance compara el neto de los días elegidos con la meta del mes (solo facturas). Semáforo: azul oscuro 100% o más, celeste 90% a 99%, amarillo 80% a 89%, rojo bajo 80%.'+(parcial?' Las ventas llegan hasta el '+fdate(M.corte)+'.':'');
+  $('ce-note').textContent='Ventas de cada ejecutivo a sus clientes estratégicos en los días elegidos de '+MESES_L[C.m-1]+' '+C.y+', por semana (lunes a domingo). "% de la meta" compara el neto de los días elegidos con la meta del mes (solo facturas). "% de lo esperado" compara ese avance con el avance lineal según días hábiles (lunes a viernes sin feriados): '+espTxt+'. El semáforo usa "% de lo esperado": azul oscuro 100% o más, celeste 90% a 99%, amarillo 80% a 89%, rojo bajo 80%.'+(parcial?' Las ventas llegan hasta el '+fdate(M.corte)+'.':'');
 }
 ['ce-ven','ce-ani','ce-mes'].forEach((id)=>$(id).addEventListener('change',(e)=>{const C=S.ce;if(id==='ce-ven')C.ven=e.target.value;else{if(id==='ce-ani')C.y=+e.target.value;else C.m=+e.target.value;C.ds=null;}renderCE();}));
 $('ce-med').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;S.ce.med=b.dataset.v;renderCE();});
 $('ce-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCE)return;const L=S.lastCE;const C=L.C;
-  const N=(v)=>({v:v||0,t:'$'}),K=(v)=>({v:v||0,t:'kg'}),Q=(v)=>({v,t:'n'});const SP=(a,b)=>b?[semXL(a/b),{v:a/b,t:'%'}]:['',''];
+  const N=(v)=>({v:v||0,t:'$'}),K=(v)=>({v:v||0,t:'kg'}),Q=(v)=>({v,t:'n'});const E=L.ESP;const SP=(a,b)=>{if(!b)return ['','',''];const av=a/b;const l=E.f>0?av/E.f:null;return [{v:av,t:'%'},...(l==null?['','']:[semXL(l),{v:l,t:'%'}])];};
   const mesT=MESES_L[C.m-1][0].toUpperCase()+MESES_L[C.m-1].slice(1)+' '+C.y;const quien=L.todos?'Todos los ejecutivos':C.ven;
   const nd=diasMes(C.y,C.m);const dTxt=C.ds.length===nd?'todos los días del mes':'días '+C.ds.join(', ');
-  const titulo=[['Clientes estratégicos · '+mesT+' · '+quien],['Días elegidos: '+dTxt+'. Ventas hasta el '+fdate(S.M.corte)+'.'],[]];
-  const metas=[['Indicador','Meta','Vendido','','Avance'],['Meta clientes estratégicos',N(L.tMeta),N(L.tVen),...SP(L.tVen,L.tMeta)]];
-  if(L.kMes)metas.push(['Meta mensual de venta (vs ventas del giro)',L.kMes.mt?N(L.kMes.mt):'Sin meta cargada',L.kMes.vg==null?'':N(L.kMes.vg),...(L.kMes.vg==null?['','']:SP(L.kMes.vg,L.kMes.mt))]);
+  const titulo=[['Clientes estratégicos · '+mesT+' · '+quien],['Días elegidos: '+dTxt+'. Ventas hasta el '+fdate(S.M.corte)+'. Avance esperado a la fecha: '+pf.format(E.f)+' ('+E.tr+' de '+E.tot+' días hábiles).'],[]];
+  const metas=[['Indicador','Meta','Vendido','% de la meta','','% de lo esperado'],['Meta clientes estratégicos',N(L.tMeta),N(L.tVen),...SP(L.tVen,L.tMeta)]];
+  if(L.kMes)metas.push(['Meta mensual de venta (vs ventas del giro)',L.kMes.mt?N(L.kMes.mt):'Sin meta cargada',L.kMes.vg==null?'':N(L.kMes.vg),...(L.kMes.vg==null?['','','']:SP(L.kMes.vg,L.kMes.mt))]);
   // tabla detalle
   const hd=[...(L.todos?['Ejecutivo']:[]),'Cliente','Código'];
-  for(const j of L.meds){const p=j===0?'Neto':'Kilos';L.sems.forEach((s,i)=>hd.push(p+' sem '+(i+1)+' ('+s.ini+'-'+s.fin+' '+L.mesLab+')'));hd.push(p+' total días elegidos');if(j===0)hd.push('Meta '+L.mesLab,'','Avance %');}
+  for(const j of L.meds){const p=j===0?'Neto':'Kilos';L.sems.forEach((s,i)=>hd.push(p+' sem '+(i+1)+' ('+s.ini+'-'+s.fin+' '+L.mesLab+')'));hd.push(p+' total días elegidos');if(j===0)hd.push('Meta '+L.mesLab,'% de la meta','','% de lo esperado');}
   const fila=(r,v,cli,cod)=>{const o=[...(L.todos?[v]:[]),cli,cod];for(const j of L.meds){const F=j===0?N:K;r.ws.forEach((w)=>o.push(F(w[j])));o.push(F(r.tot[j]));if(j===0)o.push(r.meta?N(r.meta):'',...SP(r.tot[0],r.meta));}return o;};
   const suma=(rs)=>({ws:L.sems.map((_,i)=>rs.reduce((a,r)=>[a[0]+r.ws[i][0],a[1]+r.ws[i][1]],[0,0])),tot:rs.reduce((a,r)=>[a[0]+r.tot[0],a[1]+r.tot[1]],[0,0]),meta:rs.reduce((a,r)=>a+r.meta,0)});
   const cod=(c)=>/^\d+$/.test(c)?+c:c;const det=[hd];
   if(L.todos){for(const v of L.vlist){const rs=L.rows.filter((r)=>r.v===v);if(!rs.length)continue;rs.forEach((r)=>det.push(fila(r,v,r.cli,cod(r.cod))));det.push(fila(suma(rs),v,'Total '+v,''));}}
   else L.rows.forEach((r)=>det.push(fila(r,'',r.cli,cod(r.cod))));
   if(L.rows.length)det.push(fila(suma(L.rows),'','TOTAL',''));
-  const w1=[...(L.todos?[26]:[]),44,11,...L.meds.flatMap((j)=>[...L.sems.map(()=>15),17,...(j===0?[15,4,10]:[])])];
+  const w1=[...(L.todos?[26]:[]),44,11,...L.meds.flatMap((j)=>[...L.sems.map(()=>15),17,...(j===0?[15,12,4,14]:[])])];
   const h1=hojaXL([...titulo,...metas,[],...det],3);h1['!cols']=w1.map((w,i)=>({wch:i===0?Math.max(w,40):w}));
   // resumen por ejecutivo
-  const conK=L.meds.includes(1);const rh=['Ejecutivo','Clientes','Meta','Vendido','','Avance %',...(conK?['Kilos vendidos']:[])];const rr=[rh];
+  const conK=L.meds.includes(1);const rh=['Ejecutivo','Clientes','Meta','Vendido','% de la meta','','% de lo esperado',...(conK?['Kilos vendidos']:[])];const rr=[rh];
   for(const v of L.vlist){const rs=L.rows.filter((r)=>r.v===v);if(!rs.length)continue;const t=suma(rs);rr.push([v,Q(rs.length),N(t.meta),N(t.tot[0]),...SP(t.tot[0],t.meta),...(conK?[K(t.tot[1])]:[])]);}
   if(L.rows.length){const t=suma(L.rows);rr.push(['TOTAL',Q(L.rows.length),N(t.meta),N(t.tot[0]),...SP(t.tot[0],t.meta),...(conK?[K(t.tot[1])]:[])]);}
-  const h2=hojaXL([...titulo,...metas,[],...rr],3);h2['!cols']=[{wch:44},{wch:16},{wch:18},{wch:18},{wch:4},{wch:12},{wch:16}];
+  const h2=hojaXL([...titulo,...metas,[],...rr],3);h2['!cols']=[{wch:44},{wch:16},{wch:18},{wch:18},{wch:13},{wch:4},{wch:15},{wch:16}];
   libroXLSX([['Resumen',h2,null],['Clientes estratégicos',h1,null]],'Clientes_estrategicos_'+C.y+'-'+pad2(C.m)+(L.todos?'':'_'+nomArch(C.ven))+'.xlsx');});
 /* ---- Maestro de Estrategia: importador de metas ---- */
 const toks=(s)=>norm(String(s)).replace(/[^a-z0-9ñ ]/g,' ').split(/\s+/).filter((w)=>w.length>=3);
