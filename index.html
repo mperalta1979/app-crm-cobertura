@@ -208,6 +208,8 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
 .t .stk2{left:var(--stk2,0)}
 .t .stk3{left:var(--stk3,0)}
 .t .stkl{box-shadow:inset -1px 0 0 var(--line)}
+#ce-rbody tr[data-v]{cursor:pointer}
+@media (max-width:700px){#ce-table .vend.stk{position:static}#ce-table td.cli.stk,#ce-table th.cli.stk{left:0;max-width:9.5rem;overflow:hidden;text-overflow:ellipsis;box-shadow:inset -1px 0 0 var(--line)}#ce-rtable td.vend,#ce-rtable th.vend{max-width:8.5rem;overflow:hidden;text-overflow:ellipsis}}
 .t tbody tr:hover td.stk{background:var(--accent-soft)}
 @media (max-width:700px){.t td.stk1,.t th.stk1{box-shadow:inset -1px 0 0 var(--line);max-width:9.5rem;overflow:hidden;text-overflow:ellipsis}}
 .t td.z{color:var(--bad);background:var(--bad-soft)}
@@ -422,6 +424,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font
           <div class="field" id="ce-dia-w"><span>Días del mes a revisar</span><div id="ce-dia" class="dias"></div></div>
         </div>
         <div class="kpis" id="ce-kpis"></div>
+        <div class="card" id="ce-res" hidden><h3 style="margin:0 0 8px">Resumen por ejecutivo</h3><div class="twrap" style="max-height:26rem"><table class="t" id="ce-rtable"><thead><tr id="ce-rhead"></tr></thead><tbody id="ce-rbody"></tbody></table></div><p class="note" style="margin-top:6px">Toca un ejecutivo para ver solo su detalle.</p></div>
         <div class="card" id="ce-view"><div class="twrap" style="max-height:34rem"><table class="t" id="ce-table"><thead><tr id="ce-head"></tr></thead><tbody id="ce-body"></tbody></table></div></div>
       </div>
       <div id="est-me" class="wrap" style="padding:0" hidden>
@@ -2546,10 +2549,11 @@ function renderCE(){
   // tarjetas: meta clientes estratégicos y meta mensual de venta
   const tMeta=rows.reduce((s,r)=>s+r.meta,0),tVen=rows.reduce((s,r)=>s+r.tot[0],0);
   const kp=(t,v,s,av,s2)=>{const b=el('b',{text:v});const k=el('div',{class:'kpi'},el('span',{text:t}),b,el('small',{text:s}),...(s2?[el('small',{text:s2})]:[]));if(av!=null)b.prepend(semaforo(av));return k;};
-  const vLin=(a,b)=>{const l=lin(a,b);return l==null?(b?pf.format(a/b)+' de la meta':'—'):pf.format(l)+' de lo esperado';};
-  const cards=[kp('Meta clientes estratégicos'+(todos?'':' · '+C.ven),vLin(tVen,tMeta),(tMeta?pf.format(tVen/tMeta)+' de la meta · ':'')+'vendido $'+nf.format(Math.round(tVen))+' de $'+nf.format(Math.round(tMeta))+' · '+rows.length+' clientes',lin(tVen,tMeta),espTxt)];
+  const vLin=(a,b)=>{const l=lin(a,b);return l==null?(b?pf.format(a/b):'—'):pf.format(l);};
+  const qLin=(a,b)=>lin(a,b)==null?'de la meta':'de lo esperado';
+  const cards=[kp('Meta clientes estratégicos'+(todos?'':' · '+C.ven),vLin(tVen,tMeta),qLin(tVen,tMeta)+(tMeta?' · '+pf.format(tVen/tMeta)+' de la meta · ':' · ')+'vendido $'+nf.format(Math.round(tVen))+' de $'+nf.format(Math.round(tMeta))+' · '+rows.length+' clientes',lin(tVen,tMeta),espTxt)];
   let kMes=null;if(editaEst()){const T=(S.estCli[VK_TOT]||{}).meses||{};const mt=(T[ym]||{}).meta||0;const vg=ventasGiro(C.y,C.m,dset);kMes={mt,vg};
-    cards.push(kp('Meta mensual de venta',mt&&vg!=null?vLin(vg,mt):'—',mt?(vg!=null?pf.format(vg/mt)+' de la meta · ':'')+'ventas del giro $'+(vg==null?'—':nf.format(Math.round(vg)))+' de $'+nf.format(Math.round(mt)):'sin meta mensual cargada para '+mesLab+' '+C.y,mt&&vg!=null?lin(vg,mt):null,mt?espTxt:''));}
+    cards.push(kp('Meta mensual de venta',mt&&vg!=null?vLin(vg,mt):'—',mt?(vg!=null?qLin(vg,mt)+' · '+pf.format(vg/mt)+' de la meta · ':'')+'ventas del giro $'+(vg==null?'—':nf.format(Math.round(vg)))+' de $'+nf.format(Math.round(mt)):'sin meta mensual cargada para '+mesLab+' '+C.y,mt&&vg!=null?lin(vg,mt):null,mt?espTxt:''));}
   $('ce-kpis').replaceChildren(...cards);
   const meds=C.med==='ambos'?[0,1]:C.med==='neto'?[0]:[1];
   const fmtM=(j,v)=>j===0?'$'+nf.format(Math.round(v)):nf.format(Math.round(v));
@@ -2568,6 +2572,12 @@ function renderCE(){
   const suma=(rs,nom,v)=>({v,cli:nom,cod:'',ws:sems.map((_,i)=>rs.reduce((a,r)=>[a[0]+r.ws[i][0],a[1]+r.ws[i][1]],[0,0])),tot:rs.reduce((a,r)=>[a[0]+r.tot[0],a[1]+r.tot[1]],[0,0]),meta:rs.reduce((a,r)=>a+r.meta,0)});
   const out=[];if(todos){for(const v of vlist){const rs=rows.filter((r)=>r.v===v);if(!rs.length)continue;rs.forEach((r)=>out.push(linea(r)));out.push(linea(suma(rs,'Total '+v,v),'tot'));}}else rows.forEach((r)=>out.push(linea(r)));
   if(rows.length)out.push(linea(suma(rows,'TOTAL',''),'tot tot2'));
+  {const conK=meds.includes(1);const show=todos&&rows.length>0;$('ce-res').hidden=!show;
+   if(show){$('ce-rhead').replaceChildren(el('th',{class:'l vend stk stk1 stkl',scope:'col',text:'Ejecutivo'}),el('th',{scope:'col',text:'Clientes'}),el('th',{scope:'col',text:'Meta '+mesLab}),el('th',{scope:'col',text:'Vendido'}),el('th',{scope:'col',text:'% de la meta'}),el('th',{scope:'col',text:'% de lo esperado',title:espTxt}),...(conK?[el('th',{scope:'col',text:'Kilos vendidos'})]:[]));
+    const fr=(v,rs,cls)=>{const t=suma(rs,'',v);const av=t.meta?t.tot[0]/t.meta:null;const l=lin(t.tot[0],t.meta);const ta=el('td',{text:l==null?'—':pf.format(l),style:'font-weight:600'});if(l!=null)ta.prepend(semaforo(l));
+      const tr=el('tr',cls?{class:cls}:null,el('td',{class:'l vend stk stk1 stkl',text:v}),el('td',{text:nf.format(rs.length)}),el('td',{text:fmtM(0,t.meta)}),el('td',{text:fmtM(0,t.tot[0])}),el('td',{text:av==null?'—':pf.format(av)}),ta,...(conK?[el('td',{text:fmtM(1,t.tot[1])})]:[]));
+      if(!cls){tr.dataset.v=v;tr.title='Ver solo '+v;}return tr;};
+    const rr=[];for(const v of vlist){const rs=rows.filter((r)=>r.v===v);if(rs.length)rr.push(fr(v,rs));}rr.push(fr('TOTAL',rows,'tot tot2'));$('ce-rbody').replaceChildren(...rr);}}
   $('ce-body').replaceChildren(...out,...(rows.length?[]:[el('tr',null,el('td',{class:'l',colSpan:head.length,text:'No hay clientes estratégicos con meta para '+mesLab+' '+C.y+(editaEst()?'. Cárgalos desde Estrategia → Maestro.':'.')}))]));
   {const h=$('ce-head'),w=(q)=>{const e=h.querySelector(q);return e?e.getBoundingClientRect().width:0;};const T=$('ce-table');T.style.setProperty('--stk2',w('.stk1')+'px');T.style.setProperty('--stk3',(w('.stk1')+w('.stk2'))+'px');}
   const parcial=dInt(C.y,C.m,Math.max(...C.ds,0))>corteInt();
@@ -2575,6 +2585,7 @@ function renderCE(){
 }
 ['ce-ven','ce-ani','ce-mes'].forEach((id)=>$(id).addEventListener('change',(e)=>{const C=S.ce;if(id==='ce-ven')C.ven=e.target.value;else{if(id==='ce-ani')C.y=+e.target.value;else C.m=+e.target.value;C.ds=null;}renderCE();}));
 $('ce-med').addEventListener('click',(e)=>{const b=e.target.closest('button[data-v]');if(!b)return;S.ce.med=b.dataset.v;renderCE();});
+$('ce-rbody').addEventListener('click',(e)=>{const tr=e.target.closest('tr[data-v]');if(!tr)return;S.ce.ven=tr.dataset.v;renderCE();$('ce-kpis').scrollIntoView({behavior:'smooth',block:'start'});});
 $('ce-export').addEventListener('click',()=>{if(sinXLSX()||!S.lastCE)return;const L=S.lastCE;const C=L.C;
   const N=(v)=>({v:v||0,t:'$'}),K=(v)=>({v:v||0,t:'kg'}),Q=(v)=>({v,t:'n'});const E=L.ESP;const SP=(a,b)=>{if(!b)return ['','',''];const av=a/b;const l=E.f>0?av/E.f:null;return [{v:av,t:'%'},...(l==null?['','']:[semXL(l),{v:l,t:'%'}])];};
   const mesT=MESES_L[C.m-1][0].toUpperCase()+MESES_L[C.m-1].slice(1)+' '+C.y;const quien=L.todos?'Todos los ejecutivos':C.ven;
