@@ -746,7 +746,7 @@ function code_(v){if(v==null||v==='')return '';if(typeof v==='number')return Str
 function socio_(v){return v==null?'':String(v).replace(/_x000D_/gi,' ').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();}
 function idx_(h,names){for(const n of names){const i=h.findIndex(x=>String(x==null?'':x).trim().toLowerCase()===n.toLowerCase());if(i>=0)return i;}return -1;}
 // Lector de .xlsx por partes: descomprime y recorre la hoja en trozos, sin armar un único texto gigante.
-const KEEP_=['pcdesc','grupo','peso total','tipo_docto','estado_docto','folio_docto','fecha_docto','año','ano','mes','dia','día','vendedor','cod_cliente','rut_cliente','cliente','neto','cod_producto','producto','un_medida','socio','cantidad',
+const KEEP_=['pcdesc','grupo','peso total','tipo_docto','estado_docto','folio_docto','fecha_docto','año','ano','mes','dia','día','vendedor','cod_cliente','rut_cliente','cliente','neto','cod_producto','producto','un_medida','socio','cantidad','nota_venta','nota venta','notaventa',
   'venDes','codaux','nomaux','rutaux','actaux','bloqueado','catdes','cvedes','numero_nventa','fecha_emis','nvestado','estado'].map((x)=>x.toLowerCase());
 function xmlTxt_(s){return s.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi,(m,e)=>{e=e.toLowerCase();if(e==='amp')return'&';if(e==='lt')return'<';if(e==='gt')return'>';if(e==='quot')return'"';if(e==='apos')return"'";
   return String.fromCodePoint(e[1]==='x'?parseInt(e.slice(2),16):parseInt(e.slice(1),10));}).replace(/_x000D_/g,'\r');}
